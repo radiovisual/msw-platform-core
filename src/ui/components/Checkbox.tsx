@@ -1,19 +1,23 @@
 import React from "react";
 
-type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement>;
+interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  id?: string;
+}
 
-const Checkbox: React.FC<CheckboxProps> = ({ style, ...props }) => (
-  <input
-    type="checkbox"
-    style={{
-      width: 16,
-      height: 16,
-      accentColor: "#0070f3",
-      marginRight: 4,
-      ...style,
-    }}
-    {...props}
-  />
-);
+const Checkbox: React.FC<CheckboxProps> = ({ checked, onChange, id, ...rest }) => {
+  return (
+    <input
+      type="checkbox"
+      role="checkbox"
+      checked={checked}
+      onChange={onChange}
+      id={id}
+      style={{ width: 18, height: 18, accentColor: "#0070f3", cursor: "pointer" }}
+      {...rest}
+    />
+  );
+};
 
 export default Checkbox; 

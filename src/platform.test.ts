@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { createMockPlatform, Plugin, InMemoryPersistence, Scenario } from "./index";
 import { mswHandlersFromPlatform } from "./adapters/msw";
 import { setupServer } from "msw/node";
@@ -17,6 +20,7 @@ afterAll(() => {
 
 describe("MockPlatformCore", () => {
   const plugin: Plugin = {
+    componentId: "example",
     id: "example",
     endpoint: "/api/example",
     method: "GET",
@@ -93,7 +97,7 @@ describe("MockPlatformCore", () => {
 
   // Edge cases
   it("returns undefined for missing plugin or status", () => {
-    const platform = createMockPlatform({ name: "test",plugins: [plugin], featureFlags: ["EXAMPLE_USE_ALT"] });
+    const platform = createMockPlatform({ name: "test", plugins: [plugin], featureFlags: ["EXAMPLE_USE_ALT"] });
     expect(platform.getResponse("notfound")).toBeUndefined();
     expect(platform.getResponse("example", 999)).toBeUndefined();
   });
@@ -107,6 +111,7 @@ describe("MockPlatformCore", () => {
 
 describe("mswHandlersFromPlatform", () => {
   const plugin: Plugin = {
+    componentId: "example",
     id: "example",
     endpoint: "/api/example",
     method: "GET",

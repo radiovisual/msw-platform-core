@@ -51,17 +51,29 @@ function saveDisabledPluginIds(ids: string[], storageKey: string) {
   localStorage.setItem(storageKey, JSON.stringify(ids))
 }
 
+// Add scenario persistence helpers
+function loadEndpointScenarios(storageKey: string): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+function saveEndpointScenarios(map: Record<string, string>, storageKey: string) {
+  localStorage.setItem(storageKey, JSON.stringify(map));
+}
+
 export default function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsStorageKey }: MockUIProps) {
-  // Log the platform instance for debugging
-  console.log("[MockUI] platform instance:", platform);
   const platformName = platform.getName();
-  console.log("[MockUI] platformName:", platformName);
   if (!platformName) {
     throw new Error("Platform name is required for MockUI localStorage namespacing. Received platform: " + JSON.stringify(platform));
   }
 
   const groupKey = groupStorageKey || `${platformName}.mockui.groups.v1`;
   const disabledKey = disabledPluginIdsStorageKey || `${platformName}.mockui.disabledPluginIds.v1`;
+  const endpointScenarioKey = `${platformName}.mockui.endpointScenarios.v1`;
   const [isOpen, setIsOpen] = useState(false)
   const [groups, setGroups] = useState<Group[]>(() => loadGroups(groupKey))
   const [disabledPluginIds, setDisabledPluginIds] = useState<string[]>(() => loadDisabledPluginIds(disabledKey))
@@ -70,6 +82,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([])
   const [, forceUpdate] = useState(0)
+  const [endpointScenarios, setEndpointScenarios] = useState<Record<string, string>>(() => loadEndpointScenarios(endpointScenarioKey));
 
   const plugins: Plugin[] = platform.getPlugins()
   const featureFlags = platform.getFeatureFlags()
@@ -92,6 +105,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
   // Persist groups and disabledPluginIds
   useEffect(() => { saveGroups(groups, groupKey) }, [groups, groupKey])
   useEffect(() => { saveDisabledPluginIds(disabledPluginIds, disabledKey) }, [disabledPluginIds, disabledKey])
+  // Persist endpointScenarios
+  useEffect(() => { saveEndpointScenarios(endpointScenarios, endpointScenarioKey) }, [endpointScenarios, endpointScenarioKey]);
 
   // Notify parent/MSW adapter on state change
   useEffect(() => { onStateChange?.({ disabledPluginIds }) }, [disabledPluginIds, onStateChange])
@@ -159,6 +174,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
   // Filtering
   const filteredPlugins = plugins.filter(plugin => {
+    // Always show all endpoints that match the search and group filters, regardless of passthrough/mocked state
     const matchesSearch = plugin.endpoint.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesGroup =
       selectedGroupFilters.length === 0 ||
@@ -169,7 +185,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
         }
         const userGroup = groups.find(g => g.id === groupId);
         if (userGroup && Array.isArray(userGroup.endpointIds) && userGroup.endpointIds.includes(plugin.id)) return true;
-       
         const autoGroup = autoGroups.find(g => g.id === groupId);
         if (!autoGroup) {
           console.warn(`[MockUI] autoGroup not found for groupId: ${groupId}. autoGroups:`, autoGroups);
@@ -187,97 +202,124 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
   }
 
 
-  console.log({ platform, cids: platform.getComponentIds() })
   const allGroups = [...autoGroups, ...groups];
 
-  // Defensive logging for autoGroups
-  console.log("[MockUI] autoGroups:", autoGroups);
-  console.log("[MockUI] user groups:", groups);
-
   // UI rendering (fix event typing)
-  const EndpointRow = ({ plugin }: { plugin: Plugin }) => (
-    <div style={{ border: "1px solid #eee", borderRadius: 8, padding: 16, marginBottom: 12, background: isMocked(plugin) ? "#f6fff6" : "#fff6f6" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Checkbox
-              checked={isMocked(plugin)}
-              onChange={() => toggleEndpointSelection(plugin.id)}
-              id={`mocked-${plugin.id}`}
-            />
-            <Label htmlFor={`mocked-${plugin.id}`}>mocked?</Label>
-          </div>
-          <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: "#e6f7ff", color: "#0070f3" }}>{plugin.method}</span>
-          <span style={{ fontFamily: "monospace", fontSize: 14 }}>{plugin.endpoint}</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {/* Auto group badge */}
-            <span style={{ border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12, background: "#f0f0f0", opacity: 0.7 }}>
-              {plugin.componentId}
-            </span>
-            {/* User group badges */}
-            {groups
-              .filter((group: Group) => group.endpointIds.includes(plugin.id))
-              .map((group: Group) => (
-                <span key={group.id} style={{ border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12 }}>{group.name}</span>
-              ))}
-          </div>
-        </div>
-        <Popover
-          trigger={
-            <Button style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 8px", fontSize: 12, background: "#f8f8f8" }}>
-              + Add to group
-            </Button>
-          }
-        >
-          {(close) => (
-            <div style={{ minWidth: 180, padding: 8 }}>
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Groups</div>
-              {groups.length === 0 && <div style={{ color: "#888", fontSize: 12 }}>No groups yet</div>}
-              {groups.map((group: Group) => {
-                const checked = group.endpointIds.includes(plugin.id);
-                return (
-                  <div key={group.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <Checkbox
-                      id={`addtogroup-${plugin.id}-${group.id}`}
-                      checked={checked}
-                      onChange={() => {
-                        if (checked) removeFromGroup(plugin.id, group.id);
-                        else addToGroup(plugin.id, group.id);
-                      }}
-                    />
-                    <Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
-                  </div>
-                );
-              })}
+  const EndpointRow = ({ plugin }: { plugin: Plugin }) => {
+    // Scenario dropdown
+    const scenarioList = plugin.scenarios;
+    const activeScenarioId = endpointScenarios[plugin.id] || platform.getEndpointScenario(plugin.id);
+    const handleScenarioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const scenarioId = e.target.value;
+      // Debug: log event target value and scenarioId
+      // eslint-disable-next-line no-console
+      console.log('[handleScenarioChange] event.target.value:', e.target.value, 'scenarioId:', scenarioId);
+      // Debug: log platform and persistence instance
+      // eslint-disable-next-line no-console
+      console.log('[handleScenarioChange] platform:', platform, 'persistence:', (platform as any).persistence, 'scenarioId:', scenarioId);
+      setEndpointScenarios(prev => ({ ...prev, [plugin.id]: scenarioId }));
+      platform.setEndpointScenario(plugin.id, scenarioId);
+      forceUpdate(x => x + 1);
+    };
+    return (
+      <div style={{ border: "1px solid #eee", borderRadius: 8, padding: 16, marginBottom: 12, background: isMocked(plugin) ? "#f6fff6" : "#fff6f6" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Checkbox
+                checked={isMocked(plugin)}
+                onChange={() => toggleEndpointSelection(plugin.id)}
+                id={`mocked-${plugin.id}`}
+                aria-label={`Toggle endpoint ${plugin.endpoint}`}
+              />
+              <Label htmlFor={`mocked-${plugin.id}`}>mocked?</Label>
             </div>
-          )}
-        </Popover>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8 }}>
-        {getStatusCodes(plugin).map((code: number) => (
-          <div key={code} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <Radio
-              name={`status-${plugin.id}`}
-              value={code}
-              checked={getStatus(plugin) === code}
-              onChange={() => updateStatusCode(plugin.id, code)}
-              id={`${plugin.id}-${code}`}
-            />
-            <Label htmlFor={`${plugin.id}-${code}`}>{code}</Label>
+            <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: "#e6f7ff", color: "#0070f3" }}>{plugin.method}</span>
+            <span style={{ fontFamily: "monospace", fontSize: 14 }}>{plugin.endpoint}</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {/* Auto group badge */}
+              <span style={{ border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12, background: "#f0f0f0", opacity: 0.7 }}>
+                {plugin.componentId}
+              </span>
+              {/* User group badges */}
+              {groups
+                .filter((group: Group) => group.endpointIds.includes(plugin.id))
+                .map((group: Group) => (
+                  <span key={group.id} style={{ border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12 }}>{group.name}</span>
+                ))}
+              {/* Scenario dropdown */}
+              {scenarioList && scenarioList.length > 0 && (
+                <select
+                  value={activeScenarioId || ""}
+                  onChange={handleScenarioChange}
+                  style={{ marginLeft: 8, borderRadius: 4, padding: "2px 8px", fontSize: 12 }}
+                >
+                  <option value="">Default</option>
+                  {scenarioList.map(scenario => (
+                    <option key={scenario.id} value={scenario.id}>{scenario.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
-        ))}
+          <Popover
+            trigger={
+              <Button style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 8px", fontSize: 12, background: "#f8f8f8" }}>
+                + Add to group
+              </Button>
+            }
+          >
+            {(close) => (
+              <div style={{ minWidth: 180, padding: 8 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Groups</div>
+                {groups.length === 0 && <div style={{ color: "#888", fontSize: 12 }}>No groups yet</div>}
+                {groups.map((group: Group) => {
+                  const checked = group.endpointIds.includes(plugin.id);
+                  return (
+                    <div key={group.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Checkbox
+                        id={`addtogroup-${plugin.id}-${group.id}`}
+                        checked={checked}
+                        onChange={() => {
+                          if (checked) removeFromGroup(plugin.id, group.id);
+                          else addToGroup(plugin.id, group.id);
+                        }}
+                        aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
+                      />
+                      <Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Popover>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8 }}>
+          {getStatusCodes(plugin).map((code: number) => (
+            <div key={code} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <Radio
+                name={`status-${plugin.id}`}
+                value={code}
+                checked={getStatus(plugin) === code}
+                onChange={() => updateStatusCode(plugin.id, code)}
+                id={`${plugin.id}-${code}`}
+              />
+              <Label htmlFor={`${plugin.id}-${code}`}>{code}</Label>
+            </div>
+          ))}
+        </div>
+        {!isMocked(plugin) && (
+          <p style={{ fontSize: 12, color: "#888", fontStyle: "italic" }}>endpoint will passthrough to localhost:4711</p>
+        )}
       </div>
-      {!isMocked(plugin) && (
-        <p style={{ fontSize: 12, color: "#888", fontStyle: "italic" }}>endpoint will passthrough to localhost:4711</p>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
     <>
       {/* Floating Button */}
       <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}>
-        <Button onClick={() => setIsOpen(true)} style={{ borderRadius: "50%", height: 56, width: 56, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ccc" }}>
+        <Button onClick={() => setIsOpen(true)} style={{ borderRadius: "50%", height: 56, width: 56, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ccc" }} data-testid="open-settings">
           <Settings style={{ height: 24, width: 24 }} />
         </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -298,18 +340,26 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
             }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #eee", flex: "0 0 auto" }}>
                 <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Endpoint Manager</h2>
-                <Button style={{ padding: 8 }} onClick={() => setIsOpen(false)}>
+                <Button style={{ padding: 8 }} onClick={() => setIsOpen(false)} data-testid="close-dialog">
                   <X style={{ height: 16, width: 16 }} />
                 </Button>
               </div>
               <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                 <Tabs defaultValue="endpoints">
-                  <TabList>
-                    <Tab value="endpoints">Endpoints</Tab>
-                    <Tab value="groups">Groups</Tab>
-                    <Tab value="feature-flags">Feature Flags</Tab>
-                    <Tab value="settings">Settings</Tab>
-                  </TabList>
+                  <div style={{
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 2,
+                    background: "#fff",
+                    borderBottom: "1px solid #eee",
+                  }}>
+                    <TabList>
+                      <Tab value="endpoints">Endpoints</Tab>
+                      <Tab value="groups">Groups</Tab>
+                      <Tab value="feature-flags">Feature Flags</Tab>
+                      <Tab value="settings">Settings</Tab>
+                    </TabList>
+                  </div>
                   <TabPanel value="endpoints">
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <h3 style={{ fontSize: 18, fontWeight: 500 }}>All Endpoints</h3>
@@ -345,6 +395,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
                                     id={`filter-${group.id}`}
                                     checked={selectedGroupFilters.includes(group.id)}
                                     onChange={() => { toggleGroupFilter(group.id); close(); }}
+                                    aria-label={`Filter by group ${group.name}`}
                                   />
                                   <Label htmlFor={`filter-${group.id}`} style={{ fontSize: 14, flex: 1 }}>
                                     {group.name}
@@ -399,7 +450,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
                         <div key={group.id} style={{ border: "1px solid #eee", borderRadius: 8, padding: 16, background: "#f8f8f8", opacity: 0.7 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                             <Users style={{ height: 16, width: 16 }} />
-                            <span>{group.name} (auto)</span>
+                            <span>{group.name}</span>
                             <span style={{ borderRadius: 6, padding: "4px 8px", fontSize: 12, background: "#f0f0f0" }}>{plugins.filter(p => p.componentId === group.name).length}</span>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -440,12 +491,13 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
                               </div>
                             )}
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Button onClick={() => setEditingGroup(group.id)} style={{ padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc" }}>
+                              <Button onClick={() => setEditingGroup(group.id)} style={{ padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc" }} aria-label="edit">
                                 <Edit2 style={{ height: 16, width: 16 }} />
                               </Button>
                               <Button
                                 onClick={() => deleteGroup(group.id)}
                                 style={{ padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc", color: "#e53e3e", cursor: "pointer" }}
+                                aria-label="trash"
                               >
                                 <Trash2 style={{ height: 16, width: 16 }} />
                               </Button>
@@ -498,6 +550,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
                             checked={!!enabled}
                             onChange={e => toggleFeatureFlag(flag, !enabled)}
                             id={flag}
+                            aria-label={`Toggle feature flag ${flag}`}
                           />
                         </div>
                       ))}

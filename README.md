@@ -77,6 +77,75 @@ platform.setFeatureFlag("EXPERIMENTAL_USER", true);
 platform.setStatusOverride("user", 404);
 ```
 
+### 4. Endpoint Scenarios (Per-Endpoint Variations)
+
+You can define multiple **scenarios** for each endpoint, allowing you to easily switch between different variations (e.g., "User not registered" vs. "User is registered").
+
+#### Defining Scenarios
+
+Add a `scenarios` array to your plugin definition. Each scenario can override any subset of status codes. If a status code is not defined in the scenario, the plugin's main `responses` will be used as a fallback.
+
+```js
+const platform = createMockPlatform({
+  plugins: [
+    {
+      id: "register",
+      endpoint: "/api/register",
+      method: "POST",
+      responses: {
+        200: { ok: true },
+        400: { error: "Bad request" },
+      },
+      defaultStatus: 200,
+      scenarios: [
+        {
+          id: "not-registered",
+          label: "User not registered",
+          responses: {
+            200: { error: "User not registered" },
+            // 400 not defined here, will fallback to plugin.responses[400]
+          },
+        },
+        {
+          id: "registered",
+          label: "User is registered",
+          responses: {
+            200: { ok: "User is registered" },
+            400: { error: "Custom bad request" },
+          },
+        },
+      ],
+    },
+  ],
+});
+```
+
+#### Using Scenarios in the UI
+
+- In the MockUI "All Endpoints" tab, a dropdown will appear for each endpoint with scenarios.
+- Select a scenario to activate it for that endpoint. The response will update accordingly.
+- The selected scenario is persisted to localStorage and restored on reload.
+
+#### Programmatic API
+
+```js
+// Set the active scenario for an endpoint
+platform.setEndpointScenario("register", "not-registered");
+
+// Get the active scenario for an endpoint
+const scenarioId = platform.getEndpointScenario("register");
+
+// The response returned by getResponse will use the active scenario if set
+// and the requested status code. If not defined in the scenario, falls back to plugin.responses
+const resp200 = platform.getResponse("register", 200); // scenario or plugin 200
+const resp400 = platform.getResponse("register", 400); // scenario or plugin 400
+```
+
+#### In Tests and Storybook
+
+- You can set the scenario programmatically in your tests or Storybook stories for deterministic results.
+- The UI and MSW handlers will respect the active scenario.
+
 ### 4. Example handler (for reference)
 
 Handlers are generated for you, but here's what they look like under the hood:

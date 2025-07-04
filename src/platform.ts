@@ -7,6 +7,8 @@ export interface PersistenceProvider {
   setStatus(pluginId: string, status: number): void;
   getActiveScenario(): string | undefined;
   setActiveScenario(scenarioId: string): void;
+  getEndpointScenario(pluginId: string): string | undefined;
+  setEndpointScenario(pluginId: string, scenarioId: string): void;
 }
 
 export class InMemoryPersistence implements PersistenceProvider {
@@ -14,6 +16,7 @@ export class InMemoryPersistence implements PersistenceProvider {
   private flags: Record<string, boolean> = {};
   private statuses: Record<string, number> = {};
   private activeScenario: string | undefined;
+  private endpointScenarios: Record<string, string> = {};
   constructor(name: string) { this.name = name; }
   getFlag(flag: string) { return this.flags[flag]; }
   setFlag(flag: string, value: boolean) { this.flags[flag] = value; }
@@ -21,6 +24,8 @@ export class InMemoryPersistence implements PersistenceProvider {
   setStatus(pluginId: string, status: number) { this.statuses[pluginId] = status; }
   getActiveScenario() { return this.activeScenario; }
   setActiveScenario(scenarioId: string) { this.activeScenario = scenarioId; }
+  getEndpointScenario(pluginId: string) { return this.endpointScenarios[pluginId]; }
+  setEndpointScenario(pluginId: string, scenarioId: string) { this.endpointScenarios[pluginId] = scenarioId; }
 }
 
 export class MockPlatformCore {
@@ -31,6 +36,7 @@ export class MockPlatformCore {
   private scenarios: Scenario[];
   private activeScenario: string | undefined;
   private persistence: PersistenceProvider;
+  private endpointScenarioOverrides: Record<string, string> = {};
 
   constructor(config: MockPlatformConfig, persistence?: PersistenceProvider) {
     this.name = config?.name ?? new Date().getTime().toString();
@@ -58,6 +64,9 @@ export class MockPlatformCore {
     for (const plugin of this.plugins) {
       const persisted = this.persistence.getStatus(plugin.id);
       if (persisted !== undefined) this.statusOverrides[plugin.id] = persisted;
+      // Load endpoint scenario override from persistence
+      const scenarioId = this.persistence.getEndpointScenario(plugin.id);
+      if (scenarioId) this.endpointScenarioOverrides[plugin.id] = scenarioId;
     }
     // Load active scenario
     this.activeScenario = this.persistence.getActiveScenario();
@@ -89,11 +98,37 @@ export class MockPlatformCore {
     this.persistence.setStatus(pluginId, status);
   }
 
+  // Endpoint scenario support
+  getEndpointScenario(pluginId: string): string | undefined {
+    return this.endpointScenarioOverrides[pluginId];
+  }
+  setEndpointScenario(pluginId: string, scenarioId: string) {
+    this.endpointScenarioOverrides[pluginId] = scenarioId;
+    this.persistence.setEndpointScenario(pluginId, scenarioId);
+  }
+
   getResponse(pluginId: string, status?: number) {
     const plugin = this.plugins.find(p => p.id === pluginId);
     if (!plugin) return undefined;
-    // Use override if present
+    // If endpoint scenario is set and plugin has scenarios, use it
+    const scenarioId = this.getEndpointScenario(pluginId);
     const useStatus = status ?? this.statusOverrides[pluginId] ?? plugin.defaultStatus;
+    if (scenarioId && plugin.scenarios) {
+      const scenario = plugin.scenarios.find(s => s.id === scenarioId);
+      if (scenario) {
+        let resp = scenario.responses[useStatus];
+        if (resp === undefined) {
+          // Fallback to plugin responses
+          resp = plugin.responses[useStatus];
+        }
+        if (resp === undefined) return undefined;
+        if (plugin.transform) {
+          resp = plugin.transform(JSON.parse(JSON.stringify(resp)), this.featureFlags);
+        }
+        return resp;
+      }
+    }
+    // Otherwise, use status override/default
     let response = plugin.responses[useStatus];
     if (response === undefined) return undefined;
     if (plugin.transform) {

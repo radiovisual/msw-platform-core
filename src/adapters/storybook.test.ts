@@ -1,9 +1,13 @@
+/**
+ * @jest-environment node
+ */
 import { createMockPlatform } from '../platform';
 import { mswHandlersFromPlatform } from './msw';
 import { storybookHandlersFromPlatform } from './storybook';
 
 describe('storybookHandlersFromPlatform', () => {
   const plugin = {
+    componentId: 'test',
     id: 'test',
     endpoint: '/api/test',
     method: 'GET' as const,
