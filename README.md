@@ -1,4 +1,4 @@
-# mock-platform-core
+# msw-platform-core
 
 A reusable, portable mock platform core for frontend and full-stack projects.
 
@@ -20,7 +20,7 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 ### 1. Define your plugins and create the platform
 
 ```js
-import { createMockPlatform } from "mock-platform-core";
+import { createMockPlatform } from "msw-platform-core";
 
 const platform = createMockPlatform({
   plugins: [
@@ -46,7 +46,7 @@ const platform = createMockPlatform({
 
 ```js
 import { setupWorker } from "msw";
-import { mswHandlersFromPlatform } from "mock-platform-core";
+import { mswHandlersFromPlatform } from "msw-platform-core";
 
 const worker = setupWorker(...mswHandlersFromPlatform(platform));
 worker.start();
@@ -58,7 +58,7 @@ worker.start();
 
 ```js
 import { setupServer } from "msw/node";
-import { mswHandlersFromPlatform } from "mock-platform-core";
+import { mswHandlersFromPlatform } from "msw-platform-core";
 
 const server = setupServer(...mswHandlersFromPlatform(platform));
 
@@ -169,14 +169,14 @@ http.get("/api/user", () => {
 ### 1. Install dependencies
 
 ```bash
-npm install msw mock-platform-core
+npm install msw msw-platform-core
 ```
 
 ### 2. Create your mock platform and handlers
 
 ```js
 // src/mocks/platform.js
-import { createMockPlatform } from 'mock-platform-core';
+import { createMockPlatform } from 'msw-platform-core';
 
 export const platform = createMockPlatform({
   plugins: [
@@ -210,7 +210,7 @@ export const platform = createMockPlatform({
 
 ```js
 // src/mocks/handlers.js
-import { mswHandlersFromPlatform } from 'mock-platform-core';
+import { mswHandlersFromPlatform } from 'msw-platform-core';
 import { platform } from './platform';
 
 export const handlers = mswHandlersFromPlatform(platform);
@@ -286,14 +286,12 @@ export default function App() {
 
 --- 
 
----
-
 ## Guide: Integrating with Storybook using storybookHandlersFromPlatform
 
 ### 1. Install dependencies
 
 ```bash
-npm install msw msw-storybook-addon mock-platform-core
+npm install msw msw-storybook-addon msw-platform-core
 ```
 
 ### 2. Configure Storybook to use MSW
@@ -346,7 +344,7 @@ export default config;
 
 ```js
 // src/mocks/platform.js
-import { createMockPlatform } from 'mock-platform-core';
+import { createMockPlatform } from 'msw-platform-core';
 
 export const platform = createMockPlatform({
   plugins: [
@@ -374,7 +372,7 @@ import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { App } from "./App";
 import { platform } from "./mocks/platform";
-import { storybookHandlersFromPlatform } from "mock-platform-core/src/adapters/storybook";
+import { storybookHandlersFromPlatform } from "msw-platform-core";
 
 const meta: Meta<typeof App> = {
   title: "App",
@@ -427,8 +425,6 @@ In summary: Use the Storybook adapter in your Storybook stories for clarity and 
 
 --- 
 
----
-
 ## Proxy Passthrough: Disabling Mocks and Allowing Real Backend/Proxy
 
 Both the MSW and Storybook adapters now support a passthrough feature. You can disable specific mocks by plugin id, and those requests will not be intercepted—they will be passed through to your real backend or proxy (e.g., localhost:4711).
@@ -438,7 +434,7 @@ Both the MSW and Storybook adapters now support a passthrough feature. You can d
 #### In your app or tests (Node.js or browser):
 
 ```js
-import { mswHandlersFromPlatform } from 'mock-platform-core';
+import { mswHandlersFromPlatform } from 'msw-platform-core';
 import { platform } from './mocks/platform';
 
 const handlers = mswHandlersFromPlatform(platform, {
@@ -449,7 +445,7 @@ const handlers = mswHandlersFromPlatform(platform, {
 #### In Storybook:
 
 ```js
-import { storybookHandlersFromPlatform } from 'mock-platform-core/src/adapters/storybook';
+import { storybookHandlersFromPlatform } from 'msw-platform-core';
 import { platform } from './mocks/platform';
 
 export const Default = {
@@ -474,18 +470,12 @@ export const Default = {
 
 The Popup Mock UI widget provides a floating control panel for toggling mock endpoints, feature flags, and groups at runtime. It works seamlessly with the MSW adapter and persists your changes across browser sessions.
 
-### Installation
-
-```
-pnpm add msw-mock-platform-core react lucide-react @radix-ui/react-dialog @radix-ui/react-tabs @radix-ui/react-checkbox @radix-ui/react-radio-group @radix-ui/react-label @radix-ui/react-popover
-```
-
 ### Usage
 
 1. **Register your endpoints and feature flags with the platform:**
 
 ```ts
-import { createMockPlatform } from 'msw-mock-platform-core'
+import { createMockPlatform } from 'msw-platform-core'
 
 const platform = createMockPlatform()
 // ...register endpoints, feature flags, etc.
@@ -494,7 +484,7 @@ const platform = createMockPlatform()
 2. **Add the Popup UI widget to your app:**
 
 ```tsx
-import MockUI from 'msw-mock-platform-core/src/ui/MockUI'
+import MockUI from 'msw-platform-core'
 
 function App() {
   return (
@@ -511,5 +501,3 @@ function App() {
 - Open the floating widget (bottom-right).
 - Toggle endpoints on/off, change status codes, manage groups, and enable/disable feature flags.
 - Changes are saved to localStorage and persist across reloads.
-
-> **Note:** The widget will show a "Settings coming soon" message for the settings tab. 

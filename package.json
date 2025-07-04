@@ -1,5 +1,5 @@
 {
-  "name": "mock-platform-core",
+  "name": "msw-platform-core",
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,8 +34,7 @@
     "postcss-loader": "^8.1.1",
     "storybook": "8",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.8.3",
-    "undici": "^7.11.0"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",

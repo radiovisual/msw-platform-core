@@ -1,50 +1,19 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MockUI;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
-const Dialog = __importStar(require("@radix-ui/react-dialog"));
-const Tabs = __importStar(require("@radix-ui/react-tabs"));
-const Checkbox = __importStar(require("@radix-ui/react-checkbox"));
-const RadioGroup = __importStar(require("@radix-ui/react-radio-group"));
-const Label = __importStar(require("@radix-ui/react-label"));
-const Popover = __importStar(require("@radix-ui/react-popover"));
+const Button_1 = __importDefault(require("./components/Button"));
+const Checkbox_1 = __importDefault(require("./components/Checkbox"));
+const Radio_1 = __importDefault(require("./components/Radio"));
+const Dialog_1 = __importDefault(require("./components/Dialog"));
+const Tabs_1 = require("./components/Tabs");
+const Popover_1 = __importDefault(require("./components/Popover"));
+const Label_1 = __importDefault(require("./components/Label"));
 const lucide_react_1 = require("lucide-react");
-const GROUPS_STORAGE_KEY = "mockui.groups.v1";
-const DISABLED_STORAGE_KEY = "mockui.disabledPluginIds.v1";
 function loadGroups(storageKey) {
     try {
         const raw = localStorage.getItem(storageKey);
@@ -73,43 +42,71 @@ function loadDisabledPluginIds(storageKey) {
 function saveDisabledPluginIds(ids, storageKey) {
     localStorage.setItem(storageKey, JSON.stringify(ids));
 }
-const methodColors = {
-    GET: "bg-green-100 text-green-800",
-    POST: "bg-blue-100 text-blue-800",
-    PUT: "bg-yellow-100 text-yellow-800",
-    DELETE: "bg-red-100 text-red-800",
-    PATCH: "bg-purple-100 text-purple-800",
-};
+// Add scenario persistence helpers
+function loadEndpointScenarios(storageKey) {
+    try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw)
+            return {};
+        return JSON.parse(raw);
+    }
+    catch (_a) {
+        return {};
+    }
+}
+function saveEndpointScenarios(map, storageKey) {
+    localStorage.setItem(storageKey, JSON.stringify(map));
+}
 function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsStorageKey }) {
-    const groupKey = groupStorageKey || GROUPS_STORAGE_KEY;
-    const disabledKey = disabledPluginIdsStorageKey || DISABLED_STORAGE_KEY;
+    const platformName = platform.getName();
+    if (!platformName) {
+        throw new Error("Platform name is required for MockUI localStorage namespacing. Received platform: " + JSON.stringify(platform));
+    }
+    const groupKey = groupStorageKey || `${platformName}.mockui.groups.v1`;
+    const disabledKey = disabledPluginIdsStorageKey || `${platformName}.mockui.disabledPluginIds.v1`;
+    const endpointScenarioKey = `${platformName}.mockui.endpointScenarios.v1`;
     const [isOpen, setIsOpen] = (0, react_1.useState)(false);
     const [groups, setGroups] = (0, react_1.useState)(() => loadGroups(groupKey));
-    const [disabledPluginIds, setDisabledPluginIds] = (0, react_1.useState)(() => loadDisabledPluginIds(disabledKey));
+    const [disabledPluginIds, setDisabledPluginIds] = (0, react_1.useState)(() => {
+        const ids = loadDisabledPluginIds(disabledKey);
+        platform.setDisabledPluginIds(ids);
+        return ids;
+    });
     const [newGroupName, setNewGroupName] = (0, react_1.useState)("");
     const [editingGroup, setEditingGroup] = (0, react_1.useState)(null);
     const [searchTerm, setSearchTerm] = (0, react_1.useState)("");
     const [selectedGroupFilters, setSelectedGroupFilters] = (0, react_1.useState)([]);
     const [, forceUpdate] = (0, react_1.useState)(0);
+    const [endpointScenarios, setEndpointScenarios] = (0, react_1.useState)(() => loadEndpointScenarios(endpointScenarioKey));
     const plugins = platform.getPlugins();
     const featureFlags = platform.getFeatureFlags();
+    // Helper to get automatic groups from platform
+    const autoGroups = platform.getComponentIds().map(cid => ({
+        id: cid,
+        name: cid,
+        endpointIds: platform.getPlugins().filter(p => p.componentId === cid).map(p => p.id),
+        auto: true,
+    }));
     // Helper: get status override or default
     const getStatus = (plugin) => { var _a; return (_a = platform.getStatusOverride(plugin.id)) !== null && _a !== void 0 ? _a : plugin.defaultStatus; };
     // Helper: is endpoint mocked?
-    const isMocked = (plugin) => !disabledPluginIds.includes(plugin.id);
+    const isMocked = (plugin) => !platform.getDisabledPluginIds().includes(plugin.id);
     // Persist groups and disabledPluginIds
     (0, react_1.useEffect)(() => { saveGroups(groups, groupKey); }, [groups, groupKey]);
     (0, react_1.useEffect)(() => { saveDisabledPluginIds(disabledPluginIds, disabledKey); }, [disabledPluginIds, disabledKey]);
+    // Persist endpointScenarios
+    (0, react_1.useEffect)(() => { saveEndpointScenarios(endpointScenarios, endpointScenarioKey); }, [endpointScenarios, endpointScenarioKey]);
     // Notify parent/MSW adapter on state change
     (0, react_1.useEffect)(() => { onStateChange === null || onStateChange === void 0 ? void 0 : onStateChange({ disabledPluginIds }); }, [disabledPluginIds, onStateChange]);
     // UI: toggle endpoint mocked/passthrough
     const toggleEndpointSelection = (0, react_1.useCallback)((pluginId) => {
         setDisabledPluginIds(prev => {
             const arr = prev.includes(pluginId) ? prev.filter(id => id !== pluginId) : [...prev, pluginId];
+            platform.setDisabledPluginIds(arr);
             return arr;
         });
         forceUpdate(x => x + 1);
-    }, []);
+    }, [platform]);
     // UI: update status code
     const updateStatusCode = (0, react_1.useCallback)((pluginId, statusCode) => {
         platform.setStatusOverride(pluginId, statusCode);
@@ -154,32 +151,116 @@ function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsSto
     const clearGroupFilters = () => setSelectedGroupFilters([]);
     // Filtering
     const filteredPlugins = plugins.filter(plugin => {
+        // Always show all endpoints that match the search and group filters, regardless of passthrough/mocked state
         const matchesSearch = plugin.endpoint.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesGroup = selectedGroupFilters.length === 0 ||
-            selectedGroupFilters.some(groupId => { var _a; return (_a = groups.find(g => g.id === groupId)) === null || _a === void 0 ? void 0 : _a.endpointIds.includes(plugin.id); });
+            selectedGroupFilters.some(groupId => {
+                if (!groupId) {
+                    console.warn("[MockUI] selectedGroupFilters contains undefined groupId");
+                    return false;
+                }
+                const userGroup = groups.find(g => g.id === groupId);
+                if (userGroup && Array.isArray(userGroup.endpointIds) && userGroup.endpointIds.includes(plugin.id))
+                    return true;
+                const autoGroup = autoGroups.find(g => g.id === groupId);
+                if (!autoGroup) {
+                    console.warn(`[MockUI] autoGroup not found for groupId: ${groupId}. autoGroups:`, autoGroups);
+                    return false;
+                }
+                if (typeof plugin.componentId === "string" && plugin.componentId === autoGroup.name)
+                    return true;
+                return false;
+            });
         return matchesSearch && matchesGroup;
     });
     // Helper: get statusCodes for a plugin
     const getStatusCodes = (plugin) => {
         return Object.keys(plugin.responses).map(Number);
     };
+    const allGroups = [...autoGroups, ...groups];
     // UI rendering (fix event typing)
-    const EndpointRow = ({ plugin }) => ((0, jsx_runtime_1.jsxs)("div", { className: `border rounded-lg p-4 space-y-3 transition-colors ${isMocked(plugin) ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`, children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)(Checkbox.Root, { checked: isMocked(plugin), onCheckedChange: () => toggleEndpointSelection(plugin.id), className: "w-4 h-4 border rounded", id: `mocked-${plugin.id}`, children: (0, jsx_runtime_1.jsx)(Checkbox.Indicator, { className: "flex items-center justify-center", children: (0, jsx_runtime_1.jsx)("span", { className: "block w-2 h-2 bg-green-600 rounded" }) }) }), (0, jsx_runtime_1.jsx)(Label.Root, { htmlFor: `mocked-${plugin.id}`, className: "text-xs text-gray-600", children: "mocked?" })] }), (0, jsx_runtime_1.jsx)("span", { className: `px-2 py-1 rounded text-xs font-semibold ${methodColors[plugin.method]}`, children: plugin.method }), (0, jsx_runtime_1.jsx)("span", { className: "font-mono text-sm", children: plugin.endpoint }), (0, jsx_runtime_1.jsx)("div", { className: "flex flex-wrap gap-1", children: groups
-                                    .filter((group) => group.endpointIds.includes(plugin.id))
-                                    .map((group) => ((0, jsx_runtime_1.jsx)("span", { className: "border px-1 py-0 rounded text-xs", children: group.name }, group.id))) })] }), (0, jsx_runtime_1.jsxs)("select", { className: "border rounded px-2 py-1 text-xs", onChange: e => addToGroup(plugin.id, e.currentTarget.value), value: "", children: [(0, jsx_runtime_1.jsx)("option", { value: "", disabled: true, children: "+ Add to group" }), groups.map((group) => ((0, jsx_runtime_1.jsx)("option", { value: group.id, children: group.name }, group.id)))] })] }), (0, jsx_runtime_1.jsx)("div", { className: "flex items-center space-x-4", children: (0, jsx_runtime_1.jsx)(RadioGroup.Root, { className: "flex space-x-4", value: getStatus(plugin).toString(), onValueChange: value => updateStatusCode(plugin.id, Number.parseInt(value)), children: getStatusCodes(plugin).map((code) => ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)(RadioGroup.Item, { value: code.toString(), id: `${plugin.id}-${code}`, className: "w-4 h-4 border rounded-full", children: (0, jsx_runtime_1.jsx)(RadioGroup.Indicator, { className: "block w-2 h-2 bg-blue-600 rounded-full mx-auto my-auto" }) }), (0, jsx_runtime_1.jsx)(Label.Root, { htmlFor: `${plugin.id}-${code}`, className: "text-sm", children: code })] }, code))) }) }), !isMocked(plugin) && ((0, jsx_runtime_1.jsx)("p", { className: "text-xs text-gray-500 italic", children: "endpoint will passthrough to localhost:4711" }))] }));
-    return ((0, jsx_runtime_1.jsx)(jsx_runtime_1.Fragment, { children: (0, jsx_runtime_1.jsx)("div", { className: "fixed bottom-6 right-6 z-50", children: (0, jsx_runtime_1.jsxs)(Dialog.Root, { open: isOpen, onOpenChange: setIsOpen, children: [(0, jsx_runtime_1.jsx)(Dialog.Trigger, { asChild: true, children: (0, jsx_runtime_1.jsx)("button", { className: "rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-shadow bg-white flex items-center justify-center border", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Settings, { className: "h-6 w-6" }) }) }), (0, jsx_runtime_1.jsxs)(Dialog.Content, { className: "max-w-4xl max-h-[80vh] overflow-hidden bg-white rounded-lg shadow-xl border", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between p-6 border-b", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-xl font-semibold", children: "Endpoint Manager" }), (0, jsx_runtime_1.jsx)("button", { className: "p-2", onClick: () => setIsOpen(false), children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-4 w-4" }) })] }), (0, jsx_runtime_1.jsxs)(Tabs.Root, { defaultValue: "endpoints", className: "flex-1", children: [(0, jsx_runtime_1.jsxs)(Tabs.List, { className: "grid w-full grid-cols-4 border-b", children: [(0, jsx_runtime_1.jsx)(Tabs.Trigger, { value: "endpoints", className: "py-2", children: "Endpoints" }), (0, jsx_runtime_1.jsx)(Tabs.Trigger, { value: "groups", className: "py-2", children: "Groups" }), (0, jsx_runtime_1.jsx)(Tabs.Trigger, { value: "feature-flags", className: "py-2", children: "Feature Flags" }), (0, jsx_runtime_1.jsx)(Tabs.Trigger, { value: "settings", className: "py-2", children: "Settings" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-6 overflow-y-auto max-h-[60vh]", children: [(0, jsx_runtime_1.jsxs)(Tabs.Content, { value: "endpoints", className: "space-y-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-medium", children: "All Endpoints" }), (0, jsx_runtime_1.jsxs)("span", { className: "border rounded px-2 py-1 text-xs bg-gray-100", children: [plugins.filter((ep) => isMocked(ep)).length, " selected"] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-4", children: [(0, jsx_runtime_1.jsx)("input", { placeholder: "Search endpoints...", value: searchTerm, onChange: (e) => setSearchTerm(e.currentTarget.value), className: "flex-1 border rounded px-2 py-1" }), (0, jsx_runtime_1.jsxs)(Popover.Root, { children: [(0, jsx_runtime_1.jsx)(Popover.Trigger, { asChild: true, children: (0, jsx_runtime_1.jsxs)("button", { className: "border rounded px-4 py-2 flex items-center gap-2 bg-white", children: [selectedGroupFilters.length === 0
-                                                                                    ? "Filter by groups"
-                                                                                    : `${selectedGroupFilters.length} group${selectedGroupFilters.length > 1 ? "s" : ""} selected`, (0, jsx_runtime_1.jsx)(lucide_react_1.ChevronDown, { className: "h-4 w-4" })] }) }), (0, jsx_runtime_1.jsx)(Popover.Content, { className: "w-48 p-2 bg-white border rounded shadow", children: (0, jsx_runtime_1.jsxs)("div", { className: "space-y-2", children: [(0, jsx_runtime_1.jsx)("button", { className: "w-full text-left text-xs py-1 px-2 hover:bg-gray-100 rounded", onClick: clearGroupFilters, children: "All Groups" }), groups.map((group) => ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)(Checkbox.Root, { id: `filter-${group.id}`, checked: selectedGroupFilters.includes(group.id), onCheckedChange: () => toggleGroupFilter(group.id), className: "w-4 h-4 border rounded", children: (0, jsx_runtime_1.jsx)(Checkbox.Indicator, { className: "flex items-center justify-center", children: (0, jsx_runtime_1.jsx)("span", { className: "block w-2 h-2 bg-blue-600 rounded" }) }) }), (0, jsx_runtime_1.jsx)(Label.Root, { htmlFor: `filter-${group.id}`, className: "text-sm flex-1", children: group.name })] }, group.id)))] }) })] })] }), selectedGroupFilters.length > 0 && ((0, jsx_runtime_1.jsx)("div", { className: "flex flex-wrap gap-2", children: selectedGroupFilters.map((groupId) => {
-                                                            const group = groups.find((g) => g.id === groupId);
-                                                            return group ? ((0, jsx_runtime_1.jsxs)("span", { className: "border px-2 py-1 rounded flex items-center gap-1 text-xs", children: [group.name, (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-3 w-3 cursor-pointer", onClick: () => toggleGroupFilter(groupId) })] }, groupId)) : null;
-                                                        }) })), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [filteredPlugins.map((plugin) => ((0, jsx_runtime_1.jsx)(EndpointRow, { plugin: plugin }, plugin.id))), filteredPlugins.length === 0 && ((0, jsx_runtime_1.jsx)("div", { className: "text-center py-8 text-gray-500", children: "No endpoints match your current filters." }))] })] }), (0, jsx_runtime_1.jsxs)(Tabs.Content, { value: "groups", className: "space-y-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-medium", children: "Groups" }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)("input", { placeholder: "New group name", value: newGroupName, onChange: (e) => setNewGroupName(e.currentTarget.value), className: "w-40 border rounded px-2 py-1", onKeyDown: (e) => e.key === "Enter" && createGroup() }), (0, jsx_runtime_1.jsx)("button", { onClick: createGroup, className: "p-2 border rounded bg-white", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Plus, { className: "h-4 w-4" }) })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-4", children: [groups.map((group) => ((0, jsx_runtime_1.jsxs)("div", { className: "border rounded p-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between pb-3", children: [editingGroup === group.id ? ((0, jsx_runtime_1.jsx)("input", { defaultValue: group.name, onBlur: (e) => renameGroup(group.id, e.currentTarget.value), onKeyDown: (e) => {
-                                                                                    if (e.key === "Enter") {
-                                                                                        renameGroup(group.id, e.currentTarget.value);
-                                                                                    }
-                                                                                }, className: "w-48 border rounded px-2 py-1", autoFocus: true })) : ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Users, { className: "h-4 w-4" }), (0, jsx_runtime_1.jsx)("span", { children: group.name }), (0, jsx_runtime_1.jsx)("span", { className: "border rounded px-2 py-1 text-xs bg-gray-100", children: group.endpointIds.length })] })), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-2", children: [(0, jsx_runtime_1.jsx)("button", { onClick: () => setEditingGroup(group.id), className: "p-2 border rounded bg-white", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Edit2, { className: "h-4 w-4" }) }), (0, jsx_runtime_1.jsx)("button", { onClick: () => deleteGroup(group.id), className: "p-2 border rounded bg-white text-red-500 hover:text-red-700", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Trash2, { className: "h-4 w-4" }) })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [group.endpointIds.map((pluginId) => {
-                                                                                const plugin = plugins.find((ep) => ep.id === pluginId);
-                                                                                if (!plugin)
-                                                                                    return null;
-                                                                                return ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between p-3 border rounded", children: [(0, jsx_runtime_1.jsx)("span", { className: `px-2 py-1 rounded text-xs font-semibold ${methodColors[plugin.method]}`, children: plugin.method }), (0, jsx_runtime_1.jsx)("span", { className: "font-mono text-sm", children: plugin.endpoint }), (0, jsx_runtime_1.jsx)("button", { onClick: () => removeFromGroup(pluginId, group.id), className: "p-2 border rounded bg-white text-red-500 hover:text-red-700", children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-4 w-4" }) })] }, pluginId));
-                                                                            }), group.endpointIds.length === 0 && ((0, jsx_runtime_1.jsx)("div", { className: "text-center py-4 text-gray-500 text-sm", children: "No endpoints in this group yet." }))] })] }, group.id))), groups.length === 0 && ((0, jsx_runtime_1.jsx)("div", { className: "text-center py-8 text-gray-500", children: "No groups created yet. Create your first group above." }))] })] }), (0, jsx_runtime_1.jsxs)(Tabs.Content, { value: "feature-flags", className: "space-y-4", children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-medium", children: "Feature Flags" }), (0, jsx_runtime_1.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: Object.entries(featureFlags).map(([flag, enabled]) => ((0, jsx_runtime_1.jsxs)("div", { className: "border rounded p-4 flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("span", { className: "text-sm font-medium", children: flag }), (0, jsx_runtime_1.jsx)("p", { className: "text-xs text-gray-500 mt-1", children: enabled ? "Currently enabled" : "Currently disabled" })] }), (0, jsx_runtime_1.jsx)(Checkbox.Root, { checked: enabled, onCheckedChange: (checked) => toggleFeatureFlag(flag, !!checked), className: "w-4 h-4 border rounded", id: flag, children: (0, jsx_runtime_1.jsx)(Checkbox.Indicator, { className: "flex items-center justify-center", children: (0, jsx_runtime_1.jsx)("span", { className: "block w-2 h-2 bg-blue-600 rounded" }) }) })] }, flag))) })] }), (0, jsx_runtime_1.jsx)(Tabs.Content, { value: "settings", className: "flex flex-col items-center justify-center h-40 text-gray-400", children: (0, jsx_runtime_1.jsx)("span", { className: "text-lg", children: "Settings coming soon." }) })] })] })] })] }) }) }));
+    const EndpointRow = ({ plugin }) => {
+        // Scenario dropdown
+        const scenarioList = plugin.scenarios;
+        const activeScenarioId = endpointScenarios[plugin.id] || platform.getEndpointScenario(plugin.id);
+        const handleScenarioChange = (e) => {
+            const scenarioId = e.target.value;
+            // Debug: log event target value and scenarioId
+            // eslint-disable-next-line no-console
+            console.log('[handleScenarioChange] event.target.value:', e.target.value, 'scenarioId:', scenarioId);
+            // Debug: log platform and persistence instance
+            // eslint-disable-next-line no-console
+            console.log('[handleScenarioChange] platform:', platform, 'persistence:', platform.persistence, 'scenarioId:', scenarioId);
+            setEndpointScenarios(prev => (Object.assign(Object.assign({}, prev), { [plugin.id]: scenarioId })));
+            platform.setEndpointScenario(plugin.id, scenarioId);
+            forceUpdate(x => x + 1);
+        };
+        return ((0, jsx_runtime_1.jsxs)("div", { style: { border: "1px solid #eee", borderRadius: 8, padding: 16, marginBottom: 12, background: isMocked(plugin) ? "#f6fff6" : "#fff6f6" }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [(0, jsx_runtime_1.jsx)(Checkbox_1.default, { checked: isMocked(plugin), onChange: () => toggleEndpointSelection(plugin.id), id: `mocked-${plugin.id}`, "aria-label": `Toggle endpoint ${plugin.endpoint}` }), (0, jsx_runtime_1.jsx)(Label_1.default, { htmlFor: `mocked-${plugin.id}`, children: "mocked?" })] }), (0, jsx_runtime_1.jsx)("span", { style: { padding: "2px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: "#e6f7ff", color: "#0070f3" }, children: plugin.method }), (0, jsx_runtime_1.jsx)("span", { style: { fontFamily: "monospace", fontSize: 14 }, children: plugin.endpoint }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: [(0, jsx_runtime_1.jsx)("span", { style: { border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12, background: "#f0f0f0", opacity: 0.7 }, children: plugin.componentId }), groups
+                                            .filter((group) => group.endpointIds.includes(plugin.id))
+                                            .map((group) => ((0, jsx_runtime_1.jsx)("span", { style: { border: "1px solid #eee", padding: "0 4px", borderRadius: 4, fontSize: 12 }, children: group.name }, group.id))), scenarioList && scenarioList.length > 0 && ((0, jsx_runtime_1.jsxs)("select", { value: activeScenarioId || "", onChange: handleScenarioChange, style: { marginLeft: 8, borderRadius: 4, padding: "2px 8px", fontSize: 12 }, children: [(0, jsx_runtime_1.jsx)("option", { value: "", children: "Default" }), scenarioList.map(scenario => ((0, jsx_runtime_1.jsx)("option", { value: scenario.id, children: scenario.label }, scenario.id)))] }))] })] }), (0, jsx_runtime_1.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 0, marginLeft: "auto" }, children: (0, jsx_runtime_1.jsxs)("div", { style: { position: "relative", display: "flex", alignItems: "center" }, children: [(0, jsx_runtime_1.jsx)(Popover_1.default, { placement: "right", trigger: (0, jsx_runtime_1.jsx)(Button_1.default, { style: {
+                                                border: "none",
+                                                background: "none",
+                                                cursor: "pointer",
+                                                padding: 2,
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: 16,
+                                            }, title: "Add to group", "aria-label": "Add to group", "data-testid": `add-to-group-${plugin.id}`, children: (0, jsx_runtime_1.jsx)(lucide_react_1.Plus, { style: { width: 16, height: 16 } }) }), children: (close) => ((0, jsx_runtime_1.jsxs)("div", { style: { minWidth: 180, maxWidth: '90vw', left: 'auto', right: 0, padding: 8, position: 'absolute', top: '100%', zIndex: 1000, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderRadius: 6 }, children: [(0, jsx_runtime_1.jsx)("div", { style: { fontWeight: 600, fontSize: 13, marginBottom: 6 }, children: "Add to Groups" }), groups.length === 0 && (0, jsx_runtime_1.jsx)("div", { style: { color: "#888", fontSize: 12 }, children: "No groups yet" }), groups.map((group) => {
+                                                    const checked = group.endpointIds.includes(plugin.id);
+                                                    return ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [(0, jsx_runtime_1.jsx)(Checkbox_1.default, { id: `addtogroup-${plugin.id}-${group.id}`, checked: checked, onChange: () => {
+                                                                    if (checked)
+                                                                        removeFromGroup(plugin.id, group.id);
+                                                                    else
+                                                                        addToGroup(plugin.id, group.id);
+                                                                }, "aria-label": `Add ${plugin.endpoint} to group ${group.name}` }), (0, jsx_runtime_1.jsx)(Label_1.default, { htmlFor: `addtogroup-${plugin.id}-${group.id}`, children: group.name })] }, group.id));
+                                                })] })) }), plugin.swaggerUrl && ((0, jsx_runtime_1.jsx)("button", { style: {
+                                            border: "none",
+                                            background: "none",
+                                            cursor: "pointer",
+                                            marginLeft: 4,
+                                            padding: 2,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: 16,
+                                        }, title: "Open swagger file", "aria-label": "Open swagger file", onClick: e => {
+                                            e.stopPropagation();
+                                            window.open(plugin.swaggerUrl, "_blank", "noopener,noreferrer");
+                                        }, "data-testid": `open-swagger-${plugin.id}`, children: (0, jsx_runtime_1.jsx)(lucide_react_1.FileText, { style: { width: 16, height: 16 } }) }))] }) })] }), (0, jsx_runtime_1.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 16, marginTop: 8 }, children: getStatusCodes(plugin).map((code) => ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [(0, jsx_runtime_1.jsx)(Radio_1.default, { name: `status-${plugin.id}`, value: code, checked: getStatus(plugin) === code, onChange: () => updateStatusCode(plugin.id, code), id: `${plugin.id}-${code}` }), (0, jsx_runtime_1.jsx)(Label_1.default, { htmlFor: `${plugin.id}-${code}`, children: code })] }, code))) }), !isMocked(plugin) && ((0, jsx_runtime_1.jsx)("p", { style: { fontSize: 12, color: "#888", fontStyle: "italic" }, children: "endpoint will passthrough to localhost:4711" }))] }));
+    };
+    return ((0, jsx_runtime_1.jsx)(jsx_runtime_1.Fragment, { children: (0, jsx_runtime_1.jsxs)("div", { style: { position: "fixed", bottom: 24, right: 24, zIndex: 50 }, children: [(0, jsx_runtime_1.jsx)(Button_1.default, { onClick: () => setIsOpen(true), style: { borderRadius: "50%", height: 56, width: 56, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ccc" }, "data-testid": "open-settings", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Settings, { style: { height: 24, width: 24 } }) }), (0, jsx_runtime_1.jsx)(Dialog_1.default, { open: isOpen, onOpenChange: setIsOpen, children: isOpen && ((0, jsx_runtime_1.jsxs)("div", { style: {
+                            maxWidth: 800,
+                            width: "90vw",
+                            maxHeight: "80vh",
+                            height: "80vh",
+                            background: "#fff",
+                            borderRadius: 12,
+                            boxShadow: "0 4px 32px rgba(0,0,0,0.18)",
+                            border: "1px solid #eee",
+                            margin: "0 auto",
+                            display: "flex",
+                            flexDirection: "column",
+                            padding: 0
+                        }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #eee", flex: "0 0 auto" }, children: [(0, jsx_runtime_1.jsx)("h2", { style: { fontSize: 22, fontWeight: 600, margin: 0 }, children: "Endpoint Manager" }), (0, jsx_runtime_1.jsx)(Button_1.default, { style: { padding: 8 }, onClick: () => setIsOpen(false), "data-testid": "close-dialog", children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { style: { height: 16, width: 16 } }) })] }), (0, jsx_runtime_1.jsx)("div", { style: { flex: 1, minHeight: 0, overflowY: "auto" }, children: (0, jsx_runtime_1.jsxs)(Tabs_1.Tabs, { defaultValue: "endpoints", children: [(0, jsx_runtime_1.jsx)("div", { style: {
+                                                position: "sticky",
+                                                top: 0,
+                                                zIndex: 2,
+                                                background: "#fff",
+                                                borderBottom: "1px solid #eee",
+                                            }, children: (0, jsx_runtime_1.jsxs)(Tabs_1.TabList, { children: [(0, jsx_runtime_1.jsx)(Tabs_1.Tab, { value: "endpoints", children: "Endpoints" }), (0, jsx_runtime_1.jsx)(Tabs_1.Tab, { value: "groups", children: "Groups" }), (0, jsx_runtime_1.jsx)(Tabs_1.Tab, { value: "feature-flags", children: "Feature Flags" }), (0, jsx_runtime_1.jsx)(Tabs_1.Tab, { value: "settings", children: "Settings" })] }) }), (0, jsx_runtime_1.jsxs)(Tabs_1.TabPanel, { value: "endpoints", children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [(0, jsx_runtime_1.jsx)("h3", { style: { fontSize: 18, fontWeight: 500 }, children: "All Endpoints" }), (0, jsx_runtime_1.jsxs)("span", { style: { borderRadius: 6, padding: "4px 8px", fontSize: 12, background: "#e0f2fe", color: "#0070f3" }, children: [plugins.filter((ep) => isMocked(ep)).length, " selected"] })] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginTop: 16 }, children: [(0, jsx_runtime_1.jsx)("input", { placeholder: "Search endpoints...", value: searchTerm, onChange: (e) => setSearchTerm(e.currentTarget.value), style: { flex: 1, borderRadius: 6, padding: "8px 12px", border: "1px solid #ccc" } }), (0, jsx_runtime_1.jsx)(Popover_1.default, { trigger: (0, jsx_runtime_1.jsxs)(Button_1.default, { style: { borderRadius: 6, padding: "8px 12px", display: "flex", alignItems: "center", gap: 4, background: "#fff", border: "1px solid #ccc" }, children: [selectedGroupFilters.length === 0
+                                                                        ? "Filter by groups"
+                                                                        : `${selectedGroupFilters.length} group${selectedGroupFilters.length > 1 ? "s" : ""} selected`, (0, jsx_runtime_1.jsx)(lucide_react_1.ChevronDown, { style: { height: 16, width: 16 } })] }), children: (close) => ((0, jsx_runtime_1.jsx)("div", { style: { width: 200, padding: 8, background: "#fff", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }, children: (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [(0, jsx_runtime_1.jsx)("button", { style: { width: "100%", textAlign: "left", fontSize: 12, padding: "4px 8px", borderRadius: 4, cursor: "pointer", background: "#f0f0f0" }, onClick: () => { clearGroupFilters(); close(); }, children: "All Groups" }), allGroups.map((group) => ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [(0, jsx_runtime_1.jsx)(Checkbox_1.default, { id: `filter-${group.id}`, checked: selectedGroupFilters.includes(group.id), onChange: () => { toggleGroupFilter(group.id); close(); }, "aria-label": `Filter by group ${group.name}` }), (0, jsx_runtime_1.jsx)(Label_1.default, { htmlFor: `filter-${group.id}`, style: { fontSize: 14, flex: 1 }, children: group.name })] }, group.id)))] }) })) })] }), selectedGroupFilters.length > 0 && ((0, jsx_runtime_1.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }, children: selectedGroupFilters.map((groupId) => {
+                                                        const group = groups.find((g) => g.id === groupId);
+                                                        return group ? ((0, jsx_runtime_1.jsxs)("span", { style: { border: "1px solid #eee", padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }, children: [group.name, (0, jsx_runtime_1.jsx)(lucide_react_1.X, { style: { height: 12, width: 12, cursor: "pointer" }, onClick: () => toggleGroupFilter(groupId) })] }, groupId)) : null;
+                                                    }) })), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }, children: [filteredPlugins.map((plugin) => ((0, jsx_runtime_1.jsx)(EndpointRow, { plugin: plugin }, plugin.id))), filteredPlugins.length === 0 && ((0, jsx_runtime_1.jsx)("div", { style: { textAlign: "center", padding: "32px 0", color: "#888" }, children: "No endpoints match your current filters." }))] })] }), (0, jsx_runtime_1.jsxs)(Tabs_1.TabPanel, { value: "groups", children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [(0, jsx_runtime_1.jsx)("h3", { style: { fontSize: 18, fontWeight: 500 }, children: "Groups" }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [(0, jsx_runtime_1.jsx)("input", { placeholder: "New group name", value: newGroupName, onChange: (e) => setNewGroupName(e.currentTarget.value), style: { width: 160, borderRadius: 6, padding: "8px 12px", border: "1px solid #ccc" }, onKeyDown: (e) => e.key === "Enter" && createGroup() }), (0, jsx_runtime_1.jsx)(Button_1.default, { onClick: createGroup, style: { padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc" }, children: (0, jsx_runtime_1.jsx)(lucide_react_1.Plus, { style: { height: 16, width: 16 } }) })] })] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }, children: [autoGroups.map((group) => ((0, jsx_runtime_1.jsxs)("div", { style: { border: "1px solid #eee", borderRadius: 8, padding: 16, background: "#f8f8f8", opacity: 0.7 }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Users, { style: { height: 16, width: 16 } }), (0, jsx_runtime_1.jsx)("span", { children: group.name }), (0, jsx_runtime_1.jsx)("span", { style: { borderRadius: 6, padding: "4px 8px", fontSize: 12, background: "#f0f0f0" }, children: plugins.filter(p => p.componentId === group.name).length })] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [plugins.filter(p => p.componentId === group.name).map((plugin) => ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", padding: 12, borderRadius: 6, border: "1px solid #eee" }, children: [(0, jsx_runtime_1.jsx)("span", { style: { padding: "4px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: "#e6f7ff", color: "#0070f3" }, children: plugin.method }), (0, jsx_runtime_1.jsx)("span", { style: { fontFamily: "monospace", fontSize: 14 }, children: plugin.endpoint })] }, plugin.id))), plugins.filter(p => p.componentId === group.name).length === 0 && ((0, jsx_runtime_1.jsx)("div", { style: { textAlign: "center", padding: "24px 0", fontSize: 12, color: "#888" }, children: "No endpoints in this group yet." }))] })] }, group.id))), groups.map((group) => ((0, jsx_runtime_1.jsxs)("div", { style: { border: "1px solid #eee", borderRadius: 8, padding: 16 }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", paddingBottom: 12, borderBottom: "1px solid #eee" }, children: [editingGroup === group.id ? ((0, jsx_runtime_1.jsx)("input", { defaultValue: group.name, onBlur: (e) => renameGroup(group.id, e.currentTarget.value), onKeyDown: (e) => {
+                                                                                if (e.key === "Enter") {
+                                                                                    renameGroup(group.id, e.currentTarget.value);
+                                                                                }
+                                                                            }, style: { width: 192, borderRadius: 6, padding: "8px 12px", border: "1px solid #ccc" }, autoFocus: true })) : ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Users, { style: { height: 16, width: 16 } }), (0, jsx_runtime_1.jsx)("span", { children: group.name }), (0, jsx_runtime_1.jsx)("span", { style: { borderRadius: 6, padding: "4px 8px", fontSize: 12, background: "#f0f0f0" }, children: group.endpointIds.length })] })), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [(0, jsx_runtime_1.jsx)(Button_1.default, { onClick: () => setEditingGroup(group.id), style: { padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc" }, "aria-label": "edit", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Edit2, { style: { height: 16, width: 16 } }) }), (0, jsx_runtime_1.jsx)(Button_1.default, { onClick: () => deleteGroup(group.id), style: { padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc", color: "#e53e3e", cursor: "pointer" }, "aria-label": "trash", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Trash2, { style: { height: 16, width: 16 } }) })] })] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }, children: [group.endpointIds.map((pluginId) => {
+                                                                            const plugin = plugins.find((ep) => ep.id === pluginId);
+                                                                            if (!plugin)
+                                                                                return null;
+                                                                            return ((0, jsx_runtime_1.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", padding: 12, borderRadius: 6, border: "1px solid #eee" }, children: [(0, jsx_runtime_1.jsx)("span", { style: { padding: "4px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: "#e6f7ff", color: "#0070f3" }, children: plugin.method }), (0, jsx_runtime_1.jsx)("span", { style: { fontFamily: "monospace", fontSize: 14 }, children: plugin.endpoint }), (0, jsx_runtime_1.jsx)(Button_1.default, { onClick: () => removeFromGroup(pluginId, group.id), style: { padding: "8px 12px", borderRadius: 6, background: "#fff", border: "1px solid #ccc", color: "#e53e3e", cursor: "pointer" }, children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { style: { height: 16, width: 16 } }) })] }, pluginId));
+                                                                        }), group.endpointIds.length === 0 && ((0, jsx_runtime_1.jsx)("div", { style: { textAlign: "center", padding: "24px 0", fontSize: 12, color: "#888" }, children: "No endpoints in this group yet." }))] })] }, group.id))), groups.length === 0 && ((0, jsx_runtime_1.jsx)("div", { style: { textAlign: "center", padding: "32px 0", color: "#888" }, children: "No groups created yet. Create your first group above." }))] })] }), (0, jsx_runtime_1.jsxs)(Tabs_1.TabPanel, { value: "feature-flags", children: [(0, jsx_runtime_1.jsx)("h3", { style: { fontSize: 18, fontWeight: 500 }, children: "Feature Flags" }), (0, jsx_runtime_1.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginTop: 16 }, children: Object.entries(featureFlags).map(([flag, enabled]) => ((0, jsx_runtime_1.jsxs)("div", { style: { border: "1px solid #eee", borderRadius: 8, padding: 16 }, children: [(0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("span", { style: { fontSize: 14, fontWeight: 500 }, children: flag }), (0, jsx_runtime_1.jsx)("p", { style: { fontSize: 12, color: "#666", marginTop: 4 }, children: enabled ? "Currently enabled" : "Currently disabled" })] }), (0, jsx_runtime_1.jsx)(Checkbox_1.default, { checked: !!enabled, onChange: e => toggleFeatureFlag(flag, !enabled), id: flag, "aria-label": `Toggle feature flag ${flag}` })] }, flag))) })] }), (0, jsx_runtime_1.jsx)(Tabs_1.TabPanel, { value: "settings", children: (0, jsx_runtime_1.jsx)("span", { style: { fontSize: 18, color: "#bbb" }, children: "Settings coming soon." }) })] }) })] })) })] }) }));
 }

@@ -9,8 +9,6 @@ const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
-    "@storybook/addon-onboarding",
-    "@storybook/addon-links",
     "@storybook/addon-essentials",
     "@chromatic-com/storybook",
     "@storybook/addon-interactions",
@@ -18,28 +16,6 @@ const config: StorybookConfig = {
   framework: {
     name: "@storybook/react-webpack5",
     options: {},
-  },
-  webpackFinal: async (config) => {
-    // Add PostCSS loader for Tailwind
-    if (config?.module?.rules) {
-      config.module.rules.push({
-        test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                config: require.resolve('../postcss.config.js'),
-              },
-            },
-          },
-        ],
-        include: /src/,
-      });
-    }
-    return config;
   },
 };
 
