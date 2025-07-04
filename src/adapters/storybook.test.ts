@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+import { http } from 'msw';
 import { createMockPlatform } from '../platform';
 import { mswHandlersFromPlatform } from './msw';
 import { storybookHandlersFromPlatform } from './storybook';
@@ -49,5 +50,73 @@ describe('storybookHandlersFromPlatform', () => {
     const handlers = storybookHandlersFromPlatform(platform);
     expect(handlers[0]).toHaveProperty('predicate');
     expect(handlers[0]).toHaveProperty('resolver');
+  });
+});
+
+describe('mswHandlersFromPlatform passthrough', () => {
+  it('returns undefined (passthrough) when plugin is disabled, and mock when enabled', async () => {
+    const platform = createMockPlatform({
+      name: 'test',
+      plugins: [
+        {
+          id: 'foo',
+          componentId: 'A',
+          endpoint: '/api/foo',
+          method: 'GET',
+          responses: { 200: { ok: true } },
+          defaultStatus: 200,
+        },
+      ],
+      featureFlags: [],
+    });
+    // Initially enabled (mocked)
+    platform.setDisabledPluginIds([]);
+    const handlers = mswHandlersFromPlatform(platform);
+    const handler = handlers.find((h: any) => h.info?.path === '/api/foo');
+    expect(handler).toBeDefined();
+    // Simulate a request
+    const req = new Request('http://localhost/api/foo', { method: 'GET' });
+    // @ts-ignore
+    const res = await handler?.resolver({ request: req, params: {}, cookies: {} });
+    expect(res?.status).toBe(200);
+    // Now disable the plugin (passthrough)
+    platform.setDisabledPluginIds(['foo']);
+    // @ts-ignore
+    const passthrough = await handler?.resolver({ request: req, params: {}, cookies: {} });
+    expect(passthrough).toBeUndefined();
+  });
+});
+
+describe('mswHandlersFromPlatform passthrough (absolute URL)', () => {
+  it('returns undefined (passthrough) when absolute URL plugin is disabled, and mock when enabled', async () => {
+    const platform = createMockPlatform({
+      name: 'test',
+      plugins: [
+        {
+          id: 'bar',
+          componentId: 'B',
+          endpoint: 'https://jsonplaceholder.typicode.com/users/1',
+          method: 'GET',
+          responses: { 200: { name: 'Mocked User', email: 'mock@example.com' } },
+          defaultStatus: 200,
+        },
+      ],
+      featureFlags: [],
+    });
+    // Initially enabled (mocked)
+    platform.setDisabledPluginIds([]);
+    const handlers = mswHandlersFromPlatform(platform);
+    const handler = handlers.find((h: any) => h.info?.path === 'https://jsonplaceholder.typicode.com/users/1');
+    expect(handler).toBeDefined();
+    // Simulate a request
+    const req = new Request('https://jsonplaceholder.typicode.com/users/1', { method: 'GET' });
+    // @ts-ignore
+    const res = await handler?.resolver({ request: req, params: {}, cookies: {} });
+    expect(res?.status).toBe(200);
+    // Now disable the plugin (passthrough)
+    platform.setDisabledPluginIds(['bar']);
+    // @ts-ignore
+    const passthrough = await handler?.resolver({ request: req, params: {}, cookies: {} });
+    expect(passthrough).toBeUndefined();
   });
 }); 

@@ -37,6 +37,7 @@ export class MockPlatformCore {
   private activeScenario: string | undefined;
   private persistence: PersistenceProvider;
   private endpointScenarioOverrides: Record<string, string> = {};
+  private disabledPluginIds: string[] = [];
 
   constructor(config: MockPlatformConfig, persistence?: PersistenceProvider) {
     this.name = config?.name ?? new Date().getTime().toString();
@@ -183,6 +184,14 @@ export class MockPlatformCore {
       map[plugin.componentId].push(plugin.id);
     }
     return map;
+  }
+
+  getDisabledPluginIds(): string[] {
+    return this.disabledPluginIds;
+  }
+
+  setDisabledPluginIds(ids: string[]): void {
+    this.disabledPluginIds = ids;
   }
 }
 

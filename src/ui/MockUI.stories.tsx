@@ -47,6 +47,10 @@ const platform = createMockPlatform({
         404: { error: "Not found" },
       },
       defaultStatus: 200,
+      queryResponses: {
+        "type=admin": { 200: { message: "User is Admin!" } },
+        "type=guest": { 200: { message: "User is Guest!" } },
+      },
     },
     {
       id: "user-status",
@@ -63,6 +67,16 @@ const platform = createMockPlatform({
         { id: "member", label: "Member User", responses: { 200: { status: "member" } } },
         { id: "admin", label: "Admin User", responses: { 200: { status: "admin" } } },
       ],
+    },
+    {
+      id: "external-user",
+      componentId: "External",
+      endpoint: "https://jsonplaceholder.typicode.com/users/1",
+      method: "GET",
+      responses: {
+        200: { name: "Mocked User", email: "mock@example.com" },
+      },
+      defaultStatus: 200,
     },
   ],
   featureFlags: ["EXPERIMENTAL_HELLO"],
@@ -116,6 +130,39 @@ function DemoApp() {
       setError(String(e));
     }
   };
+  const fetchExternalUser = async () => {
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch("https://jsonplaceholder.typicode.com/users/1");
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+  const fetchUserAdmin = async () => {
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch("/api/user?type=admin");
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+  const fetchUserGuest = async () => {
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch("/api/user?type=guest");
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
   return (
     <div style={{ padding: 32 }}>
       <h2 className="text-xl font-bold mb-4">Demo: /api/hello & /api/goodbye</h2>
@@ -128,8 +175,17 @@ function DemoApp() {
       <button className="border rounded px-4 py-2 mb-4" onClick={fetchUser} style={{ marginLeft: 8 }}>
         Fetch /api/user
       </button>
+      <button className="border rounded px-4 py-2 mb-4" onClick={fetchUserAdmin} style={{ marginLeft: 8 }}>
+        Fetch /api/user?type=admin
+      </button>
+      <button className="border rounded px-4 py-2 mb-4" onClick={fetchUserGuest} style={{ marginLeft: 8 }}>
+        Fetch /api/user?type=guest
+      </button>
       <button className="border rounded px-4 py-2 mb-4" onClick={fetchUserStatus} style={{ marginLeft: 8 }}>
         Fetch /api/user-status
+      </button>
+      <button className="border rounded px-4 py-2 mb-4" onClick={fetchExternalUser} style={{ marginLeft: 8 }}>
+        Fetch https://jsonplaceholder.typicode.com/users/1
       </button>
       <pre className="bg-gray-100 p-2 rounded">
         {result ? JSON.stringify(result, null, 2) : error ? error : "No data yet"}

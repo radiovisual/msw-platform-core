@@ -76,7 +76,11 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
   const endpointScenarioKey = `${platformName}.mockui.endpointScenarios.v1`;
   const [isOpen, setIsOpen] = useState(false)
   const [groups, setGroups] = useState<Group[]>(() => loadGroups(groupKey))
-  const [disabledPluginIds, setDisabledPluginIds] = useState<string[]>(() => loadDisabledPluginIds(disabledKey))
+  const [disabledPluginIds, setDisabledPluginIds] = useState<string[]>(() => {
+    const ids = loadDisabledPluginIds(disabledKey);
+    platform.setDisabledPluginIds(ids);
+    return ids;
+  })
   const [newGroupName, setNewGroupName] = useState("")
   const [editingGroup, setEditingGroup] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -100,7 +104,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
     platform.getStatusOverride(plugin.id) ?? plugin.defaultStatus
 
   // Helper: is endpoint mocked?
-  const isMocked = (plugin: Plugin) => !disabledPluginIds.includes(plugin.id)
+  const isMocked = (plugin: Plugin) => !platform.getDisabledPluginIds().includes(plugin.id)
 
   // Persist groups and disabledPluginIds
   useEffect(() => { saveGroups(groups, groupKey) }, [groups, groupKey])
@@ -114,11 +118,12 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
   // UI: toggle endpoint mocked/passthrough
   const toggleEndpointSelection = useCallback((pluginId: string) => {
     setDisabledPluginIds(prev => {
-      const arr = prev.includes(pluginId) ? prev.filter(id => id !== pluginId) : [...prev, pluginId]
-      return arr
-    })
-    forceUpdate(x => x + 1)
-  }, [])
+      const arr = prev.includes(pluginId) ? prev.filter(id => id !== pluginId) : [...prev, pluginId];
+      platform.setDisabledPluginIds(arr);
+      return arr;
+    });
+    forceUpdate(x => x + 1);
+  }, [platform]);
 
   // UI: update status code
   const updateStatusCode = useCallback((pluginId: string, statusCode: number) => {

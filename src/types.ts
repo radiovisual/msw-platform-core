@@ -16,6 +16,11 @@ export interface EndpointScenario<T = any> {
   // No defaultStatus here; plugin.defaultStatus is used
 }
 
+// Allow queryResponses to be an object where each key is a query string, and the value is either a response object or a map of status codes to responses
+export type QueryResponses = {
+  [query: string]: any | { [status: number]: any }
+};
+
 export interface Plugin<T = any> {
   id: string;
   componentId: string;
@@ -25,8 +30,9 @@ export interface Plugin<T = any> {
   responses: Record<number, any>; // status code -> payload
   defaultStatus: number;
   featureFlags?: string[];
-  transform?: (response: any, flags: Record<string, boolean>) => any;
   scenarios?: EndpointScenario<T>[];
+  queryResponses?: QueryResponses;
+  transform?: (response: any, flags: Record<string, boolean>) => any;
 }
 
 export interface MockPlatformConfig {
