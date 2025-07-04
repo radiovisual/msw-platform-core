@@ -294,4 +294,33 @@ describe("MockUI", () => {
     render(<input type="checkbox" aria-label="test-checkbox" />)
     expect(screen.getByLabelText("test-checkbox")).toBeInTheDocument()
   })
+
+  it("renders swagger button if swaggerUrl is present and opens in new window", async () => {
+    const platform = createMockPlatform({
+      name: "swagger-test-platform",
+      plugins: [
+        {
+          id: "swagger-test",
+          componentId: "SwaggerComp",
+          endpoint: "/api/swagger-test",
+          method: "GET",
+          responses: { 200: { ok: true } },
+          defaultStatus: 200,
+          swaggerUrl: "https://example.com/swagger.json",
+        },
+      ],
+      featureFlags: [],
+    });
+    render(<MockUI platform={platform} />);
+    fireEvent.click(await screen.findByTestId("open-settings"));
+    // Find the swagger button
+    const btn = await screen.findByTestId("open-swagger-swagger-test");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveAttribute("title", "Open swagger file");
+    // Simulate click and check window.open
+    const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(btn);
+    expect(openSpy).toHaveBeenCalledWith("https://example.com/swagger.json", "_blank", "noopener,noreferrer");
+    openSpy.mockRestore();
+  });
 }) 

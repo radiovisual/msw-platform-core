@@ -5,9 +5,10 @@ type PopoverProps = {
   children: React.ReactNode | ((close: () => void) => React.ReactNode);
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  placement?: 'left' | 'right';
 };
 
-const Popover: React.FC<PopoverProps> = ({ trigger, children, open: controlledOpen, onOpenChange }) => {
+const Popover: React.FC<PopoverProps> = ({ trigger, children, open: controlledOpen, onOpenChange, placement = 'left' }) => {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : uncontrolledOpen;
   const setOpen = onOpenChange || setUncontrolledOpen;
@@ -36,7 +37,8 @@ const Popover: React.FC<PopoverProps> = ({ trigger, children, open: controlledOp
           style={{
             position: "absolute",
             top: "100%",
-            left: 0,
+            left: (placement === 'right' ? 'auto' : 0),
+            right: (placement === 'right' ? 0 : 'auto'),
             background: "#fff",
             border: "1px solid #ccc",
             borderRadius: 4,

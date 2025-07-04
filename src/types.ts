@@ -33,6 +33,7 @@ export interface Plugin<T = any> {
   scenarios?: EndpointScenario<T>[];
   queryResponses?: QueryResponses;
   transform?: (response: any, flags: Record<string, boolean>) => any;
+  swaggerUrl?: string;
 }
 
 export interface MockPlatformConfig {

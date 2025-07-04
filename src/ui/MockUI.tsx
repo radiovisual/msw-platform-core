@@ -6,7 +6,7 @@ import Dialog from "./components/Dialog";
 import { Tabs, TabList, Tab, TabPanel } from "./components/Tabs";
 import Popover from "./components/Popover";
 import Label from "./components/Label";
-import { Plus, Settings, Users, X, Edit2, Trash2, ChevronDown } from "lucide-react"
+import { Plus, Settings, Users, X, Edit2, Trash2, ChevronDown, FileText } from "lucide-react"
 import type { MockPlatformCore } from "../platform"
 import type { Plugin } from "../types"
 
@@ -267,37 +267,80 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
               )}
             </div>
           </div>
-          <Popover
-            trigger={
-              <Button style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 8px", fontSize: 12, background: "#f8f8f8" }}>
-                + Add to group
-              </Button>
-            }
-          >
-            {(close) => (
-              <div style={{ minWidth: 180, padding: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Groups</div>
-                {groups.length === 0 && <div style={{ color: "#888", fontSize: 12 }}>No groups yet</div>}
-                {groups.map((group: Group) => {
-                  const checked = group.endpointIds.includes(plugin.id);
-                  return (
-                    <div key={group.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <Checkbox
-                        id={`addtogroup-${plugin.id}-${group.id}`}
-                        checked={checked}
-                        onChange={() => {
-                          if (checked) removeFromGroup(plugin.id, group.id);
-                          else addToGroup(plugin.id, group.id);
-                        }}
-                        aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
-                      />
-                      <Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Popover>
+          <div style={{ display: "flex", alignItems: "center", gap: 0, marginLeft: "auto" }}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <Popover
+                placement="right"
+                trigger={
+                  <Button
+                    style={{
+                      border: "none",
+                      background: "none",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                    }}
+                    title="Add to group"
+                    aria-label="Add to group"
+                    data-testid={`add-to-group-${plugin.id}`}
+                  >
+                    <Plus style={{ width: 16, height: 16 }} />
+                  </Button>
+                }
+              >
+                {(close) => (
+                  <div style={{ minWidth: 180, maxWidth: '90vw', left: 'auto', right: 0, padding: 8, position: 'absolute', top: '100%', zIndex: 1000, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderRadius: 6 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Add to Groups</div>
+                    {groups.length === 0 && <div style={{ color: "#888", fontSize: 12 }}>No groups yet</div>}
+                    {groups.map((group: Group) => {
+                      const checked = group.endpointIds.includes(plugin.id);
+                      return (
+                        <div key={group.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <Checkbox
+                            id={`addtogroup-${plugin.id}-${group.id}`}
+                            checked={checked}
+                            onChange={() => {
+                              if (checked) removeFromGroup(plugin.id, group.id);
+                              else addToGroup(plugin.id, group.id);
+                            }}
+                            aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
+                          />
+                          <Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Popover>
+              {plugin.swaggerUrl && (
+                <button
+                  style={{
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer",
+                    marginLeft: 4,
+                    padding: 2,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16,
+                  }}
+                  title="Open swagger file"
+                  aria-label="Open swagger file"
+                  onClick={e => {
+                    e.stopPropagation();
+                    window.open(plugin.swaggerUrl, "_blank", "noopener,noreferrer");
+                  }}
+                  data-testid={`open-swagger-${plugin.id}`}
+                >
+                  <FileText style={{ width: 16, height: 16 }} />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8 }}>
           {getStatusCodes(plugin).map((code: number) => (

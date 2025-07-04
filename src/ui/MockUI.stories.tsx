@@ -17,6 +17,7 @@ const platform = createMockPlatform({
         200: { message: "Hello, world!" },
         404: { error: "Not found" },
       },
+      swaggerUrl: "https://jsonplaceholder.typicode.com/users/1",
       defaultStatus: 200,
       featureFlags: ["EXPERIMENTAL_HELLO"],
       transform: (response, flags) => {
