@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from './Button';
-import { Plus } from 'lucide-react';
+import { Plus } from './Icon';
 import GroupRow from './GroupRow';
 import AutoGroupRow from './AutoGroupRow';
 import type { Plugin } from '../../types';

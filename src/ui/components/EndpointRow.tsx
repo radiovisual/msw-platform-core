@@ -4,7 +4,7 @@ import Checkbox from './Checkbox';
 import Radio from './Radio';
 import Popover from './Popover';
 import Label from './Label';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText } from './Icon';
 import type { Plugin } from '../../types';
 import PropTypes from 'prop-types';
 

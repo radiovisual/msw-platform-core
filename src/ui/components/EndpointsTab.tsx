@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from './Button';
 import Popover from './Popover';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X } from './Icon';
 import EndpointRow from './EndpointRow';
 import GroupFilterPopover from './GroupFilterPopover';
 import type { Plugin } from '../../types';

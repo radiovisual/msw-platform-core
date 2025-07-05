@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from './Button';
-import { Users, Edit2, Trash2, X } from 'lucide-react';
+import { Users, Edit2, Trash2, X } from './Icon';
 import type { Plugin } from '../../types';
 import PropTypes from 'prop-types';
 

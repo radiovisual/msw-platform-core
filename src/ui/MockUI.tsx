@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Button from './components/Button';
 import Dialog from './components/Dialog';
 import { Tabs, TabList, Tab, TabPanel } from './components/Tabs';
-import { Settings, X } from 'lucide-react';
+import { Settings, X } from './components/Icon';
 import EndpointsTab from './components/EndpointsTab';
 import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';

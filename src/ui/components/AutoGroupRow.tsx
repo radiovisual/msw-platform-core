@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Users } from './Icon';
 import type { Plugin } from '../../types';
 import PropTypes from 'prop-types';
 
