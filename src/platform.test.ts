@@ -28,8 +28,8 @@ describe('MockPlatformCore', () => {
 		},
 		defaultStatus: 200,
 		featureFlags: ['EXAMPLE_USE_ALT'],
-		transform: (response, flags) => {
-			if (flags.EXAMPLE_USE_ALT) {
+		transform: (response, context) => {
+			if (context.featureFlags.EXAMPLE_USE_ALT) {
 				response.message = '[ALT MODE] ' + response.message;
 			}
 			return response;
@@ -139,8 +139,8 @@ describe('mswHandlersFromPlatform', () => {
 		},
 		defaultStatus: 200,
 		featureFlags: ['EXAMPLE_USE_ALT'],
-		transform: (response, flags) => {
-			if (flags.EXAMPLE_USE_ALT) {
+		transform: (response, context) => {
+			if (context.featureFlags.EXAMPLE_USE_ALT) {
 				response.message = '[ALT MODE] ' + response.message;
 			}
 			return response;

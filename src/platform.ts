@@ -318,7 +318,17 @@ export class MockPlatformCore {
 				}
 				if (resp === undefined) return undefined;
 				if (plugin.transform) {
-					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), this.featureFlags);
+					const context: MiddlewareContext = {
+						plugin,
+						request,
+						response: resp,
+						settings: this.middlewareSettings,
+						featureFlags: this.featureFlags,
+						currentStatus: useStatus,
+						endpointScenario: scenarioId,
+						activeScenario: this.activeScenario,
+					};
+					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
 				}
 				// Apply middleware
 				resp = this.applyMiddleware(plugin, resp, request);
@@ -329,7 +339,17 @@ export class MockPlatformCore {
 		resp = plugin.responses[useStatus];
 		if (resp === undefined) return undefined;
 		if (plugin.transform) {
-			resp = plugin.transform(JSON.parse(JSON.stringify(resp)), this.featureFlags);
+			const context: MiddlewareContext = {
+				plugin,
+				request,
+				response: resp,
+				settings: this.middlewareSettings,
+				featureFlags: this.featureFlags,
+				currentStatus: useStatus,
+				endpointScenario: scenarioId,
+				activeScenario: this.activeScenario,
+			};
+			resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
 		}
 		// Apply middleware
 		resp = this.applyMiddleware(plugin, resp, request);

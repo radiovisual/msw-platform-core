@@ -1,4 +1,4 @@
-import type { PlatformMiddleware } from './platform';
+import type { PlatformMiddleware, MiddlewareContext } from './platform';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -30,7 +30,7 @@ export interface Plugin<T = any> {
 	featureFlags?: string[];
 	scenarios?: EndpointScenario<T>[];
 	queryResponses?: QueryResponses;
-	transform?: (response: any, flags: Record<string, boolean>) => any;
+	transform?: (response: any, context: MiddlewareContext) => any;
 	swaggerUrl?: string;
 	useMiddleware?: PlatformMiddleware[]; // Array of middleware to use for this plugin
 }

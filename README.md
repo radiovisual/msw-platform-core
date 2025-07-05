@@ -2,6 +2,14 @@
 
 A reusable, portable mock platform core for frontend and full-stack projects.
 
+## TODO
+
+- [] Setup a delay/sleep feature for each mocked endpoint
+- [] Test file type response support (html. text responses)
+- [] Set custom headers
+- [] Global disable
+- [] Manupulate response payloads directly from the UI for each endpoint
+
 ## Goals
 - Register mock API endpoints with minimal config (just JSON payloads, endpoint, method, status codes, feature flags)
 - Generate handlers for MSW, Storybook, Cypress, etc. from a single source of truth
