@@ -56,12 +56,12 @@ describe('MockPlatformCore', () => {
 			'LEGACY_FLAG',
 		];
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin], featureFlags });
-		
+
 		// Check that flags are registered
 		expect(platform.getFeatureFlags().FLAG_WITH_DESC).toBe(true);
 		expect(platform.getFeatureFlags().FLAG_WITH_DEFAULT).toBe(false);
 		expect(platform.getFeatureFlags().LEGACY_FLAG).toBe(false);
-		
+
 		// Check metadata
 		const metadata = platform.getFeatureFlagMetadata();
 		expect(metadata.FLAG_WITH_DESC).toEqual({ description: 'A flag with description', default: true });

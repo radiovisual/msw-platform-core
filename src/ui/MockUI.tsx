@@ -354,10 +354,10 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 										<DynamicSettingsTab platform={platform} onSettingChange={updateMiddlewareSetting} />
 									</TabPanel>
 									<TabPanel value="feature-flags">
-										<FeatureFlagsTab 
-											featureFlags={featureFlags} 
+										<FeatureFlagsTab
+											featureFlags={featureFlags}
 											featureFlagMetadata={featureFlagMetadata}
-											onToggleFeatureFlag={toggleFeatureFlag} 
+											onToggleFeatureFlag={toggleFeatureFlag}
 										/>
 									</TabPanel>
 								</Tabs>

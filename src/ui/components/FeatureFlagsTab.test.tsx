@@ -238,10 +238,10 @@ describe('FeatureFlagsTab', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
 		const checkboxes = screen.getAllByRole('checkbox');
-		
+
 		// Click the checkbox
 		fireEvent.click(checkboxes[1]);
-		
+
 		// Should only call once (not twice from card + checkbox)
 		expect(defaultProps.onToggleFeatureFlag).toHaveBeenCalledTimes(1);
 		expect(defaultProps.onToggleFeatureFlag).toHaveBeenCalledWith('feature-2', true);

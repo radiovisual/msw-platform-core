@@ -7,11 +7,7 @@ interface FeatureFlagsTabProps {
 	onToggleFeatureFlag: (flag: string, value: boolean) => void;
 }
 
-const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
-	featureFlags,
-	featureFlagMetadata = {},
-	onToggleFeatureFlag,
-}) => {
+const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, featureFlagMetadata = {}, onToggleFeatureFlag }) => {
 	const [searchTerm, setSearchTerm] = useState('');
 
 	const filteredFlags = useMemo(() => {
@@ -22,8 +18,7 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
 		return entries.filter(([flag, _enabled]) => {
 			const metadata = featureFlagMetadata[flag];
 			const description = metadata?.description || '';
-			return flag.toLowerCase().includes(searchLower) ||
-				   description.toLowerCase().includes(searchLower);
+			return flag.toLowerCase().includes(searchLower) || description.toLowerCase().includes(searchLower);
 		});
 	}, [featureFlags, featureFlagMetadata, searchTerm]);
 
@@ -41,7 +36,7 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
 					type="text"
 					placeholder="Search feature flags..."
 					value={searchTerm}
-					onChange={(e) => setSearchTerm(e.target.value)}
+					onChange={e => setSearchTerm(e.target.value)}
 					style={{
 						width: '100%',
 						padding: '8px 12px',
@@ -78,18 +73,18 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
 								cursor: 'pointer',
 								userSelect: 'none',
 							}}
-							onMouseEnter={(e) => {
+							onMouseEnter={e => {
 								e.currentTarget.style.transform = 'translateY(-1px)';
 								e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
 							}}
-							onMouseLeave={(e) => {
+							onMouseLeave={e => {
 								e.currentTarget.style.transform = 'translateY(0)';
 								e.currentTarget.style.boxShadow = 'none';
 							}}
 							role="button"
 							tabIndex={0}
 							aria-label={`Toggle feature flag ${flag} (currently ${enabled ? 'enabled' : 'disabled'})`}
-							onKeyDown={(e) => {
+							onKeyDown={e => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
 									handleCardClick(flag, enabled);
@@ -98,9 +93,7 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
 						>
 							<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
 								<div style={{ flex: 1 }}>
-									<span style={{ fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 4 }}>
-										{flag}
-									</span>
+									<span style={{ fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 4 }}>{flag}</span>
 									{description && (
 										<p
 											style={{
@@ -131,7 +124,7 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({
 									onChange={() => handleCardClick(flag, enabled)}
 									id={flag}
 									aria-label={`Toggle feature flag ${flag}`}
-									onClick={(e) => e.stopPropagation()}
+									onClick={e => e.stopPropagation()}
 								/>
 							</div>
 						</div>
