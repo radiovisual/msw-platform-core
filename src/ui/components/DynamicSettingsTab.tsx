@@ -1,3 +1,4 @@
+import React from 'react';
 import { MockPlatformCore } from '../../platform';
 
 interface DynamicSettingsTabProps {

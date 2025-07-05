@@ -498,7 +498,7 @@ describe('Middleware Registration', () => {
 
 		// Verify no duplicate badges in the system
 		const allBadges = platform.getEndpointBadges(plugin1).concat(platform.getEndpointBadges(plugin2));
-		const uniqueBadgeIds = [...new Set(allBadges.map(b => b.id))];
+		const uniqueBadgeIds = Array.from(new Set(allBadges.map(b => b.id)));
 		expect(uniqueBadgeIds).toHaveLength(1);
 		expect(uniqueBadgeIds[0]).toBe('badgeTest');
 	});
