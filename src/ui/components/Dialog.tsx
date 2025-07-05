@@ -33,7 +33,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
 					minHeight: 300,
 					maxWidth: '90vw',
 					maxHeight: '80vh',
-					overflow: 'auto',
+					overflow: 'hidden',
 					padding: 1,
 				}}
 				onClick={e => e.stopPropagation()}
