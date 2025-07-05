@@ -92,6 +92,7 @@ export class MockPlatformCore {
 	private name: string;
 	private plugins: Plugin[];
 	private featureFlags: { [key: string]: boolean };
+	private featureFlagMetadata: { [key: string]: { description?: string; default?: boolean } };
 	private statusOverrides: { [key: string]: number };
 	private scenarios: Scenario[];
 	private activeScenario: string | undefined;
@@ -110,6 +111,7 @@ export class MockPlatformCore {
 		this.name = config.name;
 		this.plugins = config.plugins || [];
 		this.featureFlags = {};
+		this.featureFlagMetadata = {};
 		this.statusOverrides = {};
 		this.scenarios = [];
 		this.persistence = persistence || new InMemoryPersistence(config.name);
@@ -117,7 +119,15 @@ export class MockPlatformCore {
 		// Initialize feature flags from config
 		if (config.featureFlags) {
 			for (const flag of config.featureFlags) {
-				this.featureFlags[flag] = this.persistence.getFlag(flag) ?? false;
+				if (typeof flag === 'string') {
+					this.featureFlags[flag] = this.persistence.getFlag(flag) ?? false;
+				} else {
+					this.featureFlags[flag.name] = this.persistence.getFlag(flag.name) ?? flag.default ?? false;
+					this.featureFlagMetadata[flag.name] = {
+						description: flag.description,
+						default: flag.default,
+					};
+				}
 			}
 		}
 
@@ -155,6 +165,10 @@ export class MockPlatformCore {
 
 	getFeatureFlags() {
 		return { ...this.featureFlags };
+	}
+
+	getFeatureFlagMetadata() {
+		return { ...this.featureFlagMetadata };
 	}
 
 	setFeatureFlag(flag: string, value: boolean) {

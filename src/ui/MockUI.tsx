@@ -91,6 +91,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	const plugins: Plugin[] = platform.getPlugins();
 	const featureFlags = platform.getFeatureFlags();
+	const featureFlagMetadata = platform.getFeatureFlagMetadata();
 
 	// Helper to get automatic groups from platform
 	const autoGroups = platform.getComponentIds().map(cid => ({
@@ -353,7 +354,11 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 										<DynamicSettingsTab platform={platform} onSettingChange={updateMiddlewareSetting} />
 									</TabPanel>
 									<TabPanel value="feature-flags">
-										<FeatureFlagsTab featureFlags={featureFlags} onToggleFeatureFlag={toggleFeatureFlag} />
+										<FeatureFlagsTab 
+											featureFlags={featureFlags} 
+											featureFlagMetadata={featureFlagMetadata}
+											onToggleFeatureFlag={toggleFeatureFlag} 
+										/>
 									</TabPanel>
 								</Tabs>
 							</div>

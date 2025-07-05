@@ -38,7 +38,7 @@ export interface Plugin<T = any> {
 export interface MockPlatformConfig {
 	name: string;
 	plugins: Plugin[];
-	featureFlags?: string[];
+	featureFlags?: (string | FeatureFlag)[];
 }
 
 export interface Scenario {

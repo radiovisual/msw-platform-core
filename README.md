@@ -10,6 +10,7 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 - Abstract persistence and allow for custom storage
 
 ## Architecture Overview
+
 - **Core API**: Register plugins (endpoints), feature flags, and scenarios
 - **Adapters**: For MSW, Storybook, Cypress, etc.
 - **UI**: Embeddable React component for runtime control
@@ -37,7 +38,10 @@ const platform = createMockPlatform({
       featureFlags: ["EXPERIMENTAL_USER"],
     },
   ],
-  featureFlags: ["EXPERIMENTAL_USER"],
+  featureFlags: [
+    { name: "EXPERIMENTAL_USER", description: "Enables experimental user features", default: false },
+    { name: "NEW_UI", description: "Enables new UI components", default: true },
+  ],
 });
 ```
 
@@ -68,7 +72,45 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 ```
 
-### 3. Toggling flags and status at runtime
+### 3. Feature Flags
+
+Feature flags can be defined as simple strings or as objects with descriptions and default values:
+
+```js
+const platform = createMockPlatform({
+  plugins: [...],
+  featureFlags: [
+    // Simple string (legacy format)
+    "LEGACY_FLAG",
+    
+    // Object with description and default
+    { 
+      name: "EXPERIMENTAL_USER", 
+      description: "Enables experimental user features", 
+      default: false 
+    },
+    { 
+      name: "NEW_UI", 
+      description: "Enables new UI components", 
+      default: true 
+    },
+  ],
+});
+```
+
+#### Feature Flag UI Features
+
+The MockUI provides an enhanced feature flags interface with:
+
+- **Clickable Cards**: Entire feature flag cards are clickable for easy toggling
+- **Visual Status Indicators**: Green background for enabled flags, red for disabled
+- **Search Functionality**: Search through feature flags by name or description
+- **Descriptions**: Display optional descriptions for each feature flag
+- **Default Values**: Support for setting default values when flags are first created
+- **Keyboard Accessibility**: Cards can be activated with Enter or Space keys
+- **Hover Effects**: Subtle hover animations for better user feedback
+
+#### Toggling flags and status at runtime
 
 ```js
 // Toggle a feature flag
@@ -160,9 +202,6 @@ http.get("/api/user", () => {
 });
 ```
 
-## Next Steps
-- See `PROJECT_SPEC.md` for file/module structure and development plan. 
-
 ---
 
 ## Guide: Using mswHandlersFromPlatform in a Real React Application
@@ -205,7 +244,9 @@ export const platform = createMockPlatform({
       defaultStatus: 200,
     },
   ],
-  featureFlags: ['EXPERIMENTAL_USER'],
+  featureFlags: [
+    { name: 'EXPERIMENTAL_USER', description: 'Enables experimental user features', default: false },
+  ],
 });
 ```
 
@@ -321,6 +362,8 @@ export const decorators = [mswDecorator];
 export default preview;
 ```
 
+:bulb: You might need to run `mkdir .storybook/public && npx msw init .storybook/public` to get the mockServiceWorker.js registered with your storybook projects
+
 **.storybook/main.ts**
 ```ts
 import type { StorybookConfig } from "@storybook/react-webpack5";
@@ -332,7 +375,7 @@ const config: StorybookConfig = {
     "@storybook/addon-essentials",
     "msw-storybook-addon",
   ],
-  staticDirs: ["../public"], // 👈 serve mockServiceWorker.js
+  staticDirs: ["./public"], // 👈 serve mockServiceWorker.js
   framework: {
     name: "@storybook/react-webpack5",
     options: {},
@@ -361,7 +404,9 @@ export const platform = createMockPlatform({
       featureFlags: ['EXPERIMENTAL_USER'],
     },
   ],
-  featureFlags: ['EXPERIMENTAL_USER'],
+  featureFlags: [
+    { name: 'EXPERIMENTAL_USER', description: 'Enables experimental user features', default: false },
+  ],
 });
 ```
 
@@ -460,10 +505,12 @@ export const Default = {
 };
 ```
 
+:bulb: You can also disable mocks directly from the `MockUI` component. If the mock is disabled, then the network request should just passthrough naturally.
+
 ### How it works
 - When a plugin id is listed in `disabledPluginIds`, requests for that endpoint are not mocked and will be handled by the real backend or proxy (e.g., localhost:4711).
 - This is useful for hybrid development, debugging, or when you want to test against real data for some endpoints and mock others.
-- You can toggle which mocks are enabled/disabled at runtime (soon via the PopupUI, or programmatically now).
+- You can toggle which mocks are enabled/disabled at runtime
 
 --- 
 
@@ -962,5 +1009,5 @@ function App() {
 3. **Control your mocks at runtime:**
 
 - Open the floating widget (bottom-right).
-- Toggle endpoints on/off, change status codes, manage groups, and enable/disable feature flags.
+- Toggle endpoints on/off, change status codes, manage groups, enable/disable feature flags and manage your middleware settings
 - Changes are saved to localStorage and persist across reloads.

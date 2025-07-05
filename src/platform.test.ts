@@ -49,6 +49,26 @@ describe('MockPlatformCore', () => {
 		expect(platform.getFeatureFlags().EXAMPLE_USE_ALT).toBe(true);
 	});
 
+	it('supports feature flag objects with descriptions and defaults', () => {
+		const featureFlags = [
+			{ name: 'FLAG_WITH_DESC', description: 'A flag with description', default: true },
+			{ name: 'FLAG_WITH_DEFAULT', default: false },
+			'LEGACY_FLAG',
+		];
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin], featureFlags });
+		
+		// Check that flags are registered
+		expect(platform.getFeatureFlags().FLAG_WITH_DESC).toBe(true);
+		expect(platform.getFeatureFlags().FLAG_WITH_DEFAULT).toBe(false);
+		expect(platform.getFeatureFlags().LEGACY_FLAG).toBe(false);
+		
+		// Check metadata
+		const metadata = platform.getFeatureFlagMetadata();
+		expect(metadata.FLAG_WITH_DESC).toEqual({ description: 'A flag with description', default: true });
+		expect(metadata.FLAG_WITH_DEFAULT).toEqual({ default: false });
+		expect(metadata.LEGACY_FLAG).toBeUndefined();
+	});
+
 	it('applies transform when feature flag is active', () => {
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin], featureFlags: ['EXAMPLE_USE_ALT'] });
 		// Default: flag is false

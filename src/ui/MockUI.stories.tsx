@@ -213,7 +213,12 @@ const platform = createMockPlatform({
 			defaultStatus: 200,
 		},
 	],
-	featureFlags: ['EXPERIMENTAL_HELLO'],
+	featureFlags: [
+		{ name: 'EXPERIMENTAL_HELLO', description: 'Enables experimental hello message', default: false },
+		{ name: 'NEW_UI_FEATURES', description: 'Enables new UI features and improvements', default: true },
+		{ name: 'BETA_API', description: 'Enables beta API endpoints and functionality', default: false },
+		'LEGACY_FLAG',
+	],
 });
 
 // Runtime middleware registration - for dynamic middleware that might be added later
