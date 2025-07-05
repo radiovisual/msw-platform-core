@@ -1,7 +1,6 @@
 import React from 'react';
 import Checkbox from './Checkbox';
 import Label from './Label';
-import PropTypes from 'prop-types';
 
 interface Group {
 	id: string;
@@ -63,18 +62,6 @@ const GroupFilterPopover: React.FC<GroupFilterPopoverProps> = ({
 			</div>
 		</div>
 	);
-};
-
-GroupFilterPopover.propTypes = {
-	groups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	})).isRequired,
-	selectedGroupFilters: PropTypes.arrayOf(PropTypes.string).isRequired,
-	onToggleGroupFilter: PropTypes.func.isRequired,
-	onClearGroupFilters: PropTypes.func.isRequired,
-	onClose: PropTypes.func.isRequired,
 };
 
 export default GroupFilterPopover;

@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from './components/Button';
 import Dialog from './components/Dialog';
@@ -10,7 +9,6 @@ import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
 import type { MockPlatformCore } from '../platform';
 import type { Plugin } from '../types';
-import PropTypes from 'prop-types';
 
 // UI-only group type
 interface Group {
@@ -357,21 +355,4 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	);
 }
 
-MockUI.propTypes = {
-	platform: PropTypes.shape({
-		getName: PropTypes.func.isRequired,
-		getPlugins: PropTypes.func.isRequired,
-		getFeatureFlags: PropTypes.func.isRequired,
-		setFeatureFlag: PropTypes.func.isRequired,
-		getStatusOverride: PropTypes.func.isRequired,
-		setStatusOverride: PropTypes.func.isRequired,
-		getEndpointScenario: PropTypes.func.isRequired,
-		setEndpointScenario: PropTypes.func.isRequired,
-		getDisabledPluginIds: PropTypes.func.isRequired,
-		setDisabledPluginIds: PropTypes.func.isRequired,
-		getComponentIds: PropTypes.func.isRequired,
-	}).isRequired,
-	onStateChange: PropTypes.func,
-	groupStorageKey: PropTypes.string,
-	disabledPluginIdsStorageKey: PropTypes.string,
-};
+

@@ -1,6 +1,5 @@
 import React from 'react';
 import Checkbox from './Checkbox';
-import PropTypes from 'prop-types';
 
 interface FeatureFlagsTabProps {
 	featureFlags: { [key: string]: boolean };
@@ -33,9 +32,6 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, onToggl
 	);
 };
 
-FeatureFlagsTab.propTypes = {
-	featureFlags: PropTypes.object.isRequired,
-	onToggleFeatureFlag: PropTypes.func.isRequired,
-};
+
 
 export default FeatureFlagsTab;

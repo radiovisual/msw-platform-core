@@ -6,7 +6,6 @@ import Popover from './Popover';
 import Label from './Label';
 import { Plus, FileText } from './Icon';
 import type { Plugin } from '../../types';
-import PropTypes from 'prop-types';
 
 interface EndpointRowProps {
 	plugin: Plugin;
@@ -207,34 +206,6 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 			)}
 		</div>
 	);
-};
-
-EndpointRow.propTypes = {
-	plugin: PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		method: PropTypes.string.isRequired,
-		endpoint: PropTypes.string.isRequired,
-		componentId: PropTypes.string.isRequired,
-		scenarios: PropTypes.arrayOf(PropTypes.shape({
-			id: PropTypes.string.isRequired,
-			label: PropTypes.string.isRequired,
-		})),
-		swaggerUrl: PropTypes.string,
-	}).isRequired,
-	isMocked: PropTypes.bool.isRequired,
-	onToggleMocked: PropTypes.func.isRequired,
-	onUpdateStatusCode: PropTypes.func.isRequired,
-	onAddToGroup: PropTypes.func.isRequired,
-	onRemoveFromGroup: PropTypes.func.isRequired,
-	getStatus: PropTypes.func.isRequired,
-	getStatusCodes: PropTypes.func.isRequired,
-	groups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	})).isRequired,
-	endpointScenarios: PropTypes.object.isRequired,
-	onScenarioChange: PropTypes.func.isRequired,
 };
 
 export default EndpointRow;

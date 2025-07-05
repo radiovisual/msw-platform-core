@@ -4,7 +4,6 @@ import { Plus } from './Icon';
 import GroupRow from './GroupRow';
 import AutoGroupRow from './AutoGroupRow';
 import type { Plugin } from '../../types';
-import PropTypes from 'prop-types';
 
 interface Group {
 	id: string;
@@ -90,34 +89,6 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 			</div>
 		</div>
 	);
-};
-
-GroupsTab.propTypes = {
-	groups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	})).isRequired,
-	autoGroups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-		auto: PropTypes.bool.isRequired,
-	})).isRequired,
-	plugins: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		method: PropTypes.string.isRequired,
-		endpoint: PropTypes.string.isRequired,
-		componentId: PropTypes.string.isRequired,
-	})).isRequired,
-	newGroupName: PropTypes.string.isRequired,
-	onNewGroupNameChange: PropTypes.func.isRequired,
-	onCreateGroup: PropTypes.func.isRequired,
-	editingGroup: PropTypes.string,
-	onSetEditingGroup: PropTypes.func.isRequired,
-	onRenameGroup: PropTypes.func.isRequired,
-	onDeleteGroup: PropTypes.func.isRequired,
-	onRemoveFromGroup: PropTypes.func.isRequired,
 };
 
 export default GroupsTab;

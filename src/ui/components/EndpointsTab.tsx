@@ -5,7 +5,6 @@ import { ChevronDown, X } from './Icon';
 import EndpointRow from './EndpointRow';
 import GroupFilterPopover from './GroupFilterPopover';
 import type { Plugin } from '../../types';
-import PropTypes from 'prop-types';
 
 interface Group {
 	id: string;
@@ -149,40 +148,6 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 			</div>
 		</div>
 	);
-};
-
-EndpointsTab.propTypes = {
-	plugins: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		endpoint: PropTypes.string.isRequired,
-	})).isRequired,
-	filteredPlugins: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-	})).isRequired,
-	searchTerm: PropTypes.string.isRequired,
-	onSearchChange: PropTypes.func.isRequired,
-	selectedGroupFilters: PropTypes.arrayOf(PropTypes.string).isRequired,
-	onToggleGroupFilter: PropTypes.func.isRequired,
-	onClearGroupFilters: PropTypes.func.isRequired,
-	groups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	})).isRequired,
-	allGroups: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	})).isRequired,
-	isMocked: PropTypes.func.isRequired,
-	onToggleMocked: PropTypes.func.isRequired,
-	onUpdateStatusCode: PropTypes.func.isRequired,
-	onAddToGroup: PropTypes.func.isRequired,
-	onRemoveFromGroup: PropTypes.func.isRequired,
-	getStatus: PropTypes.func.isRequired,
-	getStatusCodes: PropTypes.func.isRequired,
-	endpointScenarios: PropTypes.object.isRequired,
-	onScenarioChange: PropTypes.func.isRequired,
 };
 
 export default EndpointsTab;

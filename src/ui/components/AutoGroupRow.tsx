@@ -1,7 +1,6 @@
 import React from 'react';
 import { Users } from './Icon';
 import type { Plugin } from '../../types';
-import PropTypes from 'prop-types';
 
 interface AutoGroup {
 	id: string;
@@ -67,19 +66,6 @@ const AutoGroupRow: React.FC<AutoGroupRowProps> = ({ group, plugins }) => {
 	);
 };
 
-AutoGroupRow.propTypes = {
-	group: PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-		auto: PropTypes.bool.isRequired,
-	}).isRequired,
-	plugins: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		method: PropTypes.string.isRequired,
-		endpoint: PropTypes.string.isRequired,
-		componentId: PropTypes.string.isRequired,
-	})).isRequired,
-};
+
 
 export default AutoGroupRow;

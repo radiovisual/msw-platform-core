@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 interface ButtonProps {
 	children: React.ReactNode;
@@ -16,15 +15,6 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, style, title, 'aria-
 			{children}
 		</button>
 	);
-};
-
-Button.propTypes = {
-	children: PropTypes.node.isRequired,
-	onClick: PropTypes.func,
-	style: PropTypes.object,
-	title: PropTypes.string,
-	'aria-label': PropTypes.string,
-	'data-testid': PropTypes.string,
 };
 
 export default Button;

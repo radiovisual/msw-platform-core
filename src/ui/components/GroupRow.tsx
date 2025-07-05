@@ -2,7 +2,6 @@ import React from 'react';
 import Button from './Button';
 import { Users, Edit2, Trash2, X } from './Icon';
 import type { Plugin } from '../../types';
-import PropTypes from 'prop-types';
 
 interface Group {
 	id: string;
@@ -131,24 +130,6 @@ const GroupRow: React.FC<GroupRowProps> = ({
 			</div>
 		</div>
 	);
-};
-
-GroupRow.propTypes = {
-	group: PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		name: PropTypes.string.isRequired,
-		endpointIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-	}).isRequired,
-	plugins: PropTypes.arrayOf(PropTypes.shape({
-		id: PropTypes.string.isRequired,
-		method: PropTypes.string.isRequired,
-		endpoint: PropTypes.string.isRequired,
-	})).isRequired,
-	editingGroup: PropTypes.string,
-	onSetEditingGroup: PropTypes.func.isRequired,
-	onRenameGroup: PropTypes.func.isRequired,
-	onDeleteGroup: PropTypes.func.isRequired,
-	onRemoveFromGroup: PropTypes.func.isRequired,
 };
 
 export default GroupRow;
