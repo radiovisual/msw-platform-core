@@ -17,6 +17,7 @@ export class InMemoryPersistence implements PersistenceProvider {
 	private statuses: { [key: string]: number } = {};
 	private activeScenario: string | undefined;
 	private endpointScenarios: { [key: string]: string } = {};
+
 	constructor(name: string) {
 		this.name = name;
 	}

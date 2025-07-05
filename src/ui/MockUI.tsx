@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from './components/Button';
 import Checkbox from './components/Checkbox';
@@ -9,6 +11,7 @@ import Label from './components/Label';
 import { Plus, Settings, Users, X, Edit2, Trash2, ChevronDown, FileText } from 'lucide-react';
 import type { MockPlatformCore } from '../platform';
 import type { Plugin } from '../types';
+import PropTypes from 'prop-types';
 
 // UI-only group type
 interface Group {
@@ -228,12 +231,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		const activeScenarioId = endpointScenarios[plugin.id] || platform.getEndpointScenario(plugin.id);
 		const handleScenarioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 			const scenarioId = e.target.value;
-			// Debug: log event target value and scenarioId
-			// eslint-disable-next-line no-console
-			console.log('[handleScenarioChange] event.target.value:', e.target.value, 'scenarioId:', scenarioId);
-			// Debug: log platform and persistence instance
-			// eslint-disable-next-line no-console
-			// console.log('[handleScenarioChange] platform:', platform, 'persistence:', (platform as any).persistence, 'scenarioId:', scenarioId);
 			setEndpointScenarios(prev => ({ ...prev, [plugin.id]: scenarioId }));
 			platform.setEndpointScenario(plugin.id, scenarioId);
 			forceUpdate(x => x + 1);
@@ -402,6 +399,20 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 				)}
 			</div>
 		);
+	};
+
+	EndpointRow.propTypes = {
+		plugin: PropTypes.shape({
+			id: PropTypes.string.isRequired,
+			method: PropTypes.string.isRequired,
+			endpoint: PropTypes.string.isRequired,
+			componentId: PropTypes.string.isRequired,
+			scenarios: PropTypes.arrayOf(PropTypes.shape({
+				id: PropTypes.string.isRequired,
+				label: PropTypes.string.isRequired,
+			})),
+			swaggerUrl: PropTypes.string,
+		}).isRequired,
 	};
 
 	return (
@@ -778,7 +789,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 													</div>
 													<Checkbox
 														checked={!!enabled}
-														onChange={e => toggleFeatureFlag(flag, !enabled)}
+														onChange={() => toggleFeatureFlag(flag, !enabled)}
 														id={flag}
 														aria-label={`Toggle feature flag ${flag}`}
 													/>
@@ -798,3 +809,22 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		</>
 	);
 }
+
+MockUI.propTypes = {
+	platform: PropTypes.shape({
+		getName: PropTypes.func.isRequired,
+		getPlugins: PropTypes.func.isRequired,
+		getFeatureFlags: PropTypes.func.isRequired,
+		setFeatureFlag: PropTypes.func.isRequired,
+		getStatusOverride: PropTypes.func.isRequired,
+		setStatusOverride: PropTypes.func.isRequired,
+		getEndpointScenario: PropTypes.func.isRequired,
+		setEndpointScenario: PropTypes.func.isRequired,
+		getDisabledPluginIds: PropTypes.func.isRequired,
+		setDisabledPluginIds: PropTypes.func.isRequired,
+		getComponentIds: PropTypes.func.isRequired,
+	}).isRequired,
+	onStateChange: PropTypes.func,
+	groupStorageKey: PropTypes.string,
+	disabledPluginIdsStorageKey: PropTypes.string,
+};

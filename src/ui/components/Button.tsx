@@ -1,21 +1,30 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+interface ButtonProps {
+	children: React.ReactNode;
+	onClick?: () => void;
+	style?: React.CSSProperties;
+	title?: string;
+	'aria-label'?: string;
+	'data-testid'?: string;
+}
 
-const Button: React.FC<ButtonProps> = ({ children, style, ...props }) => (
-	<button
-		style={{
-			padding: '6px 12px',
-			border: '1px solid #ccc',
-			borderRadius: 4,
-			background: '#fff',
-			cursor: 'pointer',
-			...style,
-		}}
-		{...props}
-	>
-		{children}
-	</button>
-);
+const Button: React.FC<ButtonProps> = ({ children, onClick, style, title, 'aria-label': ariaLabel, 'data-testid': dataTestId }) => {
+	return (
+		<button onClick={onClick} style={style} title={title} aria-label={ariaLabel} data-testid={dataTestId}>
+			{children}
+		</button>
+	);
+};
+
+Button.propTypes = {
+	children: PropTypes.node.isRequired,
+	onClick: PropTypes.func,
+	style: PropTypes.object,
+	title: PropTypes.string,
+	'aria-label': PropTypes.string,
+	'data-testid': PropTypes.string,
+};
 
 export default Button;

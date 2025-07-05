@@ -19,7 +19,7 @@ const Popover: React.FC<PopoverProps> = ({ trigger, children, open: controlledOp
 		if (!open) return;
 		function handle(e: MouseEvent) {
 			const refCurrent = popoverRef.current;
-			if (refCurrent && !refCurrent.contains(e.target as Node)) {
+			if (refCurrent && e?.target && !refCurrent.contains(e.target as Node)) {
 				setOpen(false);
 			}
 		}

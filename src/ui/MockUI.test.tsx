@@ -44,13 +44,13 @@ describe('MockUI', () => {
 		render(<MockUI platform={platform} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		// Endpoints tab is default
-		expect(await screen.findByText((c, n) => n?.textContent === '/api/v1/foo' || false)).toBeInTheDocument();
-		expect(await screen.findByText((c, n) => n?.textContent === '/api/v1/bar' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === '/api/v1/foo' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === '/api/v1/bar' || false)).toBeInTheDocument();
 		// Switch to Feature Flags tab robustly
 		const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 		fireEvent.click(featureFlagsTab);
-		expect(await screen.findByText((c, n) => n?.textContent === 'FLAG_A' || false)).toBeInTheDocument();
-		expect(await screen.findByText((c, n) => n?.textContent === 'FLAG_B' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'FLAG_A' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'FLAG_B' || false)).toBeInTheDocument();
 	});
 
 	it('toggles endpoint passthrough and updates disabledPluginIds', async () => {
@@ -85,7 +85,7 @@ describe('MockUI', () => {
 		const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 		fireEvent.click(featureFlagsTab);
 		// Find the card or row containing FLAG_A
-		const flagA = await screen.findByText((c, n) => n?.textContent === 'FLAG_A' || false);
+		const flagA = await screen.findByText((_, n) => n?.textContent === 'FLAG_A' || false);
 		expect(flagA).toBeInTheDocument();
 		const flagCard = flagA.closest('div');
 		expect(flagCard).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('MockUI', () => {
 			} else {
 				throw new Error('flagCard is null');
 			}
-		} catch (e) {
+		} catch (_e) {
 			// eslint-disable-next-line no-console
 			console.log('within(flagCard!) failed, falling back to screen.getByLabelText');
 			flagCheckbox = screen.getByLabelText('Toggle feature flag FLAG_A');
@@ -118,21 +118,21 @@ describe('MockUI', () => {
 		const groupsTab = await screen.findByRole('tab', { name: /groups/i });
 		fireEvent.click(groupsTab);
 		// Use function matcher for placeholder
-		const input = await screen.findByPlaceholderText((c, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
+		const input = await screen.findByPlaceholderText((_, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
 		fireEvent.change(input, { target: { value: 'TestGroup' } });
 		fireEvent.keyDown(input, { key: 'Enter' });
-		expect(await screen.findByText((c, n) => n?.textContent === 'TestGroup' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'TestGroup' || false)).toBeInTheDocument();
 		// Rename group
 		const editButtons = await screen.findAllByRole('button', { name: /edit/i });
 		fireEvent.click(editButtons[0]);
 		const renameInput = await screen.findByDisplayValue('TestGroup');
 		fireEvent.change(renameInput, { target: { value: 'RenamedGroup' } });
 		fireEvent.keyDown(renameInput, { key: 'Enter' });
-		expect(await screen.findByText((c, n) => n?.textContent === 'RenamedGroup' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'RenamedGroup' || false)).toBeInTheDocument();
 		// Delete group
 		const trashButtons = await screen.findAllByRole('button', { name: /trash/i });
 		fireEvent.click(trashButtons[0]);
-		await waitFor(() => expect(screen.queryByText((c, n) => n?.textContent === 'RenamedGroup' || false)).not.toBeInTheDocument());
+		await waitFor(() => expect(screen.queryByText((_, n) => n?.textContent === 'RenamedGroup' || false)).not.toBeInTheDocument());
 	});
 
 	it('persists groups and disabledPluginIds to localStorage', async () => {
@@ -143,10 +143,10 @@ describe('MockUI', () => {
 		// Create a group
 		const groupsTab = await screen.findByRole('tab', { name: /groups/i });
 		fireEvent.click(groupsTab);
-		const input = await screen.findByPlaceholderText((c, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
+		const input = await screen.findByPlaceholderText((_, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
 		fireEvent.change(input, { target: { value: 'PersistedGroup' } });
 		fireEvent.keyDown(input, { key: 'Enter' });
-		expect(await screen.findByText((c, n) => n?.textContent === 'PersistedGroup' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'PersistedGroup' || false)).toBeInTheDocument();
 		// Switch to Endpoints tab and toggle endpoint off
 		const endpointsTab = await screen.findByRole('tab', { name: /endpoints/i });
 		fireEvent.click(endpointsTab);
@@ -198,36 +198,36 @@ describe('MockUI', () => {
 		let utils = render(<MockUI platform={platformA} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		fireEvent.click(await screen.findByRole('tab', { name: /groups/i }));
-		const inputA = await screen.findByPlaceholderText((c, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
+		const inputA = await screen.findByPlaceholderText((_, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
 		fireEvent.change(inputA, { target: { value: 'GroupA' } });
 		fireEvent.keyDown(inputA, { key: 'Enter' });
-		expect(await screen.findByText((c, n) => n?.textContent === 'GroupA' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'GroupA' || false)).toBeInTheDocument();
 
 		// Unmount and mount MockUI for platformB and create a group
 		utils.unmount();
 		utils = render(<MockUI platform={platformB} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		fireEvent.click(await screen.findByRole('tab', { name: /groups/i }));
-		const inputB = await screen.findByPlaceholderText((c, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
+		const inputB = await screen.findByPlaceholderText((_, n) => n?.getAttribute('placeholder')?.toLowerCase() === 'new group name');
 		fireEvent.change(inputB, { target: { value: 'GroupB' } });
 		fireEvent.keyDown(inputB, { key: 'Enter' });
-		expect(await screen.findByText((c, n) => n?.textContent === 'GroupB' || false)).toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'GroupB' || false)).toBeInTheDocument();
 
 		// Unmount and remount MockUI for platformA, GroupA should still exist, GroupB should not
 		utils.unmount();
 		utils = render(<MockUI platform={platformA} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		fireEvent.click(await screen.findByRole('tab', { name: /groups/i }));
-		expect(await screen.findByText((c, n) => n?.textContent === 'GroupA' || false)).toBeInTheDocument();
-		expect(screen.queryByText((c, n) => n?.textContent === 'GroupB' || false)).not.toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'GroupA' || false)).toBeInTheDocument();
+		expect(screen.queryByText((_, n) => n?.textContent === 'GroupB' || false)).not.toBeInTheDocument();
 
 		// Unmount and remount MockUI for platformB, GroupB should still exist, GroupA should not
 		utils.unmount();
 		utils = render(<MockUI platform={platformB} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		fireEvent.click(await screen.findByRole('tab', { name: /groups/i }));
-		expect(await screen.findByText((c, n) => n?.textContent === 'GroupB' || false)).toBeInTheDocument();
-		expect(screen.queryByText((c, n) => n?.textContent === 'GroupA' || false)).not.toBeInTheDocument();
+		expect(await screen.findByText((_, n) => n?.textContent === 'GroupB' || false)).toBeInTheDocument();
+		expect(screen.queryByText((_, n) => n?.textContent === 'GroupA' || false)).not.toBeInTheDocument();
 	});
 
 	it('renders automatic groups for componentId and prevents deletion', async () => {
@@ -276,6 +276,7 @@ describe('MockUI', () => {
 		const selectAfter = await screen.findByDisplayValue('User not registered');
 		// Select "User is registered"
 		const selectEl = selectAfter as HTMLSelectElement;
+		// eslint-disable-next-line no-console
 		console.log(
 			'[test] select value before change:',
 			selectEl.value,

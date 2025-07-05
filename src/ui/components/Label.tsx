@@ -1,11 +1,24 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;
+interface LabelProps {
+	children: React.ReactNode;
+	htmlFor?: string;
+	style?: React.CSSProperties;
+}
 
-const Label: React.FC<LabelProps> = ({ children, style, ...props }) => (
-	<label style={{ fontSize: 14, marginRight: 4, ...style }} {...props}>
-		{children}
-	</label>
-);
+const Label: React.FC<LabelProps> = ({ children, htmlFor, style }) => {
+	return (
+		<label htmlFor={htmlFor} style={style}>
+			{children}
+		</label>
+	);
+};
+
+Label.propTypes = {
+	children: PropTypes.node.isRequired,
+	htmlFor: PropTypes.string,
+	style: PropTypes.object,
+};
 
 export default Label;
