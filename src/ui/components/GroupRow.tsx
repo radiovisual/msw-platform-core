@@ -151,4 +151,4 @@ GroupRow.propTypes = {
 	onRemoveFromGroup: PropTypes.func.isRequired,
 };
 
-export default GroupRow; 
+export default GroupRow;

@@ -77,4 +77,4 @@ GroupFilterPopover.propTypes = {
 	onClose: PropTypes.func.isRequired,
 };
 
-export default GroupFilterPopover; 
+export default GroupFilterPopover;

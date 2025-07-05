@@ -62,7 +62,7 @@ describe('EndpointRow', () => {
 		
 		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
 		expect(checkbox).not.toBeChecked();
-		expect(screen.getByText('endpoint will passthrough to localhost:4711')).toBeInTheDocument();
+		expect(screen.getByText('endpoint will passthrough (not mocked)')).toBeInTheDocument();
 	});
 
 	it('calls onToggleMocked when checkbox is clicked', () => {
@@ -147,4 +147,4 @@ describe('EndpointRow', () => {
 		rerender(<EndpointRow {...defaultProps} isMocked={false} />);
 		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
 	});
-}); 
+});

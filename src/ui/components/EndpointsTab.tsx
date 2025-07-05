@@ -185,4 +185,4 @@ EndpointsTab.propTypes = {
 	onScenarioChange: PropTypes.func.isRequired,
 };
 
-export default EndpointsTab; 
+export default EndpointsTab;

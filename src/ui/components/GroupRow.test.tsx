@@ -102,7 +102,7 @@ describe('GroupRow', () => {
 		render(<GroupRow {...defaultProps} />);
 
 		const removeButtons = screen.getAllByRole('button');
-		const removeButton = removeButtons.find(button => 
+		const removeButton = removeButtons.find(button =>
 			button.querySelector('svg') && button.getAttribute('aria-label') !== 'edit' && button.getAttribute('aria-label') !== 'trash'
 		);
 		
@@ -127,4 +127,4 @@ describe('GroupRow', () => {
 		const emptyState = screen.queryByText('No endpoints in this group yet.');
 		expect(emptyState).toBeNull();
 	});
-}); 
+});

@@ -166,29 +166,35 @@ function DemoApp() {
 	};
 	return (
 		<div style={{ padding: 32 }}>
-			<h2 className="text-xl font-bold mb-4">Demo: /api/hello & /api/goodbye</h2>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchHello}>
-				Fetch /api/hello
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchGoodbye} style={{ marginLeft: 8 }}>
-				Fetch /api/goodbye
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchUser} style={{ marginLeft: 8 }}>
-				Fetch /api/user
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchUserAdmin} style={{ marginLeft: 8 }}>
-				Fetch /api/user?type=admin
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchUserGuest} style={{ marginLeft: 8 }}>
-				Fetch /api/user?type=guest
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchUserStatus} style={{ marginLeft: 8 }}>
-				Fetch /api/user-status
-			</button>
-			<button className="border rounded px-4 py-2 mb-4" onClick={fetchExternalUser} style={{ marginLeft: 8 }}>
-				Fetch https://jsonplaceholder.typicode.com/users/1
-			</button>
-			<pre className="bg-gray-100 p-2 rounded">{result ? JSON.stringify(result, null, 2) : error ? error : 'No data yet'}</pre>
+			<h2>MSW UI Manager Demo</h2>
+			<p>Click the buttons to make fetch requests. Click the gear icon to manage the mocks.</p>
+			<hr />
+			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>
+				<button  onClick={fetchHello}>
+					Fetch /api/hello
+				</button>
+				<button  onClick={fetchGoodbye}>
+					Fetch /api/goodbye
+				</button>
+				<button  onClick={fetchUser}>
+					Fetch /api/user
+				</button>
+				<button  onClick={fetchUserAdmin}>
+					Fetch /api/user?type=admin
+				</button>
+				<button  onClick={fetchUserGuest}>
+					Fetch /api/user?type=guest
+				</button>
+				<button  onClick={fetchUserStatus}>
+					Fetch /api/user-status
+				</button>
+				<button  onClick={fetchExternalUser}>
+					Fetch https://jsonplaceholder.typicode.com/users/1
+				</button>
+				<pre style={{ width: '100%', padding: '10px', backgroundColor: 'lightgray', borderRadius: 5, color: 'black', fontFamily: 'monospace', fontSize: '12px' }}>
+					{result ? JSON.stringify(result, null, 2) : error ? error : 'No data yet'}
+				</pre>
+			</div>
 			<MockUI platform={platform} />
 		</div>
 	);

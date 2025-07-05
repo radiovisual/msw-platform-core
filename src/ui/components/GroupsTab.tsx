@@ -120,4 +120,4 @@ GroupsTab.propTypes = {
 	onRemoveFromGroup: PropTypes.func.isRequired,
 };
 
-export default GroupsTab; 
+export default GroupsTab;

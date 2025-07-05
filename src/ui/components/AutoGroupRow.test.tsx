@@ -83,4 +83,4 @@ describe('AutoGroupRow', () => {
 		const countElement = screen.getByText('2');
 		expect(countElement).toBeInTheDocument();
 	});
-}); 
+});

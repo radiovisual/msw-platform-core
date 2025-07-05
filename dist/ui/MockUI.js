@@ -419,7 +419,7 @@ function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsSto
 				!isMocked(plugin) &&
 					(0, jsx_runtime_1.jsx)('p', {
 						style: { fontSize: 12, color: '#888', fontStyle: 'italic' },
-						children: 'endpoint will passthrough to localhost:4711',
+						children: 'endpoint will passthrough (not mocked)',
 					}),
 			],
 		});

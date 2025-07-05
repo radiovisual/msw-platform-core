@@ -203,7 +203,7 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 				))}
 			</div>
 			{!isMocked && (
-				<p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough to localhost:4711</p>
+				<p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough (not mocked)</p>
 			)}
 		</div>
 	);
@@ -237,4 +237,4 @@ EndpointRow.propTypes = {
 	onScenarioChange: PropTypes.func.isRequired,
 };
 
-export default EndpointRow; 
+export default EndpointRow;

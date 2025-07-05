@@ -38,4 +38,4 @@ FeatureFlagsTab.propTypes = {
 	onToggleFeatureFlag: PropTypes.func.isRequired,
 };
 
-export default FeatureFlagsTab; 
+export default FeatureFlagsTab;
