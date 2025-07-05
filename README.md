@@ -212,6 +212,92 @@ http.get("/api/user", () => {
 
 ---
 
+## Dynamic Route Matching and Wildcards
+
+The platform supports MSW-style dynamic route matching and wildcards in plugin endpoints. This means you can define endpoints with parameters (e.g., `/api/v1/user/:id`) or wildcards (e.g., `/api/v1/user/*`), and any request matching that pattern will be handled by your mock.
+
+**How it works:**
+- The `endpoint` property of a plugin can use Express-style parameters (e.g., `:id`, `:orderId`) and wildcards (`*`).
+- These patterns are passed directly to MSW, which handles the matching logic.
+- You do **not** need to do anything special—just use the pattern you want in your plugin definition.
+
+**Example:**
+```ts
+const userPlugin = {
+  id: 'user',
+  endpoint: '/api/v1/user/:id', // :id will match any value
+  method: 'GET',
+  responses: {
+    200: { id: '123', name: 'John Doe' },
+    404: { error: 'User not found' },
+  },
+  defaultStatus: 200,
+};
+```
+
+Any request to `/api/v1/user/123`, `/api/v1/user/abc`, etc., will match this plugin.
+
+You can also use multiple parameters:
+```ts
+const orderPlugin = {
+  id: 'order',
+  endpoint: '/api/v1/orders/:orderId/items/:itemId',
+  method: 'GET',
+  responses: {
+    200: { orderId: '...', itemId: '...', ... },
+  },
+  defaultStatus: 200,
+};
+```
+
+**Note:**
+- This works for both relative and absolute URLs.
+- The matching is handled by MSW, so you get all the flexibility of MSW's route matching out of the box.
+
+---
+
+## Query Parameter Wildcards
+
+The platform supports wildcards in query parameters, allowing you to match any value for a specific parameter. This is useful when you care about the presence of a parameter but not its specific value.
+
+**How it works:**
+- Use `*` as the value for any query parameter to match any value for that parameter.
+- You can combine exact matches with wildcards in the same query string.
+- The matching is done in order of specificity (exact matches take precedence over wildcards).
+
+**Example:**
+```ts
+const userPlugin = {
+  id: 'user',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { message: 'Default user response' },
+  },
+  defaultStatus: 200,
+  queryResponses: {
+    'type=admin': { 200: { message: 'Admin user response' } },
+    'type=*': { 200: { message: 'Any type user response' } },
+    'status=active&role=*': { 200: { message: 'Active user with any role' } },
+  },
+};
+```
+
+**Matching behavior:**
+- `/api/user?type=admin` → Returns "Admin user response" (exact match)
+- `/api/user?type=guest` → Returns "Any type user response" (wildcard match)
+- `/api/user?type=member` → Returns "Any type user response" (wildcard match)
+- `/api/user?status=active&role=admin` → Returns "Active user with any role" (wildcard match)
+- `/api/user?status=active&role=user` → Returns "Active user with any role" (wildcard match)
+- `/api/user` → Returns "Default user response" (no query parameters)
+
+**Use cases:**
+- **Parameter presence detection:** Use `'param=*'` to match when a parameter is present regardless of its value
+- **Mixed matching:** Combine exact matches for important parameters with wildcards for less critical ones
+- **Fallback responses:** Use wildcards to provide generic responses when specific values don't match
+
+---
+
 ## Guide: Using mswHandlersFromPlatform in a Real React Application
 
 ### 1. Install dependencies

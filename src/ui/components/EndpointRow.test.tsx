@@ -163,4 +163,135 @@ describe('EndpointRow', () => {
 		rerender(<EndpointRow {...defaultProps} isMocked={false} />);
 		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
 	});
+
+	it('displays endpoint with query parameters when plugin has queryResponses', () => {
+		const pluginWithQuery: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+			queryResponses: {
+				'type=admin': { 200: {} },
+			},
+		};
+
+		render(
+			<EndpointRow
+				plugin={pluginWithQuery}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+			/>
+		);
+
+		expect(screen.getByText('/api/test?type=admin')).toBeInTheDocument();
+	});
+
+	it('displays all endpoint variants with query parameters when plugin has multiple queryResponses', () => {
+		const pluginWithMultipleQuery: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+			queryResponses: {
+				'type=admin': { 200: {} },
+				'type=guest': { 200: {} },
+				'status=active': { 200: {} },
+			},
+		};
+
+		render(
+			<EndpointRow
+				plugin={pluginWithMultipleQuery}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+			/>
+		);
+
+		expect(screen.getByText('/api/test?type=admin')).toBeInTheDocument();
+		expect(screen.getByText('/api/test?type=guest')).toBeInTheDocument();
+		expect(screen.getByText('/api/test?status=active')).toBeInTheDocument();
+	});
+
+	it('displays endpoint without query parameters when plugin has no queryResponses', () => {
+		const pluginWithoutQuery: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+		};
+
+		render(
+			<EndpointRow
+				plugin={pluginWithoutQuery}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+			/>
+		);
+
+		expect(screen.getByText('/api/test')).toBeInTheDocument();
+	});
+
+	it('displays endpoint without query parameters when queryResponses is empty', () => {
+		const pluginWithEmptyQuery: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+			queryResponses: {},
+		};
+
+		render(
+			<EndpointRow
+				plugin={pluginWithEmptyQuery}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+			/>
+		);
+
+		expect(screen.getByText('/api/test')).toBeInTheDocument();
+	});
 });

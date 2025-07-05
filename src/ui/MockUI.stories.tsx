@@ -179,6 +179,8 @@ const platform = createMockPlatform({
 			queryResponses: {
 				'type=admin': { 200: { user: { name: 'Admin', type: 'admin' } } },
 				'type=guest': { 200: { user: { name: 'Guest', type: 'guest' } } },
+				'type=*': { 200: { user: { name: 'Any Type User', type: 'any' } } },
+				'status=active&role=*': { 200: { user: { name: 'Active User', type: 'active', role: 'any' } } },
 			},
 			// Static middleware configuration - visible in plugin definition
 			useMiddleware: [contractMiddleware],
@@ -305,6 +307,28 @@ function DemoApp() {
 			setError(String(e));
 		}
 	};
+	const fetchUserAnyType = async () => {
+		setError(null);
+		setResult(null);
+		try {
+			const res = await fetch('/api/user?type=member');
+			const data = await res.json();
+			setResult(data);
+		} catch (e) {
+			setError(String(e));
+		}
+	};
+	const fetchUserActiveRole = async () => {
+		setError(null);
+		setResult(null);
+		try {
+			const res = await fetch('/api/user?status=active&role=admin');
+			const data = await res.json();
+			setResult(data);
+		} catch (e) {
+			setError(String(e));
+		}
+	};
 	return (
 		<div style={{ padding: 32 }}>
 			<h2>MSW UI Manager Demo</h2>
@@ -316,6 +340,8 @@ function DemoApp() {
 				<button onClick={fetchUser}>Fetch /api/user</button>
 				<button onClick={fetchUserAdmin}>Fetch /api/user?type=admin</button>
 				<button onClick={fetchUserGuest}>Fetch /api/user?type=guest</button>
+				<button onClick={fetchUserAnyType}>Fetch /api/user?type=member (wildcard)</button>
+				<button onClick={fetchUserActiveRole}>Fetch /api/user?status=active&role=admin (wildcard)</button>
 				<button onClick={fetchUserStatus}>Fetch /api/user-status</button>
 				<button onClick={fetchExternalUser}>Fetch https://jsonplaceholder.typicode.com/users/1</button>
 				<pre

@@ -23,6 +23,15 @@ interface EndpointRowProps {
 	platform: MockPlatformCore;
 }
 
+// Helper function to format endpoint display with query parameters
+function getEndpointDisplayVariants(plugin: Plugin): string[] {
+	if (!plugin.queryResponses || Object.keys(plugin.queryResponses).length === 0) {
+		return [plugin.endpoint];
+	}
+	const queryPatterns = Object.keys(plugin.queryResponses);
+	return queryPatterns.map(q => `${plugin.endpoint}?${q}`);
+}
+
 const EndpointRow: React.FC<EndpointRowProps> = ({
 	plugin,
 	isMocked,
@@ -47,6 +56,8 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 		const scenarioId = e.target.value;
 		onScenarioChange(plugin.id, scenarioId);
 	};
+
+	const endpointVariants = getEndpointDisplayVariants(plugin);
 
 	return (
 		<div
@@ -73,7 +84,11 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 					<span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, background: '#e6f7ff', color: '#0070f3' }}>
 						{plugin.method}
 					</span>
-					<span style={{ fontFamily: 'monospace', fontSize: 14 }}>{plugin.endpoint}</span>
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+						{endpointVariants.map(variant => (
+							<span key={variant} style={{ fontFamily: 'monospace', fontSize: 12, color: '#333', opacity: 0.85 }}>{variant}</span>
+						))}
+					</div>
 					<div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
 						{/* Auto group badge */}
 						<span

@@ -60,13 +60,13 @@ describe('MockPlatformCore', () => {
 		// Check that flags are registered
 		expect(platform.getFeatureFlags().FLAG_WITH_DESC).toBe(true);
 		expect(platform.getFeatureFlags().FLAG_WITH_DEFAULT).toBe(false);
-		expect(platform.getFeatureFlags().LEGACY_FLAG).toBe(false);
+		expect(platform.getFeatureFlags().LEGACY_FLAG).toBe(false); // String flags default to false
 
 		// Check metadata
 		const metadata = platform.getFeatureFlagMetadata();
 		expect(metadata.FLAG_WITH_DESC).toEqual({ description: 'A flag with description', default: true });
 		expect(metadata.FLAG_WITH_DEFAULT).toEqual({ default: false });
-		expect(metadata.LEGACY_FLAG).toBeUndefined();
+		expect(metadata.LEGACY_FLAG).toBeUndefined(); // String flags have no metadata
 	});
 
 	it('applies transform when feature flag is active', () => {
@@ -188,6 +188,151 @@ describe('mswHandlersFromPlatform', () => {
 		const json = await res.json();
 		expect(res.status).toBe(404);
 		expect(json).toEqual({ error: 'Not found' });
+	});
+
+	it('supports MSW wildcard patterns for dynamic routes', async () => {
+		const dynamicPlugin: Plugin = {
+			componentId: 'user',
+			id: 'user-dynamic',
+			endpoint: '/api/v1/user/:id',
+			method: 'GET',
+			responses: {
+				200: { id: '123', name: 'John Doe', email: 'john@example.com' },
+				404: { error: 'User not found' },
+			},
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({ name: 'test', plugins: [dynamicPlugin] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// Test with different user IDs - all should match the wildcard pattern
+		const testIds = ['123', '456', '789', 'abc123'];
+		
+		for (const id of testIds) {
+			const res = await fetch(`http://localhost/api/v1/user/${id}`);
+			const json = await res.json();
+			expect(res.status).toBe(200);
+			expect(json).toEqual({ id: '123', name: 'John Doe', email: 'john@example.com' });
+		}
+	});
+
+	it('supports MSW wildcard patterns with multiple parameters', async () => {
+		const multiParamPlugin: Plugin = {
+			componentId: 'order',
+			id: 'order-dynamic',
+			endpoint: '/api/v1/orders/:orderId/items/:itemId',
+			method: 'GET',
+			responses: {
+				200: { orderId: '123', itemId: '456', quantity: 1, price: 29.99 },
+				404: { error: 'Order item not found' },
+			},
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({ name: 'test', plugins: [multiParamPlugin] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// Test with different order and item IDs
+		const testCases = [
+			{ orderId: '123', itemId: '456' },
+			{ orderId: '789', itemId: 'abc' },
+			{ orderId: 'xyz', itemId: 'def' },
+		];
+		
+		for (const { orderId, itemId } of testCases) {
+			const res = await fetch(`http://localhost/api/v1/orders/${orderId}/items/${itemId}`);
+			const json = await res.json();
+			expect(res.status).toBe(200);
+			expect(json).toEqual({ orderId: '123', itemId: '456', quantity: 1, price: 29.99 });
+		}
+	});
+});
+
+describe('Query Parameter Matching', () => {
+	const pluginWithQueryParams: Plugin = {
+		componentId: 'test',
+		id: 'query-test',
+		endpoint: '/api/test',
+		method: 'GET',
+		responses: {
+			200: { message: 'Default response' },
+		},
+		defaultStatus: 200,
+		queryResponses: {
+			'type=admin': { 200: { message: 'Admin response' } },
+			'type=guest': { 200: { message: 'Guest response' } },
+			'type=*': { 200: { message: 'Any type response' } },
+			'status=active&role=*': { 200: { message: 'Active user with any role' } },
+		},
+	};
+
+	it('matches exact query parameters', async () => {
+		const platform = createMockPlatform({ name: 'test', plugins: [pluginWithQueryParams] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		const res = await fetch('http://localhost/api/test?type=admin');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Admin response' });
+	});
+
+	it('matches wildcard query parameters', async () => {
+		const platform = createMockPlatform({ name: 'test', plugins: [pluginWithQueryParams] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// Test with different values for the wildcard parameter
+		const testValues = ['member', 'user', '123', 'abc'];
+		
+		for (const value of testValues) {
+			const res = await fetch(`http://localhost/api/test?type=${value}`);
+			const json = await res.json();
+			expect(res.status).toBe(200);
+			expect(json).toEqual({ message: 'Any type response' });
+		}
+	});
+
+	it('matches multiple parameters with wildcards', async () => {
+		const platform = createMockPlatform({ name: 'test', plugins: [pluginWithQueryParams] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// Test with different role values
+		const testRoles = ['admin', 'user', 'guest', 'moderator'];
+		
+		for (const role of testRoles) {
+			const res = await fetch(`http://localhost/api/test?status=active&role=${role}`);
+			const json = await res.json();
+			expect(res.status).toBe(200);
+			expect(json).toEqual({ message: 'Active user with any role' });
+		}
+	});
+
+	it('falls back to default response when no query parameters match', async () => {
+		const platform = createMockPlatform({ name: 'test', plugins: [pluginWithQueryParams] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		const res = await fetch('http://localhost/api/test');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Default response' });
+	});
+
+	it('does not match when required parameter is missing', async () => {
+		const platform = createMockPlatform({ name: 'test', plugins: [pluginWithQueryParams] });
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// This should not match 'status=active&role=*' because status is missing
+		const res = await fetch('http://localhost/api/test?role=admin');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Default response' });
 	});
 });
 
@@ -581,5 +726,161 @@ describe('Middleware Registration', () => {
 		expect(platform.getRegisteredSettings()[0].key).toBe('duplicateTest');
 
 		consoleSpy.mockRestore();
+	});
+});
+
+describe('Multiple Plugins with Same Endpoint', () => {
+	const specificPlugin: Plugin = {
+		componentId: 'test',
+		id: 'specific',
+		endpoint: '/foo/bar',
+		method: 'GET',
+		responses: {
+			200: { message: 'Specific response' },
+		},
+		defaultStatus: 200,
+		queryResponses: {
+			'baz=specific': { 200: { message: 'Exact match response' } },
+		},
+	};
+
+	const wildcardPlugin: Plugin = {
+		componentId: 'test',
+		id: 'wildcard',
+		endpoint: '/foo/bar',
+		method: 'GET',
+		responses: {
+			200: { message: 'Wildcard response' },
+		},
+		defaultStatus: 200,
+		queryResponses: {
+			'baz=*': { 200: { message: 'Wildcard match response' } },
+		},
+	};
+
+	const defaultPlugin: Plugin = {
+		componentId: 'test',
+		id: 'default',
+		endpoint: '/foo/bar',
+		method: 'GET',
+		responses: {
+			200: { message: 'Default response' },
+		},
+		defaultStatus: 200,
+	};
+
+	it('correctly matches exact query parameters with highest specificity', async () => {
+		const platform = createMockPlatform({ 
+			name: 'test', 
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		});
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		const res = await fetch('http://localhost/foo/bar?baz=specific');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Exact match response' });
+	});
+
+	it('correctly matches wildcard query parameters when exact match fails', async () => {
+		const platform = createMockPlatform({ 
+			name: 'test', 
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		});
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		const res = await fetch('http://localhost/foo/bar?baz=something');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Wildcard match response' });
+	});
+
+	it('correctly falls back to default plugin when no query parameters match', async () => {
+		const platform = createMockPlatform({ 
+			name: 'test', 
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		});
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		const res = await fetch('http://localhost/foo/bar');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Default response' });
+	});
+
+	it('handles multiple query parameters with mixed specificity', async () => {
+		const mixedPlugin: Plugin = {
+			componentId: 'test',
+			id: 'mixed',
+			endpoint: '/foo/bar',
+			method: 'GET',
+			responses: {
+				200: { message: 'Mixed response' },
+			},
+			defaultStatus: 200,
+			queryResponses: {
+				'status=active&role=*': { 200: { message: 'Active with any role' } },
+				'status=*&role=admin': { 200: { message: 'Any status with admin role' } },
+			},
+		};
+
+		const platform = createMockPlatform({ 
+			name: 'test', 
+			plugins: [mixedPlugin, wildcardPlugin, defaultPlugin] 
+		});
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// This should match the mixed plugin with higher specificity
+		const res = await fetch('http://localhost/foo/bar?status=active&role=user');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'Active with any role' });
+	});
+
+	it('respects plugin order when specificity is equal', async () => {
+		const equalSpecificityPlugin1: Plugin = {
+			componentId: 'test',
+			id: 'equal1',
+			endpoint: '/foo/bar',
+			method: 'GET',
+			responses: {
+				200: { message: 'Equal specificity 1' },
+			},
+			defaultStatus: 200,
+			queryResponses: {
+				'param1=*&param2=*': { 200: { message: 'First equal match' } },
+			},
+		};
+
+		const equalSpecificityPlugin2: Plugin = {
+			componentId: 'test',
+			id: 'equal2',
+			endpoint: '/foo/bar',
+			method: 'GET',
+			responses: {
+				200: { message: 'Equal specificity 2' },
+			},
+			defaultStatus: 200,
+			queryResponses: {
+				'param1=*&param2=*': { 200: { message: 'Second equal match' } },
+			},
+		};
+
+		const platform = createMockPlatform({ 
+			name: 'test', 
+			plugins: [equalSpecificityPlugin1, equalSpecificityPlugin2] 
+		});
+		server.resetHandlers();
+		server.use(...mswHandlersFromPlatform(platform));
+
+		// Both have equal specificity, first one should win
+		const res = await fetch('http://localhost/foo/bar?param1=value1&param2=value2');
+		const json = await res.json();
+		expect(res.status).toBe(200);
+		expect(json).toEqual({ message: 'First equal match' });
 	});
 });
