@@ -5,4 +5,7 @@ import type { MockPlatformCore } from '../platform';
  * Accepts a platform instance or a function returning a platform.
  * Usage: parameters: { msw: { handlers: storybookHandlersFromPlatform(platform, options) } }
  */
-export declare function storybookHandlersFromPlatform(platformOrGetter: MockPlatformCore | (() => MockPlatformCore), options?: MSWHandlersOptions): any[];
+export declare function storybookHandlersFromPlatform(
+	platformOrGetter: MockPlatformCore | (() => MockPlatformCore),
+	options?: MSWHandlersOptions
+): any[];

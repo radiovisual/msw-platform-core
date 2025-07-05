@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
-declare function DemoApp(): import("react/jsx-runtime").JSX.Element;
+import type { Meta, StoryObj } from '@storybook/react';
+declare function DemoApp(): import('react/jsx-runtime').JSX.Element;
 declare const meta: Meta<typeof DemoApp>;
 export default meta;
 type Story = StoryObj<typeof DemoApp>;

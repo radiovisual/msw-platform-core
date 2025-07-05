@@ -1,11 +1,14 @@
-import type { MockPlatformCore } from "../platform";
+import type { MockPlatformCore } from '../platform';
 interface MockUIProps {
-    platform: MockPlatformCore;
-    onStateChange?: (opts: {
-        disabledPluginIds: string[];
-    }) => void;
-    groupStorageKey?: string;
-    disabledPluginIdsStorageKey?: string;
+	platform: MockPlatformCore;
+	onStateChange?: (opts: { disabledPluginIds: string[] }) => void;
+	groupStorageKey?: string;
+	disabledPluginIdsStorageKey?: string;
 }
-export default function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsStorageKey }: MockUIProps): import("react/jsx-runtime").JSX.Element;
+export default function MockUI({
+	platform,
+	onStateChange,
+	groupStorageKey,
+	disabledPluginIdsStorageKey,
+}: MockUIProps): import('react/jsx-runtime').JSX.Element;
 export {};
