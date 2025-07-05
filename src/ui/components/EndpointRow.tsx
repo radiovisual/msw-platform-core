@@ -6,6 +6,7 @@ import Popover from './Popover';
 import Label from './Label';
 import { Plus, FileText } from './Icon';
 import type { Plugin } from '../../types';
+import type { MockPlatformCore } from '../../platform';
 
 interface EndpointRowProps {
 	plugin: Plugin;
@@ -19,6 +20,7 @@ interface EndpointRowProps {
 	groups: Array<{ id: string; name: string; endpointIds: string[] }>;
 	endpointScenarios: { [key: string]: string };
 	onScenarioChange: (pluginId: string, scenarioId: string) => void;
+	platform: MockPlatformCore;
 }
 
 const EndpointRow: React.FC<EndpointRowProps> = ({
@@ -33,9 +35,13 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 	groups,
 	endpointScenarios,
 	onScenarioChange,
+	platform,
 }) => {
 	const scenarioList = plugin.scenarios;
 	const activeScenarioId = endpointScenarios[plugin.id];
+
+	// Get dynamic badges from platform
+	const badges = platform.getEndpointBadges(plugin);
 
 	const handleScenarioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const scenarioId = e.target.value;
@@ -50,9 +56,10 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 				padding: 16,
 				marginBottom: 12,
 				background: isMocked ? '#f6fff6' : '#fff6f6',
+				boxSizing: 'border-box',
 			}}
 		>
-			<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+			<div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
 					<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
 						<Checkbox
@@ -201,6 +208,35 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 					</div>
 				))}
 			</div>
+			      {/* Dynamic middleware badges */}
+      {badges.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: '1px solid #eee',
+          }}
+        >
+          {badges.map(badge => (
+                <div
+                  key={badge.id}
+                  style={{
+                    fontSize: '12px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: '#f0e6ff',
+                    color: '#7c3aed',
+                    marginLeft: '8px',
+                  }}
+                >
+                  {badge.text}
+                </div>
+          ))}
+        </div>
+      )}
 			{!isMocked && (
 				<p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough (not mocked)</p>
 			)}

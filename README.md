@@ -14,6 +14,7 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 - **Adapters**: For MSW, Storybook, Cypress, etc.
 - **UI**: Embeddable React component for runtime control
 - **Persistence**: Pluggable (localStorage, session, in-memory)
+- **Middleware**: Responses can be easily customized with flexible middleware
 
 ## Example Usage
 
@@ -463,6 +464,468 @@ export const Default = {
 - When a plugin id is listed in `disabledPluginIds`, requests for that endpoint are not mocked and will be handled by the real backend or proxy (e.g., localhost:4711).
 - This is useful for hybrid development, debugging, or when you want to test against real data for some endpoints and mock others.
 - You can toggle which mocks are enabled/disabled at runtime (soon via the PopupUI, or programmatically now).
+
+--- 
+
+## Middleware System: Dynamic Response Transformations
+
+The middleware system allows you to dynamically transform API responses based on runtime settings. This is perfect for scenarios like:
+- Setting user types across multiple endpoints
+- Overriding contract information based on environment
+- Conditionally modifying responses based on feature flags
+- Adding authentication headers or tokens
+
+### Basic Example: Simple Path Updates
+
+The easiest way to get started is with the helper functions:
+
+```typescript
+import { createPathMiddleware } from 'msw-platform-core';
+
+// Create middleware that updates user.type in responses
+const userTypeMiddleware = createPathMiddleware({
+  key: 'userType',
+  label: 'User Type',
+  description: 'Sets the user type in response payloads',
+  path: 'user.type',
+  type: 'select',
+  options: [
+    { value: 'member', label: 'Member' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'guest', label: 'Guest' },
+  ],
+  defaultValue: 'member',
+});
+
+// Attach to specific plugins and register with platform
+userTypeMiddleware.attachTo(['user', 'user-profile'], platform);
+```
+
+### Enhanced Context Information
+
+All middleware transformation functions receive the complete context information:
+
+```typescript
+type MiddlewareContext = {
+  plugin: Plugin;                    // The plugin being processed
+  request?: any;                     // The incoming request (if any)
+  response: any;                     // The current response being transformed
+  settings: Record<string, any>;     // All middleware-specific settings
+  // Enhanced context information
+  featureFlags: Record<string, boolean>;  // Current feature flag state
+  currentStatus: number;                    // Current response status code
+  endpointScenario?: string;               // Current endpoint scenario
+  activeScenario?: string;                 // Current global scenario
+};
+```
+
+This means every middleware can check feature flags, status codes, scenarios, and more!
+
+### Path Middleware (Simplified)
+
+The `createPathMiddleware` function handles both single and multiple paths:
+
+```typescript
+import { createPathMiddleware } from 'msw-platform-core';
+
+// Single path
+const userTypeMiddleware = createPathMiddleware({
+  key: 'userType',
+  label: 'User Type',
+  type: 'select',
+  options: [
+    { value: 'member', label: 'Member' },
+    { value: 'admin', label: 'Admin' },
+  ],
+  paths: [
+    { path: 'user.type', settingKey: 'userType' },
+  ],
+});
+
+// Multiple paths
+const contractMiddleware = createPathMiddleware({
+  key: 'contractType',
+  label: 'Contract Type',
+  type: 'select',
+  options: [
+    { value: 'premium', label: 'Premium' },
+    { value: 'standard', label: 'Standard' },
+  ],
+  paths: [
+    { path: 'user.type', settingKey: 'userType' },
+    { path: 'contract.user.type', settingKey: 'userType' },
+  ],
+});
+
+userTypeMiddleware.attachTo(['user'], platform);
+contractMiddleware.attachTo(['user', 'contracts'], platform);
+```
+
+### Custom Middleware with Full Context
+
+Create custom middleware that leverages all available context information:
+
+```typescript
+import { createCustomMiddleware } from 'msw-platform-core';
+
+// Feature flag aware middleware
+const experimentalMiddleware = createCustomMiddleware({
+  key: 'experimentalFeature',
+  label: 'Experimental Feature',
+  type: 'boolean',
+  transform: (response, context) => {
+    const { experimentalFeature } = context.settings;
+    const { featureFlags } = context;
+    
+    // Only apply if experimental flag is enabled AND setting is true
+    if (featureFlags.EXPERIMENTAL_HELLO && experimentalFeature) {
+      return { ...response, experimental: { enabled: true } };
+    }
+    return response;
+  },
+});
+
+// Status-aware middleware
+const errorHandlingMiddleware = createCustomMiddleware({
+  key: 'errorMessage',
+  label: 'Error Message',
+  type: 'text',
+  transform: (response, context) => {
+    const { errorMessage } = context.settings;
+    const { currentStatus } = context;
+    
+    // Only apply to error status codes
+    if ((currentStatus === 404 || currentStatus === 500) && errorMessage) {
+      return { ...response, error: { ...response.error, message: errorMessage } };
+    }
+    return response;
+  },
+});
+
+// Scenario-aware middleware
+const scenarioMiddleware = createCustomMiddleware({
+  key: 'scenarioOverride',
+  label: 'Scenario Override',
+  type: 'select',
+  transform: (response, context) => {
+    const { scenarioOverride } = context.settings;
+    const { endpointScenario } = context;
+    
+    // Only apply if we have a scenario and setting
+    if (endpointScenario && scenarioOverride) {
+      return { ...response, user: { ...response.user, permissions: scenarioOverride } };
+    }
+    return response;
+  },
+});
+
+// Complex middleware with all context
+const advancedMiddleware = createCustomMiddleware({
+  key: 'advancedTransform',
+  label: 'Advanced Transform',
+  type: 'text',
+  transform: (response, context) => {
+    const { advancedTransform } = context.settings;
+    const { featureFlags, currentStatus, endpointScenario, plugin } = context;
+    
+    // Complex condition using all context information
+    if (featureFlags.EXPERIMENTAL && currentStatus === 200 && endpointScenario === 'admin') {
+      return {
+        ...response,
+        enhanced: true,
+        userType: advancedTransform,
+        context: {
+          pluginId: plugin.id,
+          status: currentStatus,
+          scenario: endpointScenario,
+          experimentalEnabled: featureFlags.EXPERIMENTAL,
+        },
+      };
+    }
+    return response;
+  },
+  // Optional custom badge function with full context
+  badge: (context) => {
+    const { advancedTransform } = context.settings;
+    const { featureFlags, currentStatus, endpointScenario } = context;
+    
+    if (!advancedTransform) return null;
+    
+    // Show different badge text based on context
+    if (featureFlags.EXPERIMENTAL && currentStatus === 200 && endpointScenario === 'admin') {
+      return `Advanced: ${advancedTransform} (Enhanced)`;
+    }
+    
+    return `Advanced: ${advancedTransform}`;
+  },
+});
+
+experimentalMiddleware.attachTo(['hello'], platform);
+errorHandlingMiddleware.attachTo(['user', 'user-status'], platform);
+scenarioMiddleware.attachTo(['user-status'], platform);
+advancedMiddleware.attachTo(['user'], platform);
+```
+
+### Static Configuration (Recommended)
+
+The cleanest approach is to declare middleware directly in your plugin definitions:
+
+```typescript
+const userTypeMiddleware = createPathMiddleware({
+  key: 'userType',
+  label: 'User Type',
+  description: 'Sets user.type in response payloads',
+  type: 'select',
+  options: [
+    { value: 'member', label: 'Member' },
+    { value: 'admin', label: 'Admin' },
+  ],
+  paths: [
+    { path: 'user.type', settingKey: 'userType' },
+  ],
+});
+
+const platform = createMockPlatform({
+  name: 'my-app',
+  plugins: [
+    {
+      id: 'user',
+      componentId: 'User',
+      endpoint: '/api/user',
+      method: 'GET',
+      responses: { 200: { user: { type: 'member' } } },
+      defaultStatus: 200,
+      // ✅ Middleware automatically registered and attached
+      useMiddleware: [userTypeMiddleware],
+    },
+  ],
+});
+```
+
+### Runtime Registration (Optional)
+
+For dynamic middleware or shared middleware across multiple plugins:
+
+```typescript
+// Option 1: Register immediately with platform
+const contractMiddleware = createPathMiddleware({
+  key: 'contractType',
+  label: 'Contract Type',
+  type: 'select',
+  paths: [
+    { path: 'user.type', settingKey: 'userType' },
+    { path: 'contract.user.type', settingKey: 'userType' },
+  ],
+});
+
+// Attach and register in one step
+contractMiddleware.attachTo(['user', 'contracts'], platform);
+
+// Option 2: Attach first, register later
+const authMiddleware = createPathMiddleware({
+  key: 'authToken',
+  label: 'Auth Token',
+  type: 'text',
+  paths: [
+    { path: 'auth.token', settingKey: 'authToken' },
+  ],
+});
+
+// Attach to plugins and register with platform
+authMiddleware.attachTo(['user', 'profile'], platform);
+```
+
+**Key Benefits:**
+- **`useMiddleware`**: Everything handled automatically - registration, settings, badges, and plugin attachment
+- **`attachTo(plugins, platform)`**: One-step registration and attachment
+- **`attachTo(plugins)`**: Just attachment, register later if needed
+- **No redundant calls**: Each method handles its own registration
+
+### Advanced Examples: Complex Transformations
+
+#### Custom Transformations with Full Context
+
+For complex scenarios, use custom middleware with full context access:
+
+```typescript
+import { createCustomMiddleware } from 'msw-platform-core';
+
+const statusOverrideMiddleware = createCustomMiddleware({
+  key: 'statusOverride',
+  label: 'Status Override',
+  description: 'Overrides status based on user type, contract type, and feature flags',
+  type: 'select',
+  options: [
+    { value: 'active', label: 'Active' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'suspended', label: 'Suspended' },
+  ],
+  defaultValue: 'active',
+  transform: (response, context) => {
+    const { statusOverride, userType, contractType } = context.settings;
+    const { featureFlags, currentStatus } = context;
+    
+    // Only override if user is admin or contract is premium, and experimental flag is enabled
+    if ((userType === 'admin' || contractType === 'premium') && 
+        statusOverride && 
+        featureFlags.EXPERIMENTAL_STATUS_OVERRIDE) {
+      return { ...response, status: statusOverride };
+    }
+    
+    return response;
+  },
+});
+
+statusOverrideMiddleware.attachTo(['user-status'], platform);
+```
+
+### Runtime Registration for Dynamic Middleware
+
+For middleware that might be added conditionally or shared across multiple plugins:
+
+```typescript
+// Create reusable middleware
+const authMiddleware = createPathMiddleware({
+  key: 'authToken',
+  label: 'Auth Token',
+  description: 'Adds authentication token to responses',
+  path: 'auth.token',
+  type: 'text',
+  defaultValue: 'mock-token-123',
+});
+
+// Runtime attachment - flexible and reusable
+authMiddleware.attachTo(['user', 'profile', 'settings'], platform);
+```
+
+### Array and Nested Path Updates
+
+The middleware system supports complex path updates including arrays:
+
+```typescript
+const arrayMiddleware = createPathMiddleware({
+  key: 'arraySettings',
+  label: 'Array Settings',
+  description: 'Updates values in arrays and nested objects',
+  type: 'select',
+  options: [
+    { value: 'enabled', label: 'Enabled' },
+    { value: 'disabled', label: 'Disabled' },
+  ],
+  defaultValue: 'enabled',
+  paths: [
+    { path: 'users.0.type', settingKey: 'arraySettings' },
+    { path: 'users.1.type', settingKey: 'arraySettings' },
+    { path: 'config.features.0.status', settingKey: 'arraySettings' },
+  ],
+});
+```
+
+### Conditional Middleware
+
+Apply middleware only when certain conditions are met:
+
+```typescript
+const conditionalMiddleware = createCustomMiddleware({
+  key: 'conditionalOverride',
+  label: 'Conditional Override',
+  description: 'Only applies when specific conditions are met',
+  type: 'boolean',
+  defaultValue: false,
+  transform: (response, context) => {
+    const { conditionalOverride, userType } = context.settings;
+    const { featureFlags, currentStatus } = context;
+    
+    // Only apply if enabled AND user is admin AND experimental flag is on AND status is 200
+    if (conditionalOverride && userType === 'admin' && 
+        featureFlags.EXPERIMENTAL && currentStatus === 200) {
+      return {
+        ...response,
+        adminOnly: true,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    
+    return response;
+  },
+});
+```
+
+### Why Use the Helper Functions?
+
+#### Without Helpers (Manual Approach)
+```typescript
+// ❌ Manual middleware creation - verbose and error-prone
+const manualMiddleware = {
+  middleware: (payload, context, next) => {
+    const userType = context.settings.userType;
+    if (userType !== undefined) {
+      // Manual deep cloning and path traversal
+      const cloned = JSON.parse(JSON.stringify(payload));
+      if (cloned.user && typeof cloned.user === 'object') {
+        cloned.user.type = userType;
+      }
+      return next(cloned);
+    }
+    return next(payload);
+  },
+};
+
+// ❌ Manual plugin attachment (no UI registration possible)
+platform.useOnPlugin('user', manualMiddleware.middleware);
+```
+
+#### With Helpers (Clean Approach)
+```typescript
+// ✅ Clean, declarative, and type-safe
+const userTypeMiddleware = createPathMiddleware({
+  key: 'userType',
+  label: 'User Type',
+  description: 'Sets user.type in response payloads',
+  type: 'select',
+  options: [
+    { value: 'member', label: 'Member' },
+    { value: 'admin', label: 'Admin' },
+  ],
+  paths: [
+    { path: 'user.type', settingKey: 'userType' },
+  ],
+});
+
+// ✅ Everything handled automatically
+userTypeMiddleware.attachTo(['user'], platform);
+```
+
+### Benefits of the Helper Functions
+
+1. **🎯 Self-Documenting**: Configuration clearly shows what the middleware does
+2. **🛡️ Type-Safe**: Full TypeScript support with proper interfaces
+3. **⚡ Automatic**: Settings, badges, and plugin attachment handled automatically
+4. **🔄 Reusable**: Same middleware can be attached to multiple plugins
+5. **📦 All-in-One**: Middleware logic, UI controls, and configuration in one place
+6. **🧪 Testable**: Helper functions are thoroughly tested and robust
+
+### Middleware Utilities
+
+For advanced use cases, you can also use the utility functions directly:
+
+```typescript
+import { updateValueAtPath, updateMultiplePaths, findPaths } from 'msw-platform-core';
+
+// Update a single path
+const updated = updateValueAtPath(response, 'user.type', 'admin');
+
+// Update multiple paths
+const updated = updateMultiplePaths(response, [
+  { path: 'user.type', value: 'admin' },
+  { path: 'contract.type', value: 'premium' },
+]);
+
+// Find all matching paths with wildcards
+const paths = findPaths(response, 'users.*.type'); // ['users.0.type', 'users.1.type']
+```
+
+The middleware system provides a powerful, flexible way to transform your mock responses dynamically while keeping your code clean and maintainable.
 
 --- 
 

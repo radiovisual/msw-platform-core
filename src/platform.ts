@@ -47,6 +47,47 @@ export class InMemoryPersistence implements PersistenceProvider {
 	}
 }
 
+// Middleware types
+export type MiddlewareContext = {
+  plugin: Plugin;
+  request?: any;
+  response: any;
+  settings: Record<string, any>;
+  // Enhanced context information
+  featureFlags: Record<string, boolean>;
+  currentStatus: number;
+  endpointScenario?: string;
+  activeScenario?: string;
+};
+
+export type Middleware = (payload: any, context: MiddlewareContext, next: (payload: any) => any) => any;
+
+export interface MiddlewareSetting {
+  key: string;
+  label: string;
+  type: 'select' | 'text' | 'number' | 'boolean';
+  options?: { value: string; label: string }[];
+  defaultValue?: any;
+  description?: string;
+}
+
+export interface EndpointBadge {
+  id: string;
+  label: string;
+  pluginMatcher: (plugin: Plugin) => boolean;
+  render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+}
+
+export interface MiddlewareWithBadge {
+  middleware: Middleware;
+  badge?: {
+    id: string;
+    label: string;
+    pluginMatcher: (plugin: Plugin) => boolean;
+    render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+  };
+}
+
 export class MockPlatformCore {
 	private name: string;
 	private plugins: Plugin[];
@@ -57,39 +98,51 @@ export class MockPlatformCore {
 	private persistence: PersistenceProvider;
 	private endpointScenarioOverrides: { [key: string]: string } = {};
 	private disabledPluginIds: string[] = [];
+	private pluginMiddleware: Map<string, Middleware[]> = new Map();
+	private middlewareSettings: Record<string, any> = {};
+
+	// Private registration tracking to prevent duplicates
+	private registeredSettings: MiddlewareSetting[] = [];
+	private registeredBadges: EndpointBadge[] = [];
+	private registeredMiddlewareKeys: Set<string> = new Set();
 
 	constructor(config: MockPlatformConfig, persistence?: PersistenceProvider) {
-		this.name = config?.name ?? new Date().getTime().toString();
-		if (!this.name) {
-			throw new Error('Platform name is required');
-		}
-		this.plugins = config.plugins;
+		this.name = config.name;
+		this.plugins = config.plugins || [];
 		this.featureFlags = {};
 		this.statusOverrides = {};
 		this.scenarios = [];
-		this.activeScenario = undefined;
-		this.persistence = persistence || new InMemoryPersistence(this.name);
-		(config.featureFlags || []).forEach(flag => {
-			this.featureFlags[flag] = this.persistence.getFlag(flag) ?? false;
-		});
-		// Initialize feature flags from plugins
+		this.persistence = persistence || new InMemoryPersistence(config.name);
+
+		// Initialize feature flags from config
+		if (config.featureFlags) {
+			for (const flag of config.featureFlags) {
+				this.featureFlags[flag] = this.persistence.getFlag(flag) ?? false;
+			}
+		}
+
 		for (const plugin of this.plugins) {
-			if (plugin.featureFlags) {
-				for (const flag of plugin.featureFlags) {
-					if (!(flag in this.featureFlags)) this.featureFlags[flag] = this.persistence.getFlag(flag) ?? false;
+			const persisted = this.persistence.getStatus(plugin.id);
+			if (persisted !== undefined) {
+				this.statusOverrides[plugin.id] = persisted;
+			}
+			const endpointScenario = this.persistence.getEndpointScenario(plugin.id);
+			if (endpointScenario !== undefined) {
+				this.endpointScenarioOverrides[plugin.id] = endpointScenario;
+			}
+		}
+
+		this.activeScenario = this.persistence.getActiveScenario();
+
+		// Register middleware from plugin configurations
+		for (const plugin of this.plugins) {
+			if (plugin.useMiddleware) {
+				for (const middleware of plugin.useMiddleware) {
+					// Attach the middleware to this specific plugin and register with platform
+					middleware.attachTo(plugin.id, this);
 				}
 			}
 		}
-		// Load status overrides from persistence
-		for (const plugin of this.plugins) {
-			const persisted = this.persistence.getStatus(plugin.id);
-			if (persisted !== undefined) this.statusOverrides[plugin.id] = persisted;
-			// Load endpoint scenario override from persistence
-			const scenarioId = this.persistence.getEndpointScenario(plugin.id);
-			if (scenarioId) this.endpointScenarioOverrides[plugin.id] = scenarioId;
-		}
-		// Load active scenario
-		this.activeScenario = this.persistence.getActiveScenario();
 	}
 
 	getName() {
@@ -120,7 +173,6 @@ export class MockPlatformCore {
 		this.persistence.setStatus(pluginId, status);
 	}
 
-	// Endpoint scenario support
 	getEndpointScenario(pluginId: string): string | undefined {
 		return this.endpointScenarioOverrides[pluginId];
 	}
@@ -129,16 +181,125 @@ export class MockPlatformCore {
 		this.persistence.setEndpointScenario(pluginId, scenarioId);
 	}
 
-	getResponse(pluginId: string, status?: number) {
+	// Middleware API
+	useOnPlugin(pluginId: string, middleware: Middleware) {
+		if (!this.pluginMiddleware.has(pluginId)) this.pluginMiddleware.set(pluginId, []);
+		this.pluginMiddleware.get(pluginId)!.push(middleware);
+	}
+
+	setMiddlewareSetting(key: string, value: any) {
+		this.middlewareSettings[key] = value;
+	}
+
+	getMiddlewareSetting(key: string) {
+		return this.middlewareSettings[key];
+	}
+
+	// Public method for middleware to register itself (used internally)
+	registerMiddleware(middleware: PlatformMiddleware) {
+		const setting = middleware.getSetting();
+		
+		// Check if this middleware is already registered
+		if (this.registeredMiddlewareKeys.has(setting.key)) {
+			// Middleware is already registered, just attach to new plugins
+			const pluginIds = middleware.getAttachedPlugins();
+			for (const pluginId of pluginIds) {
+				this.useOnPlugin(pluginId, middleware.getMiddleware());
+			}
+			return;
+		}
+		
+		// Register the setting (this will also add to registeredMiddlewareKeys)
+		this.registerMiddlewareSetting(setting);
+		// Register the badge
+		this.registerEndpointBadge(middleware.getBadge());
+		// Attach middleware to all specified plugins
+		const pluginIds = middleware.getAttachedPlugins();
+		for (const pluginId of pluginIds) {
+			this.useOnPlugin(pluginId, middleware.getMiddleware());
+		}
+	}
+
+	// Private registration methods - only accessible through proper channels
+	private registerMiddlewareSetting(setting: MiddlewareSetting) {
+		// Prevent duplicate registration
+		if (this.registeredMiddlewareKeys.has(setting.key)) {
+			console.warn(`Middleware setting "${setting.key}" is already registered. Skipping duplicate registration.`);
+			return;
+		}
+		
+		this.registeredSettings.push(setting);
+		this.registeredMiddlewareKeys.add(setting.key);
+		
+		// Set default value if not already set
+		if (setting.defaultValue !== undefined && !(setting.key in this.middlewareSettings)) {
+			this.middlewareSettings[setting.key] = setting.defaultValue;
+		}
+	}
+
+	private registerEndpointBadge(badge: EndpointBadge) {
+		// Prevent duplicate badge registration
+		const existingBadge = this.registeredBadges.find(b => b.id === badge.id);
+		if (existingBadge) {
+			console.warn(`Badge "${badge.id}" is already registered. Skipping duplicate registration.`);
+			return;
+		}
+		
+		// Only register if the middleware has a badge function that returns a value
+		this.registeredBadges.push(badge);
+	}
+
+	// Public methods for UI to query dynamic controls
+	getRegisteredSettings(): MiddlewareSetting[] {
+		return [...this.registeredSettings];
+	}
+
+	getEndpointBadges(plugin: Plugin): Array<{ id: string; label: string; text: string }> {
+		return this.registeredBadges
+			.filter(badge => badge.pluginMatcher(plugin))
+			.map(badge => {
+				const result = badge.render(plugin, this.middlewareSettings);
+				return result ? { id: badge.id, label: badge.label, text: result } : null;
+			})
+			.filter(Boolean) as Array<{ id: string; label: string; text: string }>;
+	}
+
+	// Apply middleware chain (per-plugin only)
+	applyMiddleware(plugin: Plugin, payload: any, request?: any) {
+		const chain = this.pluginMiddleware.get(plugin.id) || [];
+		let idx = 0;
+		const context: MiddlewareContext = {
+			plugin,
+			request,
+			response: payload,
+			settings: this.middlewareSettings,
+			// Enhanced context information
+			featureFlags: this.featureFlags,
+			currentStatus: this.statusOverrides[plugin.id] ?? plugin.defaultStatus,
+			endpointScenario: this.endpointScenarioOverrides[plugin.id],
+			activeScenario: this.activeScenario,
+		};
+		const next = (currentPayload: any): any => {
+			if (idx < chain.length) {
+				const mw = chain[idx++];
+				return mw(currentPayload, context, next);
+			}
+			return currentPayload;
+		};
+		return next(payload);
+	}
+
+	getResponse(pluginId: string, status?: number, request?: any) {
 		const plugin = this.plugins.find(p => p.id === pluginId);
 		if (!plugin) return undefined;
 		// If endpoint scenario is set and plugin has scenarios, use it
 		const scenarioId = this.getEndpointScenario(pluginId);
 		const useStatus = status ?? this.statusOverrides[pluginId] ?? plugin.defaultStatus;
+		let resp;
 		if (scenarioId && plugin.scenarios) {
 			const scenario = plugin.scenarios.find(s => s.id === scenarioId);
 			if (scenario) {
-				let resp = scenario.responses[useStatus];
+				resp = scenario.responses[useStatus];
 				if (resp === undefined) {
 					// Fallback to plugin responses
 					resp = plugin.responses[useStatus];
@@ -147,20 +308,22 @@ export class MockPlatformCore {
 				if (plugin.transform) {
 					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), this.featureFlags);
 				}
+				// Apply middleware
+				resp = this.applyMiddleware(plugin, resp, request);
 				return resp;
 			}
 		}
 		// Otherwise, use status override/default
-		let response = plugin.responses[useStatus];
-		if (response === undefined) return undefined;
+		resp = plugin.responses[useStatus];
+		if (resp === undefined) return undefined;
 		if (plugin.transform) {
-			// Use JSON deep clone for compatibility
-			response = plugin.transform(JSON.parse(JSON.stringify(response)), this.featureFlags);
+			resp = plugin.transform(JSON.parse(JSON.stringify(resp)), this.featureFlags);
 		}
-		return response;
+		// Apply middleware
+		resp = this.applyMiddleware(plugin, resp, request);
+		return resp;
 	}
 
-	// Scenario support
 	registerScenario(scenario: Scenario) {
 		this.scenarios.push(scenario);
 	}
@@ -198,6 +361,7 @@ export class MockPlatformCore {
 	getComponentIds() {
 		return Array.from(new Set(this.plugins.map(p => p.componentId)));
 	}
+
 	getPluginsByComponentId() {
 		const map: Record<string, string[]> = {};
 		for (const plugin of this.plugins) {
@@ -214,6 +378,104 @@ export class MockPlatformCore {
 	setDisabledPluginIds(ids: string[]): void {
 		this.disabledPluginIds = ids;
 	}
+}
+
+export interface MiddlewareConfig {
+  key: string;
+  label: string;
+  description?: string;
+  type: 'select' | 'text' | 'number' | 'boolean';
+  options?: Array<{ value: string; label: string }>;
+  defaultValue?: any;
+  responseTransform: (originalResponse: any, context: MiddlewareContext) => any;
+  badge?: (context: MiddlewareContext) => string | null;
+}
+
+export class PlatformMiddleware {
+  private config: MiddlewareConfig;
+  private attachedPlugins: string[] = [];
+  private platform?: MockPlatformCore;
+
+  constructor(config: MiddlewareConfig) {
+    this.config = config;
+  }
+
+  // Attach to specific plugins and optionally register with platform
+  attachTo(pluginIds: string | string[], platform?: MockPlatformCore) {
+    const ids = Array.isArray(pluginIds) ? pluginIds : [pluginIds];
+    this.attachedPlugins.push(...ids);
+    
+    // If platform is provided, register the middleware immediately
+    if (platform) {
+      this.platform = platform;
+      platform.registerMiddleware(this);
+    }
+    
+    return this;
+  }
+
+  // Attach to plugins by component
+  attachToComponent(componentId: string) {
+    // This will be resolved when the middleware is registered with the platform
+    return this;
+  }
+
+  // Get the middleware function
+  getMiddleware(): Middleware {
+    return (payload, context, next) => {
+      const transformed = this.config.responseTransform(
+        payload, 
+        context
+      );
+      return next(transformed);
+    };
+  }
+
+  // Get the setting configuration
+  getSetting(): MiddlewareSetting {
+    return {
+      key: this.config.key,
+      label: this.config.label,
+      type: this.config.type,
+      options: this.config.options,
+      defaultValue: this.config.defaultValue,
+      description: this.config.description,
+    };
+  }
+
+  	// Get the badge configuration
+	getBadge(): EndpointBadge {
+		return {
+			id: this.config.key,
+			label: this.config.label,
+			pluginMatcher: (plugin) => this.attachedPlugins.includes(plugin.id),
+			render: (plugin, settings) => {
+				// Use the badge function if provided, otherwise show default badge
+				if (this.config.badge) {
+					const context: MiddlewareContext = {
+						plugin,
+						settings,
+						response: {},
+						featureFlags: {},
+						currentStatus: 200,
+					};
+					const result = this.config.badge(context);
+					// Only show badge if the function returns a non-null value
+					return result;
+				}
+				
+				// Default badge behavior - only show if setting has a value
+				const value = settings[this.config.key];
+				if (!value) return null;
+				return `${this.config.label}: ${value}`;
+			},
+		};
+	}
+
+  // Get attached plugin IDs
+  getAttachedPlugins(): string[] {
+    return [...this.attachedPlugins];
+  }
 }
 
 export function createMockPlatform(config: MockPlatformConfig, persistence?: PersistenceProvider) {

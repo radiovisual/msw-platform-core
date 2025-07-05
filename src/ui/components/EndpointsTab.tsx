@@ -5,6 +5,7 @@ import { ChevronDown, X } from './Icon';
 import EndpointRow from './EndpointRow';
 import GroupFilterPopover from './GroupFilterPopover';
 import type { Plugin } from '../../types';
+import type { MockPlatformCore } from '../../platform';
 
 interface Group {
 	id: string;
@@ -31,6 +32,7 @@ interface EndpointsTabProps {
 	getStatusCodes: (plugin: Plugin) => number[];
 	endpointScenarios: { [key: string]: string };
 	onScenarioChange: (pluginId: string, scenarioId: string) => void;
+	platform: MockPlatformCore;
 }
 
 const EndpointsTab: React.FC<EndpointsTabProps> = ({
@@ -52,6 +54,7 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 	getStatusCodes,
 	endpointScenarios,
 	onScenarioChange,
+	platform,
 }) => {
 	return (
 		<div>
@@ -138,6 +141,7 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 						groups={groups}
 						endpointScenarios={endpointScenarios}
 						onScenarioChange={onScenarioChange}
+						platform={platform}
 					/>
 				))}
 				{filteredPlugins.length === 0 && (

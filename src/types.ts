@@ -1,4 +1,5 @@
-// Types for mock-platform-core
+
+import type { PlatformMiddleware } from './platform';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -8,12 +9,10 @@ export interface FeatureFlag {
 	default?: boolean;
 }
 
-// Strongly-typed scenario for each endpoint
 export interface EndpointScenario<T = any> {
 	id: string; // e.g. "user-not-registered"
 	label: string; // e.g. "User not registered"
 	responses: { [key: number]: T }; // status code -> payload (overrides plugin responses)
-	// No defaultStatus here; plugin.defaultStatus is used
 }
 
 // Allow queryResponses to be an object where each key is a query string, and the value is either a response object or a map of status codes to responses
@@ -34,6 +33,7 @@ export interface Plugin<T = any> {
 	queryResponses?: QueryResponses;
 	transform?: (response: any, flags: Record<string, boolean>) => any;
 	swaggerUrl?: string;
+	useMiddleware?: PlatformMiddleware[]; // Array of middleware to use for this plugin
 }
 
 export interface MockPlatformConfig {

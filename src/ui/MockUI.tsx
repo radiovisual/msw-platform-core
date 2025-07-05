@@ -7,6 +7,7 @@ import { Settings, X } from './components/Icon';
 import EndpointsTab from './components/EndpointsTab';
 import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
+import { DynamicSettingsTab } from './components/DynamicSettingsTab';
 import type { MockPlatformCore } from '../platform';
 import type { Plugin } from '../types';
 
@@ -228,6 +229,16 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		forceUpdate(x => x + 1);
 	};
 
+	// UI: update middleware setting
+	const updateMiddlewareSetting = useCallback(
+		(key: string, value: any) => {
+			platform.setMiddlewareSetting(key, value);
+			forceUpdate(x => x + 1);
+			onStateChange?.({ disabledPluginIds });
+		},
+		[platform, onStateChange, disabledPluginIds]
+	);
+
 	return (
 		<>
 			{/* Floating Button */}
@@ -295,8 +306,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 										<TabList>
 											<Tab value="endpoints">Endpoints</Tab>
 											<Tab value="groups">Groups</Tab>
-											<Tab value="feature-flags">Feature Flags</Tab>
 											<Tab value="settings">Settings</Tab>
+											<Tab value="feature-flags">Feature Flags</Tab>
 										</TabList>
 									</div>
 									<TabPanel value="endpoints">
@@ -319,6 +330,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 											getStatusCodes={getStatusCodes}
 											endpointScenarios={endpointScenarios}
 											onScenarioChange={handleScenarioChange}
+											platform={platform}
 										/>
 									</TabPanel>
 									<TabPanel value="groups">
@@ -336,14 +348,18 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 											onRemoveFromGroup={removeFromGroup}
 										/>
 									</TabPanel>
+									<TabPanel value="settings">
+										{/* Dynamic middleware settings UI */}
+										<DynamicSettingsTab 
+											platform={platform} 
+											onSettingChange={updateMiddlewareSetting} 
+										/>
+									</TabPanel>
 									<TabPanel value="feature-flags">
 										<FeatureFlagsTab
 											featureFlags={featureFlags}
 											onToggleFeatureFlag={toggleFeatureFlag}
 										/>
-									</TabPanel>
-									<TabPanel value="settings">
-										<span style={{ fontSize: 18, color: '#bbb' }}>Settings coming soon.</span>
 									</TabPanel>
 								</Tabs>
 							</div>
@@ -354,5 +370,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		</>
 	);
 }
+
 
 
