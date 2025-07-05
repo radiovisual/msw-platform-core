@@ -24,7 +24,7 @@ function makePlatform(overrides: Plugin[] = []) {
 			responses: { 201: { created: true }, 422: { error: true } },
 			defaultStatus: 201,
 		},
-		...(overrides),
+		...overrides,
 	];
 	return createMockPlatform({ name: 'test', plugins, featureFlags: ['FLAG_A', 'FLAG_B'] }, new InMemoryPersistence('test'));
 }

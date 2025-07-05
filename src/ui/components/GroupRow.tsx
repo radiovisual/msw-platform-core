@@ -30,9 +30,7 @@ const GroupRow: React.FC<GroupRowProps> = ({
 }) => {
 	return (
 		<div key={group.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
-			<div
-				style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid #eee' }}
-			>
+			<div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid #eee' }}>
 				{editingGroup === group.id ? (
 					<input
 						defaultValue={group.name}
@@ -49,9 +47,7 @@ const GroupRow: React.FC<GroupRowProps> = ({
 					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 						<Users style={{ height: 16, width: 16 }} />
 						<span>{group.name}</span>
-						<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#f0f0f0' }}>
-							{group.endpointIds.length}
-						</span>
+						<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#f0f0f0' }}>{group.endpointIds.length}</span>
 					</div>
 				)}
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -123,9 +119,7 @@ const GroupRow: React.FC<GroupRowProps> = ({
 					);
 				})}
 				{group.endpointIds.length === 0 && (
-					<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>
-						No endpoints in this group yet.
-					</div>
+					<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>No endpoints in this group yet.</div>
 				)}
 			</div>
 		</div>

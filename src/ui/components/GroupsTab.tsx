@@ -57,10 +57,7 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 						style={{ width: 160, borderRadius: 6, padding: '8px 12px', border: '1px solid #ccc' }}
 						onKeyDown={e => e.key === 'Enter' && onCreateGroup()}
 					/>
-					<Button
-						onClick={onCreateGroup}
-						style={{ padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #ccc' }}
-					>
+					<Button onClick={onCreateGroup} style={{ padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #ccc' }}>
 						<Plus style={{ height: 16, width: 16 }} />
 					</Button>
 				</div>
@@ -82,9 +79,7 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 					/>
 				))}
 				{groups.length === 0 && (
-					<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>
-						No groups created yet. Create your first group above.
-					</div>
+					<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>No groups created yet. Create your first group above.</div>
 				)}
 			</div>
 		</div>

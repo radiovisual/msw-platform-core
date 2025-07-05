@@ -15,9 +15,7 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, onToggl
 					<div key={flag} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
 						<div>
 							<span style={{ fontSize: 14, fontWeight: 500 }}>{flag}</span>
-							<p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-								{enabled ? 'Currently enabled' : 'Currently disabled'}
-							</p>
+							<p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{enabled ? 'Currently enabled' : 'Currently disabled'}</p>
 						</div>
 						<Checkbox
 							checked={!!enabled}
@@ -31,7 +29,5 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, onToggl
 		</div>
 	);
 };
-
-
 
 export default FeatureFlagsTab;

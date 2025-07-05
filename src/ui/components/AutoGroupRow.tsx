@@ -16,10 +16,7 @@ interface AutoGroupRowProps {
 
 const AutoGroupRow: React.FC<AutoGroupRowProps> = ({ group, plugins }) => {
 	return (
-		<div
-			key={group.id}
-			style={{ border: '1px solid #eee', borderRadius: 8, padding: 16, background: '#f8f8f8', opacity: 0.7 }}
-		>
+		<div key={group.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16, background: '#f8f8f8', opacity: 0.7 }}>
 			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
 				<Users style={{ height: 16, width: 16 }} />
 				<span>{group.name}</span>
@@ -57,15 +54,11 @@ const AutoGroupRow: React.FC<AutoGroupRowProps> = ({ group, plugins }) => {
 						</div>
 					))}
 				{plugins.filter(p => p.componentId === group.name).length === 0 && (
-					<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>
-						No endpoints in this group yet.
-					</div>
+					<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>No endpoints in this group yet.</div>
 				)}
 			</div>
 		</div>
 	);
 };
-
-
 
 export default AutoGroupRow;

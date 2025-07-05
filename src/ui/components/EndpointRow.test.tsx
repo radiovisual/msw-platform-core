@@ -25,29 +25,29 @@ const mockGroups = [
 
 // Create a mock platform for testing
 const mockPlatform = {
-  getEndpointBadges: jest.fn(() => []),
+	getEndpointBadges: jest.fn(() => []),
 } as unknown as MockPlatformCore;
 
 const defaultProps = {
-  plugin: {
-    id: 'test-plugin',
-    componentId: 'TestComponent',
-    endpoint: '/api/test',
-    method: 'GET' as const,
-    responses: { 200: { message: 'test' } },
-    defaultStatus: 200,
-  },
-  isMocked: true,
-  onToggleMocked: jest.fn(),
-  onUpdateStatusCode: jest.fn(),
-  onAddToGroup: jest.fn(),
-  onRemoveFromGroup: jest.fn(),
-  getStatus: jest.fn(() => 200),
-  getStatusCodes: jest.fn(() => [200, 404]),
-  groups: mockGroups,
-  endpointScenarios: {},
-  onScenarioChange: jest.fn(),
-  platform: mockPlatform,
+	plugin: {
+		id: 'test-plugin',
+		componentId: 'TestComponent',
+		endpoint: '/api/test',
+		method: 'GET' as const,
+		responses: { 200: { message: 'test' } },
+		defaultStatus: 200,
+	},
+	isMocked: true,
+	onToggleMocked: jest.fn(),
+	onUpdateStatusCode: jest.fn(),
+	onAddToGroup: jest.fn(),
+	onRemoveFromGroup: jest.fn(),
+	getStatus: jest.fn(() => 200),
+	getStatusCodes: jest.fn(() => [200, 404]),
+	groups: mockGroups,
+	endpointScenarios: {},
+	onScenarioChange: jest.fn(),
+	platform: mockPlatform,
 };
 
 describe('EndpointRow', () => {
@@ -66,14 +66,14 @@ describe('EndpointRow', () => {
 
 	it('shows mocked state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked />);
-		
+
 		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
 		expect(checkbox).toBeChecked();
 	});
 
 	it('shows passthrough state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked={false} />);
-		
+
 		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
 		expect(checkbox).not.toBeChecked();
 		expect(screen.getByText('endpoint will passthrough (not mocked)')).toBeInTheDocument();
@@ -81,26 +81,26 @@ describe('EndpointRow', () => {
 
 	it('calls onToggleMocked when checkbox is clicked', () => {
 		render(<EndpointRow {...defaultProps} />);
-		
+
 		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
 		fireEvent.click(checkbox);
-		
+
 		expect(defaultProps.onToggleMocked).toHaveBeenCalledWith('test-plugin');
 	});
 
 	it('renders status code options', () => {
 		render(<EndpointRow {...defaultProps} />);
-		
+
 		expect(screen.getByLabelText('200')).toBeInTheDocument();
 		expect(screen.getByLabelText('404')).toBeInTheDocument();
 	});
 
 	it('calls onUpdateStatusCode when status radio is clicked', () => {
 		render(<EndpointRow {...defaultProps} />);
-		
+
 		const status404 = screen.getByLabelText('404');
 		fireEvent.click(status404);
-		
+
 		expect(defaultProps.onUpdateStatusCode).toHaveBeenCalledWith('test-plugin', 404);
 	});
 
@@ -122,9 +122,7 @@ describe('EndpointRow', () => {
 	it('calls onScenarioChange when scenario is selected', () => {
 		const pluginWithScenarios = {
 			...defaultProps.plugin,
-			scenarios: [
-				{ id: 'scenario1', label: 'Scenario 1', responses: { 200: { message: 'ok' } } },
-			],
+			scenarios: [{ id: 'scenario1', label: 'Scenario 1', responses: { 200: { message: 'ok' } } }],
 		};
 		render(<EndpointRow {...defaultProps} plugin={pluginWithScenarios} />);
 		const scenarioSelect = screen.getByRole('combobox');
@@ -145,23 +143,23 @@ describe('EndpointRow', () => {
 	it('does not show swagger button when swaggerUrl is not provided', () => {
 		const pluginWithoutSwagger = { ...mockPlugin, swaggerUrl: undefined };
 		render(<EndpointRow {...defaultProps} plugin={pluginWithoutSwagger} />);
-		
+
 		expect(screen.queryByTestId('open-swagger-test-plugin')).not.toBeInTheDocument();
 	});
 
 	it('shows add to group button', () => {
 		render(<EndpointRow {...defaultProps} />);
-		
+
 		const addToGroupButton = screen.getByTestId('add-to-group-test-plugin');
 		expect(addToGroupButton).toBeInTheDocument();
 	});
 
 	it('applies correct background color based on mocked state', () => {
 		const { rerender } = render(<EndpointRow {...defaultProps} isMocked />);
-		
+
 		const container = screen.getByText('GET').closest('div');
 		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
-		
+
 		rerender(<EndpointRow {...defaultProps} isMocked={false} />);
 		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
 	});

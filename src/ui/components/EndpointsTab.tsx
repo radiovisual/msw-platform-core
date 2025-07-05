@@ -145,9 +145,7 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 					/>
 				))}
 				{filteredPlugins.length === 0 && (
-					<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>
-						No endpoints match your current filters.
-					</div>
+					<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>No endpoints match your current filters.</div>
 				)}
 			</div>
 		</div>

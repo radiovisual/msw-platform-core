@@ -61,7 +61,7 @@ describe('FeatureFlagsTab', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
 		const checkboxes = screen.getAllByRole('checkbox');
-		
+
 		// Toggle enabled feature to disabled
 		fireEvent.click(checkboxes[0]); // feature-1
 		expect(defaultProps.onToggleFeatureFlag).toHaveBeenCalledWith('feature-1', false);

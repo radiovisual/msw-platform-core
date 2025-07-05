@@ -11,17 +11,7 @@ interface RadioProps {
 }
 
 const Radio: React.FC<RadioProps> = ({ name, value, checked, onChange, id, style }) => {
-	return (
-		<input
-			type="radio"
-			name={name}
-			value={value}
-			checked={checked}
-			onChange={onChange}
-			id={id}
-			style={style}
-		/>
-	);
+	return <input type="radio" name={name} value={value} checked={checked} onChange={onChange} id={id} style={style} />;
 };
 
 Radio.propTypes = {

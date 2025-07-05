@@ -83,8 +83,8 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 						</span>
 						{/* User group badges */}
 						{groups
-							.filter((group) => group.endpointIds.includes(plugin.id))
-							.map((group) => (
+							.filter(group => group.endpointIds.includes(plugin.id))
+							.map(group => (
 								<span key={group.id} style={{ border: '1px solid #eee', padding: '0 4px', borderRadius: 4, fontSize: 12 }}>
 									{group.name}
 								</span>
@@ -148,7 +148,7 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 								>
 									<div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Add to Groups</div>
 									{groups.length === 0 && <div style={{ color: '#888', fontSize: 12 }}>No groups yet</div>}
-									{groups.map((group) => {
+									{groups.map(group => {
 										const checked = group.endpointIds.includes(plugin.id);
 										return (
 											<div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -208,38 +208,36 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 					</div>
 				))}
 			</div>
-			      {/* Dynamic middleware badges */}
-      {badges.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            marginTop: 12,
-            paddingTop: 12,
-            borderTop: '1px solid #eee',
-          }}
-        >
-          {badges.map(badge => (
-                <div
-                  key={badge.id}
-                  style={{
-                    fontSize: '12px',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#f0e6ff',
-                    color: '#7c3aed',
-                    marginLeft: '8px',
-                  }}
-                >
-                  {badge.text}
-                </div>
-          ))}
-        </div>
-      )}
-			{!isMocked && (
-				<p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough (not mocked)</p>
+			{/* Dynamic middleware badges */}
+			{badges.length > 0 && (
+				<div
+					style={{
+						display: 'flex',
+						flexWrap: 'wrap',
+						gap: 8,
+						marginTop: 12,
+						paddingTop: 12,
+						borderTop: '1px solid #eee',
+					}}
+				>
+					{badges.map(badge => (
+						<div
+							key={badge.id}
+							style={{
+								fontSize: '12px',
+								padding: '2px 6px',
+								borderRadius: '4px',
+								backgroundColor: '#f0e6ff',
+								color: '#7c3aed',
+								marginLeft: '8px',
+							}}
+						>
+							{badge.text}
+						</div>
+					))}
+				</div>
 			)}
+			{!isMocked && <p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough (not mocked)</p>}
 		</div>
 	);
 };

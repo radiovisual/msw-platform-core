@@ -49,43 +49,43 @@ export class InMemoryPersistence implements PersistenceProvider {
 
 // Middleware types
 export type MiddlewareContext = {
-  plugin: Plugin;
-  request?: any;
-  response: any;
-  settings: Record<string, any>;
-  // Enhanced context information
-  featureFlags: Record<string, boolean>;
-  currentStatus: number;
-  endpointScenario?: string;
-  activeScenario?: string;
+	plugin: Plugin;
+	request?: any;
+	response: any;
+	settings: Record<string, any>;
+	// Enhanced context information
+	featureFlags: Record<string, boolean>;
+	currentStatus: number;
+	endpointScenario?: string;
+	activeScenario?: string;
 };
 
 export type Middleware = (payload: any, context: MiddlewareContext, next: (payload: any) => any) => any;
 
 export interface MiddlewareSetting {
-  key: string;
-  label: string;
-  type: 'select' | 'text' | 'number' | 'boolean';
-  options?: { value: string; label: string }[];
-  defaultValue?: any;
-  description?: string;
+	key: string;
+	label: string;
+	type: 'select' | 'text' | 'number' | 'boolean';
+	options?: { value: string; label: string }[];
+	defaultValue?: any;
+	description?: string;
 }
 
 export interface EndpointBadge {
-  id: string;
-  label: string;
-  pluginMatcher: (plugin: Plugin) => boolean;
-  render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+	id: string;
+	label: string;
+	pluginMatcher: (plugin: Plugin) => boolean;
+	render: (plugin: Plugin, settings: Record<string, any>) => string | null;
 }
 
 export interface MiddlewareWithBadge {
-  middleware: Middleware;
-  badge?: {
-    id: string;
-    label: string;
-    pluginMatcher: (plugin: Plugin) => boolean;
-    render: (plugin: Plugin, settings: Record<string, any>) => string | null;
-  };
+	middleware: Middleware;
+	badge?: {
+		id: string;
+		label: string;
+		pluginMatcher: (plugin: Plugin) => boolean;
+		render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+	};
 }
 
 export class MockPlatformCore {
@@ -198,7 +198,7 @@ export class MockPlatformCore {
 	// Public method for middleware to register itself (used internally)
 	registerMiddleware(middleware: PlatformMiddleware) {
 		const setting = middleware.getSetting();
-		
+
 		// Check if this middleware is already registered
 		if (this.registeredMiddlewareKeys.has(setting.key)) {
 			// Middleware is already registered, just attach to new plugins
@@ -208,7 +208,7 @@ export class MockPlatformCore {
 			}
 			return;
 		}
-		
+
 		// Register the setting (this will also add to registeredMiddlewareKeys)
 		this.registerMiddlewareSetting(setting);
 		// Register the badge
@@ -224,13 +224,12 @@ export class MockPlatformCore {
 	private registerMiddlewareSetting(setting: MiddlewareSetting) {
 		// Prevent duplicate registration
 		if (this.registeredMiddlewareKeys.has(setting.key)) {
-			console.warn(`Middleware setting "${setting.key}" is already registered. Skipping duplicate registration.`);
 			return;
 		}
-		
+
 		this.registeredSettings.push(setting);
 		this.registeredMiddlewareKeys.add(setting.key);
-		
+
 		// Set default value if not already set
 		if (setting.defaultValue !== undefined && !(setting.key in this.middlewareSettings)) {
 			this.middlewareSettings[setting.key] = setting.defaultValue;
@@ -241,10 +240,9 @@ export class MockPlatformCore {
 		// Prevent duplicate badge registration
 		const existingBadge = this.registeredBadges.find(b => b.id === badge.id);
 		if (existingBadge) {
-			console.warn(`Badge "${badge.id}" is already registered. Skipping duplicate registration.`);
 			return;
 		}
-		
+
 		// Only register if the middleware has a badge function that returns a value
 		this.registeredBadges.push(badge);
 	}
@@ -381,74 +379,71 @@ export class MockPlatformCore {
 }
 
 export interface MiddlewareConfig {
-  key: string;
-  label: string;
-  description?: string;
-  type: 'select' | 'text' | 'number' | 'boolean';
-  options?: Array<{ value: string; label: string }>;
-  defaultValue?: any;
-  responseTransform: (originalResponse: any, context: MiddlewareContext) => any;
-  badge?: (context: MiddlewareContext) => string | null;
+	key: string;
+	label: string;
+	description?: string;
+	type: 'select' | 'text' | 'number' | 'boolean';
+	options?: Array<{ value: string; label: string }>;
+	defaultValue?: any;
+	responseTransform: (originalResponse: any, context: MiddlewareContext) => any;
+	badge?: (context: MiddlewareContext) => string | null;
 }
 
 export class PlatformMiddleware {
-  private config: MiddlewareConfig;
-  private attachedPlugins: string[] = [];
-  private platform?: MockPlatformCore;
+	private config: MiddlewareConfig;
+	private attachedPlugins: string[] = [];
+	private platform?: MockPlatformCore;
 
-  constructor(config: MiddlewareConfig) {
-    this.config = config;
-  }
+	constructor(config: MiddlewareConfig) {
+		this.config = config;
+	}
 
-  // Attach to specific plugins and optionally register with platform
-  attachTo(pluginIds: string | string[], platform?: MockPlatformCore) {
-    const ids = Array.isArray(pluginIds) ? pluginIds : [pluginIds];
-    this.attachedPlugins.push(...ids);
-    
-    // If platform is provided, register the middleware immediately
-    if (platform) {
-      this.platform = platform;
-      platform.registerMiddleware(this);
-    }
-    
-    return this;
-  }
+	// Attach to specific plugins and optionally register with platform
+	attachTo(pluginIds: string | string[], platform?: MockPlatformCore) {
+		const ids = Array.isArray(pluginIds) ? pluginIds : [pluginIds];
+		this.attachedPlugins.push(...ids);
 
-  // Attach to plugins by component
-  attachToComponent(componentId: string) {
-    // This will be resolved when the middleware is registered with the platform
-    return this;
-  }
+		// If platform is provided, register the middleware immediately
+		if (platform) {
+			this.platform = platform;
+			platform.registerMiddleware(this);
+		}
 
-  // Get the middleware function
-  getMiddleware(): Middleware {
-    return (payload, context, next) => {
-      const transformed = this.config.responseTransform(
-        payload, 
-        context
-      );
-      return next(transformed);
-    };
-  }
+		return this;
+	}
 
-  // Get the setting configuration
-  getSetting(): MiddlewareSetting {
-    return {
-      key: this.config.key,
-      label: this.config.label,
-      type: this.config.type,
-      options: this.config.options,
-      defaultValue: this.config.defaultValue,
-      description: this.config.description,
-    };
-  }
+	// Attach to plugins by component
+	attachToComponent(_componentId: string) {
+		// This will be resolved when the middleware is registered with the platform
+		return this;
+	}
 
-  	// Get the badge configuration
+	// Get the middleware function
+	getMiddleware(): Middleware {
+		return (payload, context, next) => {
+			const transformed = this.config.responseTransform(payload, context);
+			return next(transformed);
+		};
+	}
+
+	// Get the setting configuration
+	getSetting(): MiddlewareSetting {
+		return {
+			key: this.config.key,
+			label: this.config.label,
+			type: this.config.type,
+			options: this.config.options,
+			defaultValue: this.config.defaultValue,
+			description: this.config.description,
+		};
+	}
+
+	// Get the badge configuration
 	getBadge(): EndpointBadge {
 		return {
 			id: this.config.key,
 			label: this.config.label,
-			pluginMatcher: (plugin) => this.attachedPlugins.includes(plugin.id),
+			pluginMatcher: plugin => this.attachedPlugins.includes(plugin.id),
 			render: (plugin, settings) => {
 				// Use the badge function if provided, otherwise show default badge
 				if (this.config.badge) {
@@ -463,7 +458,7 @@ export class PlatformMiddleware {
 					// Only show badge if the function returns a non-null value
 					return result;
 				}
-				
+
 				// Default badge behavior - only show if setting has a value
 				const value = settings[this.config.key];
 				if (!value) return null;
@@ -472,10 +467,10 @@ export class PlatformMiddleware {
 		};
 	}
 
-  // Get attached plugin IDs
-  getAttachedPlugins(): string[] {
-    return [...this.attachedPlugins];
-  }
+	// Get attached plugin IDs
+	getAttachedPlugins(): string[] {
+		return [...this.attachedPlugins];
+	}
 }
 
 export function createMockPlatform(config: MockPlatformConfig, persistence?: PersistenceProvider) {

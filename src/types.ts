@@ -1,4 +1,3 @@
-
 import type { PlatformMiddleware } from './platform';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';

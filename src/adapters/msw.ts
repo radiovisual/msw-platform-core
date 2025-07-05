@@ -10,7 +10,7 @@ export interface MSWHandlersOptions {
 }
 
 // Accepts either a platform instance or a function returning a platform
-export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (() => MockPlatformCore)/*, options?: MSWHandlersOptions*/) {
+export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (() => MockPlatformCore) /*, options?: MSWHandlersOptions*/) {
 	const getPlatform = typeof platformOrGetter === 'function' ? platformOrGetter : () => platformOrGetter;
 	return getPlatform()
 		.getPlugins()

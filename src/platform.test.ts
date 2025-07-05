@@ -172,96 +172,96 @@ describe('mswHandlersFromPlatform', () => {
 });
 
 describe('Middleware system', () => {
-  const plugin: Plugin = {
-    componentId: 'user',
-    id: 'user1',
-    endpoint: '/api/user',
-    method: 'GET',
-    responses: {
-      200: {
-        user: { id: 1, type: 'original' },
-        contract: { user: { id: 2, type: 'original' } },
-        other: { foo: 'bar' },
-      },
-    },
-    defaultStatus: 200,
-  };
-  const plugin2: Plugin = {
-    componentId: 'other',
-    id: 'other1',
-    endpoint: '/api/other',
-    method: 'GET',
-    responses: {
-      200: { user: { id: 3, type: 'original' } },
-    },
-    defaultStatus: 200,
-  };
+	const plugin: Plugin = {
+		componentId: 'user',
+		id: 'user1',
+		endpoint: '/api/user',
+		method: 'GET',
+		responses: {
+			200: {
+				user: { id: 1, type: 'original' },
+				contract: { user: { id: 2, type: 'original' } },
+				other: { foo: 'bar' },
+			},
+		},
+		defaultStatus: 200,
+	};
+	const plugin2: Plugin = {
+		componentId: 'other',
+		id: 'other1',
+		endpoint: '/api/other',
+		method: 'GET',
+		responses: {
+			200: { user: { id: 3, type: 'original' } },
+		},
+		defaultStatus: 200,
+	};
 
-  it('applies per-plugin middleware and settings', () => {
-    const platform = createMockPlatform({ name: 'mwtest', plugins: [plugin, plugin2] });
-    const userTypeMiddleware = createPathMiddleware({
-      key: 'userType',
-      label: 'User Type',
-      type: 'text',
-      paths: [
-        { path: 'user.type', settingKey: 'userType' },
-        { path: 'contract.user.type', settingKey: 'userType' },
-      ],
-    });
-    userTypeMiddleware.attachTo(['user1', 'other1'], platform);
-    platform.setMiddlewareSetting('userType', '005');
-    const resp = platform.getResponse('user1');
-    expect(resp.user.type).toBe('005');
-    expect(resp.contract.user.type).toBe('005');
-    // plugin2 also affected
-    const resp2 = platform.getResponse('other1');
-    expect(resp2.user.type).toBe('005');
-  });
+	it('applies per-plugin middleware and settings', () => {
+		const platform = createMockPlatform({ name: 'mwtest', plugins: [plugin, plugin2] });
+		const userTypeMiddleware = createPathMiddleware({
+			key: 'userType',
+			label: 'User Type',
+			type: 'text',
+			paths: [
+				{ path: 'user.type', settingKey: 'userType' },
+				{ path: 'contract.user.type', settingKey: 'userType' },
+			],
+		});
+		userTypeMiddleware.attachTo(['user1', 'other1'], platform);
+		platform.setMiddlewareSetting('userType', '005');
+		const resp = platform.getResponse('user1');
+		expect(resp.user.type).toBe('005');
+		expect(resp.contract.user.type).toBe('005');
+		// plugin2 also affected
+		const resp2 = platform.getResponse('other1');
+		expect(resp2.user.type).toBe('005');
+	});
 
-  it('applies per-plugin middleware only to that plugin', () => {
-    const platform = createMockPlatform({ name: 'mwtest2', plugins: [plugin, plugin2] });
-    const userTypeMiddleware = createPathMiddleware({
-      key: 'userType',
-      label: 'User Type',
-      type: 'text',
-      paths: [
-        { path: 'user.type', settingKey: 'userType' },
-        { path: 'contract.user.type', settingKey: 'userType' },
-      ],
-    });
-    userTypeMiddleware.attachTo(['user1'], platform);
-    platform.setMiddlewareSetting('userType', '001');
-    const resp = platform.getResponse('user1');
-    expect(resp.user.type).toBe('001');
-    expect(resp.contract.user.type).toBe('001');
-    // plugin2 not affected
-    const resp2 = platform.getResponse('other1');
-    expect(resp2.user.type).toBe('original');
-  });
+	it('applies per-plugin middleware only to that plugin', () => {
+		const platform = createMockPlatform({ name: 'mwtest2', plugins: [plugin, plugin2] });
+		const userTypeMiddleware = createPathMiddleware({
+			key: 'userType',
+			label: 'User Type',
+			type: 'text',
+			paths: [
+				{ path: 'user.type', settingKey: 'userType' },
+				{ path: 'contract.user.type', settingKey: 'userType' },
+			],
+		});
+		userTypeMiddleware.attachTo(['user1'], platform);
+		platform.setMiddlewareSetting('userType', '001');
+		const resp = platform.getResponse('user1');
+		expect(resp.user.type).toBe('001');
+		expect(resp.contract.user.type).toBe('001');
+		// plugin2 not affected
+		const resp2 = platform.getResponse('other1');
+		expect(resp2.user.type).toBe('original');
+	});
 
-  it('middleware can chain and call next()', () => {
-    const platform = createMockPlatform({ name: 'mwtest3', plugins: [plugin] });
-    // Add a middleware that appends a field
-    platform.useOnPlugin('user1', (payload, ctx, next) => {
-      const out = next(payload);
-      out._mw = 'yes';
-      return out;
-    });
-    const userTypeMiddleware = createPathMiddleware({
-      key: 'userType',
-      label: 'User Type',
-      type: 'text',
-      paths: [
-        { path: 'user.type', settingKey: 'userType' },
-        { path: 'contract.user.type', settingKey: 'userType' },
-      ],
-    });
-    userTypeMiddleware.attachTo(['user1'], platform);
-    platform.setMiddlewareSetting('userType', '007');
-    const resp = platform.getResponse('user1');
-    expect(resp.user.type).toBe('007');
-    expect(resp._mw).toBe('yes');
-  });
+	it('middleware can chain and call next()', () => {
+		const platform = createMockPlatform({ name: 'mwtest3', plugins: [plugin] });
+		// Add a middleware that appends a field
+		platform.useOnPlugin('user1', (payload, _, next) => {
+			const out = next(payload);
+			out._mw = 'yes';
+			return out;
+		});
+		const userTypeMiddleware = createPathMiddleware({
+			key: 'userType',
+			label: 'User Type',
+			type: 'text',
+			paths: [
+				{ path: 'user.type', settingKey: 'userType' },
+				{ path: 'contract.user.type', settingKey: 'userType' },
+			],
+		});
+		userTypeMiddleware.attachTo(['user1'], platform);
+		platform.setMiddlewareSetting('userType', '007');
+		const resp = platform.getResponse('user1');
+		expect(resp.user.type).toBe('007');
+		expect(resp._mw).toBe('yes');
+	});
 });
 
 describe('Middleware Registration', () => {
@@ -285,7 +285,7 @@ describe('Middleware Registration', () => {
 
 		// Second registration should be ignored silently (no warning since we prevent it at middleware level)
 		middleware.attachTo(['plugin2'], platform);
-		
+
 		// Should still only have one registration
 		expect(platform.getRegisteredSettings()).toHaveLength(1);
 		expect(platform.getRegisteredSettings()[0].key).toBe('testKey');
@@ -311,7 +311,7 @@ describe('Middleware Registration', () => {
 			key: 'nullBadge',
 			label: 'Null Badge',
 			type: 'text',
-			transform: (response) => response,
+			transform: response => response,
 			badge: () => null,
 		});
 
@@ -320,7 +320,7 @@ describe('Middleware Registration', () => {
 			key: 'valueBadge',
 			label: 'Value Badge',
 			type: 'text',
-			transform: (response) => response,
+			transform: response => response,
 			badge: () => 'Badge Text',
 		});
 
@@ -329,7 +329,7 @@ describe('Middleware Registration', () => {
 			key: 'noBadge',
 			label: 'No Badge',
 			type: 'text',
-			transform: (response) => response,
+			transform: response => response,
 		});
 
 		middlewareWithNullBadge.attachTo(['test-plugin'], platform);
@@ -454,13 +454,13 @@ describe('Middleware Registration', () => {
 			key: 'badgeTest',
 			label: 'Badge Test',
 			type: 'text',
-			transform: (response) => response,
+			transform: response => response,
 			badge: () => 'Test Badge',
 		});
 
 		// Attach to first plugin
 		middlewareWithBadge.attachTo(['plugin1'], platform);
-		
+
 		// Check badges for plugin1
 		const plugin1 = platform.getPlugins()[0];
 		const badges1 = platform.getEndpointBadges(plugin1);
@@ -469,7 +469,7 @@ describe('Middleware Registration', () => {
 
 		// Attach to second plugin - should not create duplicate badge
 		middlewareWithBadge.attachTo(['plugin2'], platform);
-		
+
 		// Check badges for plugin2
 		const plugin2 = platform.getPlugins()[1];
 		const badges2 = platform.getEndpointBadges(plugin2);
@@ -526,7 +526,10 @@ describe('Middleware Registration', () => {
 
 		// Should have exactly 2 settings
 		expect(platform.getRegisteredSettings()).toHaveLength(2);
-		const settingKeys = platform.getRegisteredSettings().map(s => s.key).sort();
+		const settingKeys = platform
+			.getRegisteredSettings()
+			.map(s => s.key)
+			.sort();
 		expect(settingKeys).toEqual(['setting1', 'setting2']);
 	});
 

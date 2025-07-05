@@ -10,25 +10,25 @@
  * @returns The updated object (deep cloned)
  */
 export function updateValueAtPath(obj: any, path: string, value: any): any {
-  const cloned = deepClone(obj);
-  const pathParts = path.split('.');
-  let current = cloned;
-  
-  // Navigate to the parent of the target property
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const part = pathParts[i];
-    if (!(part in current) || typeof current[part] !== 'object' || current[part] === null) {
-      // Path doesn't exist, create it
-      current[part] = {};
-    }
-    current = current[part];
-  }
-  
-  // Set the value at the final path
-  const finalPart = pathParts[pathParts.length - 1];
-  current[finalPart] = value;
-  
-  return cloned;
+	const cloned = deepClone(obj);
+	const pathParts = path.split('.');
+	let current = cloned;
+
+	// Navigate to the parent of the target property
+	for (let i = 0; i < pathParts.length - 1; i++) {
+		const part = pathParts[i];
+		if (!(part in current) || typeof current[part] !== 'object' || current[part] === null) {
+			// Path doesn't exist, create it
+			current[part] = {};
+		}
+		current = current[part];
+	}
+
+	// Set the value at the final path
+	const finalPart = pathParts[pathParts.length - 1];
+	current[finalPart] = value;
+
+	return cloned;
 }
 
 /**
@@ -38,17 +38,17 @@ export function updateValueAtPath(obj: any, path: string, value: any): any {
  * @returns The value at the path, or undefined if path doesn't exist
  */
 export function getValueAtPath(obj: any, path: string): any {
-  const pathParts = path.split('.');
-  let current = obj;
-  
-  for (const part of pathParts) {
-    if (current == null || !(part in current)) {
-      return undefined;
-    }
-    current = current[part];
-  }
-  
-  return current;
+	const pathParts = path.split('.');
+	let current = obj;
+
+	for (const part of pathParts) {
+		if (current == null || !(part in current)) {
+			return undefined;
+		}
+		current = current[part];
+	}
+
+	return current;
 }
 
 /**
@@ -58,15 +58,15 @@ export function getValueAtPath(obj: any, path: string): any {
  * @returns True if the path exists, false otherwise
  */
 export function hasPath(obj: any, path: string): boolean {
-  const pathParts = path.split('.');
-  let current = obj;
-  for (const part of pathParts) {
-    if (current == null || !(part in current)) {
-      return false;
-    }
-    current = current[part];
-  }
-  return true;
+	const pathParts = path.split('.');
+	let current = obj;
+	for (const part of pathParts) {
+		if (current == null || !(part in current)) {
+			return false;
+		}
+		current = current[part];
+	}
+	return true;
 }
 
 /**
@@ -76,13 +76,13 @@ export function hasPath(obj: any, path: string): boolean {
  * @returns The updated object (deep cloned)
  */
 export function updateMultiplePaths(obj: any, updates: Array<{ path: string; value: any }>): any {
-  let result = deepClone(obj);
-  
-  for (const { path, value } of updates) {
-    result = updateValueAtPath(result, path, value);
-  }
-  
-  return result;
+	let result = deepClone(obj);
+
+	for (const { path, value } of updates) {
+		result = updateValueAtPath(result, path, value);
+	}
+
+	return result;
 }
 
 /**
@@ -91,13 +91,13 @@ export function updateMultiplePaths(obj: any, updates: Array<{ path: string; val
  * @returns A deep clone of the object
  */
 export function deepClone(obj: any): any {
-  if (Array.isArray(obj)) return obj.map(deepClone);
-  if (obj && typeof obj === 'object') {
-    const out: any = {};
-    for (const k in obj) out[k] = deepClone(obj[k]);
-    return out;
-  }
-  return obj;
+	if (Array.isArray(obj)) return obj.map(deepClone);
+	if (obj && typeof obj === 'object') {
+		const out: any = {};
+		for (const k in obj) out[k] = deepClone(obj[k]);
+		return out;
+	}
+	return obj;
 }
 
 /**
@@ -107,39 +107,39 @@ export function deepClone(obj: any): any {
  * @returns Array of matching paths
  */
 export function findPaths(obj: any, pattern: string): string[] {
-  const paths: string[] = [];
-  const patternParts = pattern.split('.');
-  
-  function search(current: any, currentPath: string[], depth: number) {
-    if (depth >= patternParts.length) return;
-    
-    const patternPart = patternParts[depth];
-    
-    if (patternPart === '*') {
-      // Wildcard - search all properties
-      if (current && typeof current === 'object') {
-        for (const key in current) {
-          const newPath = [...currentPath, key];
-          if (depth === patternParts.length - 1) {
-            paths.push(newPath.join('.'));
-          } else {
-            search(current[key], newPath, depth + 1);
-          }
-        }
-      }
-    } else {
-      // Exact match
-      if (current && typeof current === 'object' && patternPart in current) {
-        const newPath = [...currentPath, patternPart];
-        if (depth === patternParts.length - 1) {
-          paths.push(newPath.join('.'));
-        } else {
-          search(current[patternPart], newPath, depth + 1);
-        }
-      }
-    }
-  }
-  
-  search(obj, [], 0);
-  return paths;
-} 
+	const paths: string[] = [];
+	const patternParts = pattern.split('.');
+
+	function search(current: any, currentPath: string[], depth: number) {
+		if (depth >= patternParts.length) return;
+
+		const patternPart = patternParts[depth];
+
+		if (patternPart === '*') {
+			// Wildcard - search all properties
+			if (current && typeof current === 'object') {
+				for (const key in current) {
+					const newPath = [...currentPath, key];
+					if (depth === patternParts.length - 1) {
+						paths.push(newPath.join('.'));
+					} else {
+						search(current[key], newPath, depth + 1);
+					}
+				}
+			}
+		} else {
+			// Exact match
+			if (current && typeof current === 'object' && patternPart in current) {
+				const newPath = [...currentPath, patternPart];
+				if (depth === patternParts.length - 1) {
+					paths.push(newPath.join('.'));
+				} else {
+					search(current[patternPart], newPath, depth + 1);
+				}
+			}
+		}
+	}
+
+	search(obj, [], 0);
+	return paths;
+}

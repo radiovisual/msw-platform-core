@@ -102,10 +102,10 @@ describe('GroupRow', () => {
 		render(<GroupRow {...defaultProps} />);
 
 		const removeButtons = screen.getAllByRole('button');
-		const removeButton = removeButtons.find(button =>
-			button.querySelector('svg') && button.getAttribute('aria-label') !== 'edit' && button.getAttribute('aria-label') !== 'trash'
+		const removeButton = removeButtons.find(
+			button => button.querySelector('svg') && button.getAttribute('aria-label') !== 'edit' && button.getAttribute('aria-label') !== 'trash'
 		);
-		
+
 		if (removeButton) {
 			fireEvent.click(removeButton);
 			expect(defaultProps.onRemoveFromGroup).toHaveBeenCalledWith('plugin1', 'test-group');
