@@ -1,4 +1,6 @@
 // Jest setup file to mock TextEncoder and fetch API globals for jsdom environment
+require('@testing-library/jest-dom');
+
 if (typeof global.TextEncoder === 'undefined') {
 	global.TextEncoder = require('util').TextEncoder;
 }

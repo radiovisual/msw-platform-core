@@ -2,13 +2,12 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from './components/Button';
-import Checkbox from './components/Checkbox';
-import Radio from './components/Radio';
 import Dialog from './components/Dialog';
 import { Tabs, TabList, Tab, TabPanel } from './components/Tabs';
-import Popover from './components/Popover';
-import Label from './components/Label';
-import { Plus, Settings, Users, X, Edit2, Trash2, ChevronDown, FileText } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
+import EndpointsTab from './components/EndpointsTab';
+import GroupsTab from './components/GroupsTab';
+import FeatureFlagsTab from './components/FeatureFlagsTab';
 import type { MockPlatformCore } from '../platform';
 import type { Plugin } from '../types';
 import PropTypes from 'prop-types';
@@ -224,195 +223,11 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	const allGroups = [...autoGroups, ...groups];
 
-	// UI rendering (fix event typing)
-	const EndpointRow = ({ plugin }: { plugin: Plugin }) => {
-		// Scenario dropdown
-		const scenarioList = plugin.scenarios;
-		const activeScenarioId = endpointScenarios[plugin.id] || platform.getEndpointScenario(plugin.id);
-		const handleScenarioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-			const scenarioId = e.target.value;
-			setEndpointScenarios(prev => ({ ...prev, [plugin.id]: scenarioId }));
-			platform.setEndpointScenario(plugin.id, scenarioId);
-			forceUpdate(x => x + 1);
-		};
-		return (
-			<div
-				style={{
-					border: '1px solid #eee',
-					borderRadius: 8,
-					padding: 16,
-					marginBottom: 12,
-					background: isMocked(plugin) ? '#f6fff6' : '#fff6f6',
-				}}
-			>
-				<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-						<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-							<Checkbox
-								checked={isMocked(plugin)}
-								onChange={() => toggleEndpointSelection(plugin.id)}
-								id={`mocked-${plugin.id}`}
-								aria-label={`Toggle endpoint ${plugin.endpoint}`}
-							/>
-							<Label htmlFor={`mocked-${plugin.id}`}>mocked?</Label>
-						</div>
-						<span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, background: '#e6f7ff', color: '#0070f3' }}>
-							{plugin.method}
-						</span>
-						<span style={{ fontFamily: 'monospace', fontSize: 14 }}>{plugin.endpoint}</span>
-						<div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-							{/* Auto group badge */}
-							<span
-								style={{ border: '1px solid #eee', padding: '0 4px', borderRadius: 4, fontSize: 12, background: '#f0f0f0', opacity: 0.7 }}
-							>
-								{plugin.componentId}
-							</span>
-							{/* User group badges */}
-							{groups
-								.filter((group: Group) => group.endpointIds.includes(plugin.id))
-								.map((group: Group) => (
-									<span key={group.id} style={{ border: '1px solid #eee', padding: '0 4px', borderRadius: 4, fontSize: 12 }}>
-										{group.name}
-									</span>
-								))}
-							{/* Scenario dropdown */}
-							{scenarioList && scenarioList.length > 0 && (
-								<select
-									value={activeScenarioId || ''}
-									onChange={handleScenarioChange}
-									style={{ marginLeft: 8, borderRadius: 4, padding: '2px 8px', fontSize: 12 }}
-								>
-									<option value="">Default</option>
-									{scenarioList.map(scenario => (
-										<option key={scenario.id} value={scenario.id}>
-											{scenario.label}
-										</option>
-									))}
-								</select>
-							)}
-						</div>
-					</div>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 0, marginLeft: 'auto' }}>
-						<div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-							<Popover
-								placement="right"
-								trigger={
-									<Button
-										style={{
-											border: 'none',
-											background: 'none',
-											cursor: 'pointer',
-											padding: 2,
-											display: 'inline-flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-											fontSize: 16,
-										}}
-										title="Add to group"
-										aria-label="Add to group"
-										data-testid={`add-to-group-${plugin.id}`}
-									>
-										<Plus style={{ width: 16, height: 16 }} />
-									</Button>
-								}
-							>
-								{() => (
-									<div
-										style={{
-											minWidth: 180,
-											maxWidth: '90vw',
-											left: 'auto',
-											right: 0,
-											padding: 8,
-											position: 'absolute',
-											top: '100%',
-											zIndex: 1000,
-											background: '#fff',
-											boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-											borderRadius: 6,
-										}}
-									>
-										<div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Add to Groups</div>
-										{groups.length === 0 && <div style={{ color: '#888', fontSize: 12 }}>No groups yet</div>}
-										{groups.map((group: Group) => {
-											const checked = group.endpointIds.includes(plugin.id);
-											return (
-												<div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-													<Checkbox
-														id={`addtogroup-${plugin.id}-${group.id}`}
-														checked={checked}
-														onChange={() => {
-															if (checked) removeFromGroup(plugin.id, group.id);
-															else addToGroup(plugin.id, group.id);
-														}}
-														aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
-													/>
-													<Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
-												</div>
-											);
-										})}
-									</div>
-								)}
-							</Popover>
-							{plugin.swaggerUrl && (
-								<button
-									style={{
-										border: 'none',
-										background: 'none',
-										cursor: 'pointer',
-										marginLeft: 4,
-										padding: 2,
-										display: 'inline-flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										fontSize: 16,
-									}}
-									title="Open swagger file"
-									aria-label="Open swagger file"
-									onClick={() => {
-										window.open(plugin.swaggerUrl, '_blank', 'noopener,noreferrer');
-									}}
-									data-testid={`open-swagger-${plugin.id}`}
-								>
-									<FileText style={{ width: 16, height: 16 }} />
-								</button>
-							)}
-						</div>
-					</div>
-				</div>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
-					{getStatusCodes(plugin).map((code: number) => (
-						<div key={code} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-							<Radio
-								name={`status-${plugin.id}`}
-								value={code}
-								checked={getStatus(plugin) === code}
-								onChange={() => updateStatusCode(plugin.id, code)}
-								id={`${plugin.id}-${code}`}
-							/>
-							<Label htmlFor={`${plugin.id}-${code}`}>{code}</Label>
-						</div>
-					))}
-				</div>
-				{!isMocked(plugin) && (
-					<p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough to localhost:4711</p>
-				)}
-			</div>
-		);
-	};
-
-	EndpointRow.propTypes = {
-		plugin: PropTypes.shape({
-			id: PropTypes.string.isRequired,
-			method: PropTypes.string.isRequired,
-			endpoint: PropTypes.string.isRequired,
-			componentId: PropTypes.string.isRequired,
-			scenarios: PropTypes.arrayOf(PropTypes.shape({
-				id: PropTypes.string.isRequired,
-				label: PropTypes.string.isRequired,
-			})),
-			swaggerUrl: PropTypes.string,
-		}).isRequired,
+	// Scenario change handler
+	const handleScenarioChange = (pluginId: string, scenarioId: string) => {
+		setEndpointScenarios(prev => ({ ...prev, [pluginId]: scenarioId }));
+		platform.setEndpointScenario(pluginId, scenarioId);
+		forceUpdate(x => x + 1);
 	};
 
 	return (
@@ -487,315 +302,47 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 										</TabList>
 									</div>
 									<TabPanel value="endpoints">
-										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-											<h3 style={{ fontSize: 18, fontWeight: 500 }}>All Endpoints</h3>
-											<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#e0f2fe', color: '#0070f3' }}>
-												{plugins.filter(ep => isMocked(ep)).length} selected
-											</span>
-										</div>
-										<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-											<input
-												placeholder="Search endpoints..."
-												value={searchTerm}
-												onChange={e => setSearchTerm(e.currentTarget.value)}
-												style={{ flex: 1, borderRadius: 6, padding: '8px 12px', border: '1px solid #ccc' }}
-											/>
-											<Popover
-												trigger={
-													<Button
-														style={{
-															borderRadius: 6,
-															padding: '8px 12px',
-															display: 'flex',
-															alignItems: 'center',
-															gap: 4,
-															background: '#fff',
-															border: '1px solid #ccc',
-														}}
-													>
-														{selectedGroupFilters.length === 0
-															? 'Filter by groups'
-															: `${selectedGroupFilters.length} group${selectedGroupFilters.length > 1 ? 's' : ''} selected`}
-														<ChevronDown style={{ height: 16, width: 16 }} />
-													</Button>
-												}
-											>
-												{close => (
-													<div
-														style={{ width: 200, padding: 8, background: '#fff', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-													>
-														<div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-															<button
-																style={{
-																	width: '100%',
-																	textAlign: 'left',
-																	fontSize: 12,
-																	padding: '4px 8px',
-																	borderRadius: 4,
-																	cursor: 'pointer',
-																	background: '#f0f0f0',
-																}}
-																onClick={() => {
-																	clearGroupFilters();
-																	close();
-																}}
-															>
-																All Groups
-															</button>
-															{allGroups.map(group => (
-																<div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-																	<Checkbox
-																		id={`filter-${group.id}`}
-																		checked={selectedGroupFilters.includes(group.id)}
-																		onChange={() => {
-																			toggleGroupFilter(group.id);
-																			close();
-																		}}
-																		aria-label={`Filter by group ${group.name}`}
-																	/>
-																	<Label htmlFor={`filter-${group.id}`} style={{ fontSize: 14, flex: 1 }}>
-																		{group.name}
-																	</Label>
-																</div>
-															))}
-														</div>
-													</div>
-												)}
-											</Popover>
-										</div>
-										{selectedGroupFilters.length > 0 && (
-											<div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
-												{selectedGroupFilters.map(groupId => {
-													const group = groups.find(g => g.id === groupId);
-													return group ? (
-														<span
-															key={groupId}
-															style={{
-																border: '1px solid #eee',
-																padding: '4px 8px',
-																borderRadius: 6,
-																display: 'flex',
-																alignItems: 'center',
-																gap: 4,
-																fontSize: 12,
-															}}
-														>
-															{group.name}
-															<X style={{ height: 12, width: 12, cursor: 'pointer' }} onClick={() => toggleGroupFilter(groupId)} />
-														</span>
-													) : null;
-												})}
-											</div>
-										)}
-										<div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
-											{filteredPlugins.map(plugin => (
-												<EndpointRow key={plugin.id} plugin={plugin} />
-											))}
-											{filteredPlugins.length === 0 && (
-												<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>
-													No endpoints match your current filters.
-												</div>
-											)}
-										</div>
+										<EndpointsTab
+											plugins={plugins}
+											filteredPlugins={filteredPlugins}
+											searchTerm={searchTerm}
+											onSearchChange={setSearchTerm}
+											selectedGroupFilters={selectedGroupFilters}
+											onToggleGroupFilter={toggleGroupFilter}
+											onClearGroupFilters={clearGroupFilters}
+											groups={groups}
+											allGroups={allGroups}
+											isMocked={isMocked}
+											onToggleMocked={toggleEndpointSelection}
+											onUpdateStatusCode={updateStatusCode}
+											onAddToGroup={addToGroup}
+											onRemoveFromGroup={removeFromGroup}
+											getStatus={getStatus}
+											getStatusCodes={getStatusCodes}
+											endpointScenarios={endpointScenarios}
+											onScenarioChange={handleScenarioChange}
+										/>
 									</TabPanel>
 									<TabPanel value="groups">
-										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-											<h3 style={{ fontSize: 18, fontWeight: 500 }}>Groups</h3>
-											<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-												<input
-													placeholder="New group name"
-													value={newGroupName}
-													onChange={e => setNewGroupName(e.currentTarget.value)}
-													style={{ width: 160, borderRadius: 6, padding: '8px 12px', border: '1px solid #ccc' }}
-													onKeyDown={e => e.key === 'Enter' && createGroup()}
-												/>
-												<Button
-													onClick={createGroup}
-													style={{ padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #ccc' }}
-												>
-													<Plus style={{ height: 16, width: 16 }} />
-												</Button>
-											</div>
-										</div>
-										<div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
-											{autoGroups.map(group => (
-												<div
-													key={group.id}
-													style={{ border: '1px solid #eee', borderRadius: 8, padding: 16, background: '#f8f8f8', opacity: 0.7 }}
-												>
-													<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-														<Users style={{ height: 16, width: 16 }} />
-														<span>{group.name}</span>
-														<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#f0f0f0' }}>
-															{plugins.filter(p => p.componentId === group.name).length}
-														</span>
-													</div>
-													<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-														{plugins
-															.filter(p => p.componentId === group.name)
-															.map(plugin => (
-																<div
-																	key={plugin.id}
-																	style={{
-																		display: 'flex',
-																		justifyContent: 'space-between',
-																		padding: 12,
-																		borderRadius: 6,
-																		border: '1px solid #eee',
-																	}}
-																>
-																	<span
-																		style={{
-																			padding: '4px 8px',
-																			borderRadius: 4,
-																			fontSize: 12,
-																			fontWeight: 600,
-																			background: '#e6f7ff',
-																			color: '#0070f3',
-																		}}
-																	>
-																		{plugin.method}
-																	</span>
-																	<span style={{ fontFamily: 'monospace', fontSize: 14 }}>{plugin.endpoint}</span>
-																</div>
-															))}
-														{plugins.filter(p => p.componentId === group.name).length === 0 && (
-															<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>
-																No endpoints in this group yet.
-															</div>
-														)}
-													</div>
-												</div>
-											))}
-											{groups.map(group => (
-												<div key={group.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
-													<div
-														style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid #eee' }}
-													>
-														{editingGroup === group.id ? (
-															<input
-																defaultValue={group.name}
-																onBlur={e => renameGroup(group.id, e.currentTarget.value)}
-																onKeyDown={e => {
-																	if (e.key === 'Enter') {
-																		renameGroup(group.id, e.currentTarget.value);
-																	}
-																}}
-																style={{ width: 192, borderRadius: 6, padding: '8px 12px', border: '1px solid #ccc' }}
-																autoFocus
-															/>
-														) : (
-															<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-																<Users style={{ height: 16, width: 16 }} />
-																<span>{group.name}</span>
-																<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#f0f0f0' }}>
-																	{group.endpointIds.length}
-																</span>
-															</div>
-														)}
-														<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-															<Button
-																onClick={() => setEditingGroup(group.id)}
-																style={{ padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #ccc' }}
-																aria-label="edit"
-															>
-																<Edit2 style={{ height: 16, width: 16 }} />
-															</Button>
-															<Button
-																onClick={() => deleteGroup(group.id)}
-																style={{
-																	padding: '8px 12px',
-																	borderRadius: 6,
-																	background: '#fff',
-																	border: '1px solid #ccc',
-																	color: '#e53e3e',
-																	cursor: 'pointer',
-																}}
-																aria-label="trash"
-															>
-																<Trash2 style={{ height: 16, width: 16 }} />
-															</Button>
-														</div>
-													</div>
-													<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-														{group.endpointIds.map(pluginId => {
-															const plugin = plugins.find(ep => ep.id === pluginId);
-															if (!plugin) return null;
-															return (
-																<div
-																	key={pluginId}
-																	style={{
-																		display: 'flex',
-																		justifyContent: 'space-between',
-																		padding: 12,
-																		borderRadius: 6,
-																		border: '1px solid #eee',
-																	}}
-																>
-																	<span
-																		style={{
-																			padding: '4px 8px',
-																			borderRadius: 4,
-																			fontSize: 12,
-																			fontWeight: 600,
-																			background: '#e6f7ff',
-																			color: '#0070f3',
-																		}}
-																	>
-																		{plugin.method}
-																	</span>
-																	<span style={{ fontFamily: 'monospace', fontSize: 14 }}>{plugin.endpoint}</span>
-																	<Button
-																		onClick={() => removeFromGroup(pluginId, group.id)}
-																		style={{
-																			padding: '8px 12px',
-																			borderRadius: 6,
-																			background: '#fff',
-																			border: '1px solid #ccc',
-																			color: '#e53e3e',
-																			cursor: 'pointer',
-																		}}
-																	>
-																		<X style={{ height: 16, width: 16 }} />
-																	</Button>
-																</div>
-															);
-														})}
-														{group.endpointIds.length === 0 && (
-															<div style={{ textAlign: 'center', padding: '24px 0', fontSize: 12, color: '#888' }}>
-																No endpoints in this group yet.
-															</div>
-														)}
-													</div>
-												</div>
-											))}
-											{groups.length === 0 && (
-												<div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>
-													No groups created yet. Create your first group above.
-												</div>
-											)}
-										</div>
+										<GroupsTab
+											groups={groups}
+											autoGroups={autoGroups}
+											plugins={plugins}
+											newGroupName={newGroupName}
+											onNewGroupNameChange={setNewGroupName}
+											onCreateGroup={createGroup}
+											editingGroup={editingGroup}
+											onSetEditingGroup={setEditingGroup}
+											onRenameGroup={renameGroup}
+											onDeleteGroup={deleteGroup}
+											onRemoveFromGroup={removeFromGroup}
+										/>
 									</TabPanel>
 									<TabPanel value="feature-flags">
-										<h3 style={{ fontSize: 18, fontWeight: 500 }}>Feature Flags</h3>
-										<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 16 }}>
-											{Object.entries(featureFlags).map(([flag, enabled]) => (
-												<div key={flag} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
-													<div>
-														<span style={{ fontSize: 14, fontWeight: 500 }}>{flag}</span>
-														<p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-															{enabled ? 'Currently enabled' : 'Currently disabled'}
-														</p>
-													</div>
-													<Checkbox
-														checked={!!enabled}
-														onChange={() => toggleFeatureFlag(flag, !enabled)}
-														id={flag}
-														aria-label={`Toggle feature flag ${flag}`}
-													/>
-												</div>
-											))}
-										</div>
+										<FeatureFlagsTab
+											featureFlags={featureFlags}
+											onToggleFeatureFlag={toggleFeatureFlag}
+										/>
 									</TabPanel>
 									<TabPanel value="settings">
 										<span style={{ fontSize: 18, color: '#bbb' }}>Settings coming soon.</span>
