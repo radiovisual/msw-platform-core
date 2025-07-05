@@ -15,10 +15,9 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 	return getPlatform()
 		.getPlugins()
 		.map((plugin: Plugin) => {
-			const method = plugin.method.toLowerCase();
-			// @ts-ignore: dynamic method access is valid
+			const method = plugin.method.toLowerCase() as keyof typeof http;
 			const handler = (endpoint: string) =>
-				http[method](endpoint, req => {
+				http[method](endpoint, (req: any) => {
 					if (getPlatform().getDisabledPluginIds().includes(plugin.id)) {
 						// Return undefined to let MSW passthrough to the real backend/proxy
 						return undefined;
