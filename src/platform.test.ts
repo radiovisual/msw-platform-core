@@ -1066,4 +1066,56 @@ describe('Global Disable functionality', () => {
 		platform.setGlobalDisable(false);
 		expect(platform.getDisabledPluginIds()).toEqual(['plugin1']);
 	});
+
+	it('should preserve individual endpoint mock states when toggling global disable', () => {
+		const plugin1: Plugin = {
+			id: 'plugin1',
+			componentId: 'test',
+			endpoint: '/api/test1',
+			method: 'GET',
+			responses: { 200: { message: 'test1' } },
+			defaultStatus: 200,
+		};
+
+		const plugin2: Plugin = {
+			id: 'plugin2',
+			componentId: 'test',
+			endpoint: '/api/test2',
+			method: 'GET',
+			responses: { 200: { message: 'test2' } },
+			defaultStatus: 200,
+		};
+
+		const plugin3: Plugin = {
+			id: 'plugin3',
+			componentId: 'test',
+			endpoint: '/api/test3',
+			method: 'GET',
+			responses: { 200: { message: 'test3' } },
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin1, plugin2, plugin3],
+		});
+
+		// Set up individual mock states: plugin1 disabled, plugin2 enabled, plugin3 disabled
+		platform.setDisabledPluginIds(['plugin1', 'plugin3']);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin3']);
+
+		// Enable global disable - all should be disabled
+		platform.setGlobalDisable(true);
+		expect(platform.isGloballyDisabled()).toBe(true);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin2', 'plugin3']);
+
+		// Disable global disable - should return to original individual states
+		platform.setGlobalDisable(false);
+		expect(platform.isGloballyDisabled()).toBe(false);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin3']);
+
+		// Verify that the internal disabledPluginIds array still contains the original settings
+		// This ensures the individual settings weren't lost during global disable
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin3']);
+	});
 });
