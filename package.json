@@ -4,13 +4,14 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"test": "jest",
+		"test": "npm run typecheck && jest",
 		"build": "tsc",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
 		"lint": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix",
 		"format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,less}\"",
-		"lint:staged": "npm run lint && npm run format"
+		"lint:staged": "npm run lint && npm run format",
+		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^1.9.0",

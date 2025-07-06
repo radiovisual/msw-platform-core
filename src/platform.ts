@@ -499,7 +499,14 @@ export class MockPlatformCore {
 			return result;
 		}
 		
-		// For simple responses, return undefined (no headers)
+		// For simple responses, wrap in body/headers structure
+		if (resp !== undefined) {
+			const body = extractResponseBody(resp);
+			const headers = extractResponseHeaders(resp);
+			const result: any = { body, headers };
+			return result;
+		}
+		
 		return undefined;
 	}
 

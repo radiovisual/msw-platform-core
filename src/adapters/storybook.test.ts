@@ -69,7 +69,6 @@ describe('mswHandlersFromPlatform passthrough', () => {
 					defaultStatus: 200,
 				},
 			],
-			featureFlags: [],
 		});
 		// Initially enabled (mocked)
 		platform.setDisabledPluginIds([]);
@@ -107,7 +106,6 @@ describe('mswHandlersFromPlatform passthrough (absolute URL)', () => {
 					defaultStatus: 200,
 				},
 			],
-			featureFlags: [],
 		});
 		// Initially enabled (mocked)
 		platform.setDisabledPluginIds([]);

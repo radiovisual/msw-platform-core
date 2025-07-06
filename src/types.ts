@@ -37,7 +37,6 @@ export interface Plugin<T = any> {
 	nickname?: string;
 	responses: { [key: number]: ResponseValue<any> }; // status code -> payload
 	defaultStatus: number;
-	featureFlags?: string[];
 	scenarios?: EndpointScenario<T>[];
 	queryResponses?: QueryResponses;
 	transform?: (response: any, context: MiddlewareContext) => any;

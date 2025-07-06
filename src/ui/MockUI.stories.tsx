@@ -147,7 +147,7 @@ const platform = createMockPlatform({
 			},
 			swaggerUrl: 'https://jsonplaceholder.typicode.com/users/1',
 			defaultStatus: 200,
-			featureFlags: ['EXPERIMENTAL_HELLO'],
+	
 			transform: (response, context) => {
 				if (context.featureFlags.EXPERIMENTAL_HELLO) {
 					return { ...response, message: 'Hello, experimental world!' };
@@ -272,7 +272,7 @@ const platform = createMockPlatform({
 				200: { message: 'Normal response' },
 			},
 			defaultStatus: 200,
-			featureFlags: ['FORCE_TRANSFORM'],
+	
 			transform: (response, context) => {
 				if (context.featureFlags.FORCE_TRANSFORM) {
 					return {

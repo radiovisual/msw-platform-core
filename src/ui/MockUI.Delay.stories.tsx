@@ -17,7 +17,7 @@ type Story = StoryObj<typeof MockUI>;
 
 // Create a platform with various delay configurations
 const platform = createMockPlatform({
-	name: 'Delay Demo',
+	name: 'delay-demo',
 	plugins: [
 		{
 			id: 'fast-user',

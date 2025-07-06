@@ -27,7 +27,6 @@ describe('MockPlatformCore', () => {
 			400: { message: 'Bad request' },
 		},
 		defaultStatus: 200,
-		featureFlags: ['EXAMPLE_USE_ALT'],
 		transform: (response, context) => {
 			if (context.featureFlags.EXAMPLE_USE_ALT) {
 				response.message = '[ALT MODE] ' + response.message;
@@ -138,7 +137,6 @@ describe('mswHandlersFromPlatform', () => {
 			400: { message: 'Bad request' },
 		},
 		defaultStatus: 200,
-		featureFlags: ['EXAMPLE_USE_ALT'],
 		transform: (response, context) => {
 			if (context.featureFlags.EXAMPLE_USE_ALT) {
 				response.message = '[ALT MODE] ' + response.message;
@@ -1274,9 +1272,9 @@ describe('Custom Response Headers functionality', () => {
 		const response = platform.getResponse('test-plugin', 200);
 		expect(response).toEqual({ message: 'simple response' });
 
-		// Test that getResponseWithHeaders returns undefined for simple responses
+		// Test that getResponseWithHeaders returns proper structure for simple responses
 		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 200);
-		expect(responseWithHeaders).toBeUndefined();
+		expect(responseWithHeaders).toEqual({ body: { message: 'simple response' }, headers: {} });
 	});
 });
 

@@ -44,7 +44,7 @@ export function getValueAtPath(obj: any, path: string): any {
 	let current = obj;
 
 	for (const part of pathParts) {
-		if (current == null || !(part in current)) {
+		if (current == null || typeof current !== 'object' || !(part in current)) {
 			return undefined;
 		}
 		current = current[part];
@@ -63,7 +63,7 @@ export function hasPath(obj: any, path: string): boolean {
 	const pathParts = path.split('.');
 	let current = obj;
 	for (const part of pathParts) {
-		if (current == null || !(part in current)) {
+		if (current == null || typeof current !== 'object' || !(part in current)) {
 			return false;
 		}
 		current = current[part];

@@ -40,7 +40,6 @@ const platform = createMockPlatform({
         404: { error: "Not found" },
       },
       defaultStatus: 200,
-      featureFlags: ["EXPERIMENTAL_USER"],
       delay: 300, // Optional: Response delay in milliseconds (default: 150)
     },
   ],
@@ -580,7 +579,6 @@ export const platform = createMockPlatform({
         404: { error: 'Not found' },
       },
       defaultStatus: 200,
-      featureFlags: ['EXPERIMENTAL_USER'],
     },
     {
       id: 'items',
@@ -752,7 +750,6 @@ export const platform = createMockPlatform({
         404: { error: 'Not found' },
       },
       defaultStatus: 200,
-      featureFlags: ['EXPERIMENTAL_USER'],
     },
   ],
   featureFlags: [

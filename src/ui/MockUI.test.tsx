@@ -176,7 +176,6 @@ describe('MockUI', () => {
 			{
 				name: 'appA',
 				plugins: [{ id: 'ep1', componentId: 'ComponentA', endpoint: '/api/a', method: 'GET', responses: { 200: {} }, defaultStatus: 200 }],
-				featureFlags: [],
 			},
 			new InMemoryPersistence('appA')
 		);
@@ -184,7 +183,6 @@ describe('MockUI', () => {
 			{
 				name: 'appB',
 				plugins: [{ id: 'ep2', componentId: 'ComponentB', endpoint: '/api/b', method: 'GET', responses: { 200: {} }, defaultStatus: 200 }],
-				featureFlags: [],
 			},
 			new InMemoryPersistence('appB')
 		);
@@ -314,7 +312,6 @@ describe('MockUI', () => {
 					swaggerUrl: 'https://example.com/swagger.json',
 				},
 			],
-			featureFlags: [],
 		});
 		render(<MockUI platform={platform} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
