@@ -44,13 +44,13 @@ describe('MockUI', () => {
 		render(<MockUI platform={platform} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		// Endpoints tab is default
-		expect(await screen.findByText((_, n) => n?.textContent === '/api/v1/foo' || false)).toBeInTheDocument();
-		expect(await screen.findByText((_, n) => n?.textContent === '/api/v1/bar' || false)).toBeInTheDocument();
+		expect(await screen.findByText('/api/v1/foo')).toBeInTheDocument();
+		expect(await screen.findByText('/api/v1/bar')).toBeInTheDocument();
 		// Switch to Feature Flags tab robustly
 		const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 		fireEvent.click(featureFlagsTab);
-		expect(await screen.findByText((_, n) => n?.textContent === 'FLAG_A' || false)).toBeInTheDocument();
-		expect(await screen.findByText((_, n) => n?.textContent === 'FLAG_B' || false)).toBeInTheDocument();
+		expect(await screen.findByText('FLAG_A')).toBeInTheDocument();
+		expect(await screen.findByText('FLAG_B')).toBeInTheDocument();
 	});
 
 	it('toggles endpoint passthrough and updates disabledPluginIds', async () => {
@@ -89,9 +89,6 @@ describe('MockUI', () => {
 		expect(flagA).toBeInTheDocument();
 		const flagCard = flagA.closest('div');
 		expect(flagCard).toBeInTheDocument();
-		// Debug: print the HTML of the card
-		// eslint-disable-next-line no-console
-		console.log('FLAG_A card HTML:', flagCard?.outerHTML);
 		let flagCheckbox;
 		try {
 			if (flagCard) {
@@ -100,8 +97,6 @@ describe('MockUI', () => {
 				throw new Error('flagCard is null');
 			}
 		} catch (_e) {
-			// eslint-disable-next-line no-console
-			console.log('within(flagCard!) failed, falling back to screen.getByLabelText');
 			flagCheckbox = screen.getByLabelText('Toggle feature flag FLAG_A');
 		}
 		fireEvent.click(flagCheckbox);
@@ -276,18 +271,8 @@ describe('MockUI', () => {
 		const selectAfter = await screen.findByDisplayValue('User not registered');
 		// Select "User is registered"
 		const selectEl = selectAfter as HTMLSelectElement;
-		// eslint-disable-next-line no-console
-		console.log(
-			'[test] select value before change:',
-			selectEl.value,
-			'options:',
-			Array.from(selectEl.options).map((o: HTMLOptionElement) => o.value)
-		);
 		await userEvent.selectOptions(selectAfter, 'registered');
 		await waitFor(() => expect(selectAfter).toHaveValue('registered'));
-		// Debug: log persistence instance and endpointScenarios
-		// eslint-disable-next-line no-console
-		console.log('[test] persistence:', persistence, 'endpointScenarios:', (persistence as any).endpointScenarios);
 		// Assert persistence is updated
 		await waitFor(() => expect(persistence.getEndpointScenario('ep1')).toBe('registered'));
 		// Re-instantiate platform to reflect persisted scenario

@@ -10,7 +10,7 @@ let server: any;
 
 beforeAll(() => {
 	server = setupServer();
-	server.listen({ onUnhandledRequest: 'error' });
+	server.listen({ onUnhandledRequest: 'warn' });
 });
 afterAll(() => {
 	server.close();

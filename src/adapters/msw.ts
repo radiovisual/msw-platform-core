@@ -72,7 +72,8 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 	const handlers: any[] = [];
 	
 	for (const [key, plugins] of endpointGroups) {
-		const [method, endpoint] = key.split(':');
+		const [method, ...endpointParts] = key.split(':');
+		const endpoint = endpointParts.join(':');
 		const httpMethod = method as keyof typeof http;
 		
 		const handler = (endpointUrl: string) =>
@@ -89,13 +90,12 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					let bestPlugin: Plugin | null = null;
 					let bestSpecificity = -1;
 					let bestQueryMatch: string | null = null;
-					
+					let fallbackPluginWithDefault: Plugin | null = null;
 					for (const plugin of plugins) {
 						// Skip disabled plugins
 						if (platform.getDisabledPluginIds().includes(plugin.id)) {
 							continue;
 						}
-						
 						// Check if this plugin has query responses
 						if (plugin.queryResponses) {
 							// Find the best matching query string for this plugin
@@ -109,6 +109,10 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 									}
 								}
 							}
+							// Track the first plugin with queryResponses and a default response
+							if (!bestPlugin && !fallbackPluginWithDefault && plugin.responses && plugin.responses[plugin.defaultStatus] !== undefined) {
+								fallbackPluginWithDefault = plugin;
+							}
 						} else {
 							// Plugin has no query responses, so it's a fallback
 							// Only use it if no other plugin matched (specificity = 0)
@@ -118,6 +122,12 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 								bestQueryMatch = null;
 							}
 						}
+					}
+					// If no plugin matched, but there is a plugin with queryResponses and a default response, use it
+					if (!bestPlugin && fallbackPluginWithDefault) {
+						bestPlugin = fallbackPluginWithDefault;
+						bestSpecificity = 0;
+						bestQueryMatch = null;
 					}
 					
 					// If no plugin matched, return 404

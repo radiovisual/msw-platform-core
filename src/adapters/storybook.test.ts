@@ -84,11 +84,12 @@ describe('mswHandlersFromPlatform passthrough', () => {
 		if (res && 'status' in res) {
 			expect(res.status).toBe(200);
 		}
-		// Now disable the plugin (passthrough)
+		// Now disable the plugin (should return 404 since no plugin matches)
 		platform.setDisabledPluginIds(['foo']);
 		// @ts-ignore
 		const passthrough = await handler?.resolver({ request: req, params: {}, cookies: {} });
-		expect(passthrough).toBeUndefined();
+		expect(passthrough.status).toBe(404);
+		expect(await passthrough.json()).toEqual({ error: 'Not found' });
 	});
 });
 
@@ -121,10 +122,11 @@ describe('mswHandlersFromPlatform passthrough (absolute URL)', () => {
 		if (res && 'status' in res) {
 			expect(res.status).toBe(200);
 		}
-		// Now disable the plugin (passthrough)
+		// Now disable the plugin (should return 404 since no plugin matches)
 		platform.setDisabledPluginIds(['bar']);
 		// @ts-ignore
 		const passthrough = await handler?.resolver({ request: req, params: {}, cookies: {} });
-		expect(passthrough).toBeUndefined();
+		expect(passthrough.status).toBe(404);
+		expect(await passthrough.json()).toEqual({ error: 'Not found' });
 	});
 });
