@@ -9,6 +9,8 @@ export interface PersistenceProvider {
 	setActiveScenario(scenarioId: string): void;
 	getEndpointScenario(pluginId: string): string | undefined;
 	setEndpointScenario(pluginId: string, scenarioId: string): void;
+	getDelay(pluginId: string): number | undefined;
+	setDelay(pluginId: string, delay: number): void;
 }
 
 export class InMemoryPersistence implements PersistenceProvider {
@@ -17,6 +19,7 @@ export class InMemoryPersistence implements PersistenceProvider {
 	private statuses: { [key: string]: number } = {};
 	private activeScenario: string | undefined;
 	private endpointScenarios: { [key: string]: string } = {};
+	private delays: { [key: string]: number } = {};
 
 	constructor(name: string) {
 		this.name = name;
@@ -44,6 +47,12 @@ export class InMemoryPersistence implements PersistenceProvider {
 	}
 	setEndpointScenario(pluginId: string, scenarioId: string) {
 		this.endpointScenarios[pluginId] = scenarioId;
+	}
+	getDelay(pluginId: string) {
+		return this.delays[pluginId];
+	}
+	setDelay(pluginId: string, delay: number) {
+		this.delays[pluginId] = delay;
 	}
 }
 
@@ -94,6 +103,7 @@ export class MockPlatformCore {
 	private featureFlags: { [key: string]: boolean };
 	private featureFlagMetadata: { [key: string]: { description?: string; default?: boolean } };
 	private statusOverrides: { [key: string]: number };
+	private delayOverrides: { [key: string]: number } = {};
 	private scenarios: Scenario[];
 	private activeScenario: string | undefined;
 	private persistence: PersistenceProvider;
@@ -139,6 +149,10 @@ export class MockPlatformCore {
 			const endpointScenario = this.persistence.getEndpointScenario(plugin.id);
 			if (endpointScenario !== undefined) {
 				this.endpointScenarioOverrides[plugin.id] = endpointScenario;
+			}
+			const persistedDelay = this.persistence.getDelay(plugin.id);
+			if (persistedDelay !== undefined) {
+				this.delayOverrides[plugin.id] = persistedDelay;
 			}
 		}
 
@@ -193,6 +207,18 @@ export class MockPlatformCore {
 	setEndpointScenario(pluginId: string, scenarioId: string) {
 		this.endpointScenarioOverrides[pluginId] = scenarioId;
 		this.persistence.setEndpointScenario(pluginId, scenarioId);
+	}
+
+	getDelayOverride(pluginId: string): number | undefined {
+		return this.delayOverrides[pluginId];
+	}
+	setDelayOverride(pluginId: string, delay: number) {
+		this.delayOverrides[pluginId] = delay;
+		this.persistence.setDelay(pluginId, delay);
+	}
+
+	getEffectiveDelay(pluginId: string): number {
+		return this.delayOverrides[pluginId] ?? this.plugins.find(p => p.id === pluginId)?.delay ?? 150;
 	}
 
 	// Middleware API

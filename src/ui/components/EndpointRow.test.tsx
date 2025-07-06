@@ -48,6 +48,8 @@ const defaultProps = {
 	endpointScenarios: {},
 	onScenarioChange: jest.fn(),
 	platform: mockPlatform,
+	onUpdateDelay: jest.fn(),
+	getDelay: jest.fn(() => 150),
 };
 
 describe('EndpointRow', () => {
@@ -191,6 +193,8 @@ describe('EndpointRow', () => {
 				endpointScenarios={{}}
 				onScenarioChange={jest.fn()}
 				platform={mockPlatform}
+				onUpdateDelay={jest.fn()}
+				getDelay={() => 150}
 			/>
 		);
 
@@ -226,6 +230,8 @@ describe('EndpointRow', () => {
 				endpointScenarios={{}}
 				onScenarioChange={jest.fn()}
 				platform={mockPlatform}
+				onUpdateDelay={jest.fn()}
+				getDelay={() => 150}
 			/>
 		);
 
@@ -258,6 +264,8 @@ describe('EndpointRow', () => {
 				endpointScenarios={{}}
 				onScenarioChange={jest.fn()}
 				platform={mockPlatform}
+				onUpdateDelay={jest.fn()}
+				getDelay={() => 150}
 			/>
 		);
 
@@ -289,9 +297,124 @@ describe('EndpointRow', () => {
 				endpointScenarios={{}}
 				onScenarioChange={jest.fn()}
 				platform={mockPlatform}
+				onUpdateDelay={jest.fn()}
+				getDelay={() => 150}
 			/>
 		);
 
 		expect(screen.getByText('/api/test')).toBeInTheDocument();
+	});
+
+	it('displays delay input with correct value', () => {
+		const plugin: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+		};
+
+		const mockGetDelay = jest.fn(() => 150);
+		const mockOnUpdateDelay = jest.fn();
+
+		render(
+			<EndpointRow
+				plugin={plugin}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+				onUpdateDelay={mockOnUpdateDelay}
+				getDelay={mockGetDelay}
+			/>
+		);
+
+		const delayInput = screen.getByTestId('delay-input-test');
+		expect(delayInput).toBeInTheDocument();
+		expect(delayInput).toHaveValue(150);
+	});
+
+	it('calls onUpdateDelay when delay input changes', () => {
+		const plugin: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+		};
+
+		const mockGetDelay = jest.fn(() => 150);
+		const mockOnUpdateDelay = jest.fn();
+
+		render(
+			<EndpointRow
+				plugin={plugin}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+				onUpdateDelay={mockOnUpdateDelay}
+				getDelay={mockGetDelay}
+			/>
+		);
+
+		const delayInput = screen.getByTestId('delay-input-test');
+		fireEvent.change(delayInput, { target: { value: '1000' } });
+
+		expect(mockOnUpdateDelay).toHaveBeenCalledWith('test', 1000);
+	});
+
+	it('handles empty delay input value', () => {
+		const plugin: Plugin = {
+			id: 'test',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET' as const,
+			responses: { 200: {} },
+			defaultStatus: 200,
+		};
+
+		const mockGetDelay = jest.fn(() => 150);
+		const mockOnUpdateDelay = jest.fn();
+
+		render(
+			<EndpointRow
+				plugin={plugin}
+				isMocked
+				onToggleMocked={jest.fn()}
+				onUpdateStatusCode={jest.fn()}
+				onAddToGroup={jest.fn()}
+				onRemoveFromGroup={jest.fn()}
+				getStatus={jest.fn()}
+				getStatusCodes={() => [200]}
+				groups={[]}
+				endpointScenarios={{}}
+				onScenarioChange={jest.fn()}
+				platform={mockPlatform}
+				onUpdateDelay={mockOnUpdateDelay}
+				getDelay={mockGetDelay}
+			/>
+		);
+
+		const delayInput = screen.getByTestId('delay-input-test');
+		fireEvent.change(delayInput, { target: { value: '' } });
+
+		expect(mockOnUpdateDelay).toHaveBeenCalledWith('test', 0);
 	});
 });

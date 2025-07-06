@@ -21,6 +21,8 @@ interface EndpointRowProps {
 	endpointScenarios: { [key: string]: string };
 	onScenarioChange: (pluginId: string, scenarioId: string) => void;
 	platform: MockPlatformCore;
+	onUpdateDelay: (pluginId: string, delay: number) => void;
+	getDelay: (pluginId: string) => number;
 }
 
 // Helper function to format endpoint display with query parameters
@@ -45,6 +47,8 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 	endpointScenarios,
 	onScenarioChange,
 	platform,
+	onUpdateDelay,
+	getDelay,
 }) => {
 	const scenarioList = plugin.scenarios;
 	const activeScenarioId = endpointScenarios[plugin.id];
@@ -222,6 +226,27 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 						<Label htmlFor={`${plugin.id}-${code}`}>{code}</Label>
 					</div>
 				))}
+			</div>
+			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+				<Label htmlFor={`delay-${plugin.id}`} style={{ fontSize: 12 }}>Delay (ms):</Label>
+				<input
+					type="number"
+					id={`delay-${plugin.id}`}
+					min="0"
+					max="10000"
+					step="50"
+					value={getDelay(plugin.id)}
+					onChange={(e) => onUpdateDelay(plugin.id, parseInt(e.target.value) || 0)}
+					style={{
+						width: 80,
+						padding: '4px 8px',
+						border: '1px solid #ddd',
+						borderRadius: 4,
+						fontSize: 12,
+						fontFamily: 'monospace',
+					}}
+					data-testid={`delay-input-${plugin.id}`}
+				/>
 			</div>
 			{/* Dynamic middleware badges */}
 			{badges.length > 0 && (

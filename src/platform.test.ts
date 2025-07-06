@@ -884,3 +884,87 @@ describe('Multiple Plugins with Same Endpoint', () => {
 		expect(json).toEqual({ message: 'First equal match' });
 	});
 });
+
+describe('Delay functionality', () => {
+	it('should handle delay overrides correctly', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: { 200: { message: 'test' } },
+			defaultStatus: 200,
+			delay: 500,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Test default delay
+		expect(platform.getEffectiveDelay('test-plugin')).toBe(500);
+
+		// Test override
+		platform.setDelayOverride('test-plugin', 1000);
+		expect(platform.getEffectiveDelay('test-plugin')).toBe(1000);
+
+		// Test getting override
+		expect(platform.getDelayOverride('test-plugin')).toBe(1000);
+	});
+
+	it('should use default delay of 150ms when no delay is specified', () => {
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [
+				{
+					id: 'test-plugin',
+					componentId: 'test',
+					endpoint: '/api/test',
+					method: 'GET',
+					defaultStatus: 200,
+					responses: { 200: { message: 'test' } },
+				},
+			],
+		});
+
+		expect(platform.getEffectiveDelay('test-plugin')).toBe(150);
+	});
+
+	it('should persist delay overrides', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: { 200: { message: 'test' } },
+			defaultStatus: 200,
+			delay: 500,
+		};
+
+		const mockPersistence = {
+			getFlag: jest.fn(),
+			setFlag: jest.fn(),
+			getStatus: jest.fn(),
+			setStatus: jest.fn(),
+			getActiveScenario: jest.fn(),
+			setActiveScenario: jest.fn(),
+			getEndpointScenario: jest.fn(),
+			setEndpointScenario: jest.fn(),
+			getDelay: jest.fn(() => 1000),
+			setDelay: jest.fn(),
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		}, mockPersistence);
+
+		// Should use persisted delay
+		expect(platform.getEffectiveDelay('test-plugin')).toBe(1000);
+
+		// Should call persistence when setting delay
+		platform.setDelayOverride('test-plugin', 2000);
+		expect(mockPersistence.setDelay).toHaveBeenCalledWith('test-plugin', 2000);
+	});
+});

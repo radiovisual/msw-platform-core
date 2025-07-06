@@ -76,7 +76,7 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 		const httpMethod = method as keyof typeof http;
 		
 		const handler = (endpointUrl: string) =>
-			http[httpMethod](endpointUrl, (req: any) => {
+			http[httpMethod](endpointUrl, async (req: any) => {
 				try {
 					const urlString = req.url || req.request?.url;
 					if (typeof urlString !== 'string') {
@@ -146,7 +146,13 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					if (response === undefined) {
 						return HttpResponse.json({ error: 'Not found' }, { status: 404 });
 					}
-					
+
+					// Apply delay if configured
+					const delay = platform.getEffectiveDelay(bestPlugin.id);
+					if (delay > 0) {
+						await new Promise(resolve => setTimeout(resolve, delay));
+					}
+
 					return HttpResponse.json(response, { status });
 				} catch (err) {
 					// MSW handler error: err

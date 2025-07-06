@@ -33,6 +33,8 @@ interface EndpointsTabProps {
 	endpointScenarios: { [key: string]: string };
 	onScenarioChange: (pluginId: string, scenarioId: string) => void;
 	platform: MockPlatformCore;
+	onUpdateDelay: (pluginId: string, delay: number) => void;
+	getDelay: (pluginId: string) => number;
 }
 
 const EndpointsTab: React.FC<EndpointsTabProps> = ({
@@ -55,6 +57,8 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 	endpointScenarios,
 	onScenarioChange,
 	platform,
+	onUpdateDelay,
+	getDelay,
 }) => {
 	return (
 		<div>
@@ -142,6 +146,8 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 						endpointScenarios={endpointScenarios}
 						onScenarioChange={onScenarioChange}
 						platform={platform}
+						onUpdateDelay={onUpdateDelay}
+						getDelay={getDelay}
 					/>
 				))}
 				{filteredPlugins.length === 0 && (

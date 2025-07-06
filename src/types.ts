@@ -33,6 +33,7 @@ export interface Plugin<T = any> {
 	transform?: (response: any, context: MiddlewareContext) => any;
 	swaggerUrl?: string;
 	useMiddleware?: PlatformMiddleware[]; // Array of middleware to use for this plugin
+	delay?: number; // Response delay in milliseconds (default: 150)
 }
 
 export interface MockPlatformConfig {

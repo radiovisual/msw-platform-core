@@ -150,6 +150,24 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		[platform, onStateChange, disabledPluginIds]
 	);
 
+	// UI: update delay
+	const updateDelay = useCallback(
+		(pluginId: string, delay: number) => {
+			platform.setDelayOverride(pluginId, delay);
+			forceUpdate(x => x + 1);
+			onStateChange?.({ disabledPluginIds });
+		},
+		[platform, onStateChange, disabledPluginIds]
+	);
+
+	// Helper: get delay for a plugin
+	const getDelay = useCallback(
+		(pluginId: string) => {
+			return platform.getEffectiveDelay(pluginId);
+		},
+		[platform]
+	);
+
 	// UI: toggle feature flag
 	const toggleFeatureFlag = useCallback(
 		(flag: string, value: boolean) => {
@@ -325,6 +343,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 											isMocked={isMocked}
 											onToggleMocked={toggleEndpointSelection}
 											onUpdateStatusCode={updateStatusCode}
+											onUpdateDelay={updateDelay}
+											getDelay={getDelay}
 											onAddToGroup={addToGroup}
 											onRemoveFromGroup={removeFromGroup}
 											getStatus={getStatus}

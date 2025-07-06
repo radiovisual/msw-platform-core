@@ -4,9 +4,8 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 
 ## TODO
 
-- [] Setup a delay/sleep feature for each mocked endpoint
 - [] Test file type response support (html. text responses)
-- [] Set custom headers
+- [] Set custom headers for the different response types (application/problem+json, etc)
 - [] Global disable
 - [] Manupulate response payloads directly from the UI for each endpoint
 
@@ -44,6 +43,7 @@ const platform = createMockPlatform({
       },
       defaultStatus: 200,
       featureFlags: ["EXPERIMENTAL_USER"],
+      delay: 300, // Optional: Response delay in milliseconds (default: 150)
     },
   ],
   featureFlags: [
@@ -51,6 +51,74 @@ const platform = createMockPlatform({
     { name: "NEW_UI", description: "Enables new UI components", default: true },
   ],
 });
+```
+
+### 1.1. Response Delays
+
+You can configure response delays for each endpoint to simulate real network conditions, slow APIs, or test loading states in your application.
+
+#### Configuring Delays
+
+Add a `delay` property to your plugin definition with a number in milliseconds:
+
+```js
+const platform = createMockPlatform({
+  plugins: [
+    {
+      id: "fast-api",
+      endpoint: "/api/fast",
+      method: "GET",
+      responses: { 200: { message: "Fast response" } },
+      defaultStatus: 200,
+      delay: 100, // 100ms delay
+    },
+    {
+      id: "slow-api",
+      endpoint: "/api/slow",
+      method: "GET",
+      responses: { 200: { message: "Slow response" } },
+      defaultStatus: 200,
+      delay: 2000, // 2 second delay
+    },
+    {
+      id: "instant-api",
+      endpoint: "/api/instant",
+      method: "GET",
+      responses: { 200: { message: "Instant response" } },
+      defaultStatus: 200,
+      delay: 0, // No delay
+    },
+  ],
+});
+```
+
+#### Runtime Delay Control
+
+The MockUI provides a delay input field for each endpoint, allowing you to adjust delays at runtime:
+
+- **Default Delay**: 150ms for all endpoints (unless specified otherwise)
+- **Runtime Override**: Use the delay input in the MockUI to change delays during development
+- **Persistence**: Delay overrides are saved to localStorage and restored on page reload
+- **Range**: 0ms to 100,000ms (100 seconds)
+
+#### Use Cases
+
+- **Loading States**: Test how your UI handles different loading times
+- **Network Simulation**: Simulate slow network conditions
+- **API Testing**: Test timeout handling and retry logic
+- **User Experience**: Ensure your app provides good UX during slow responses
+
+#### Programmatic API
+
+```js
+// Get the effective delay for a plugin (override or default)
+const delay = platform.getEffectiveDelay("user"); // Returns 150 (default)
+
+// Set a delay override
+platform.setDelayOverride("user", 1000); // 1 second delay
+
+// Get the delay override (if set)
+const override = platform.getDelayOverride("user"); // Returns 1000
 ```
 
 ### 2. Use with MSW in your app or tests
