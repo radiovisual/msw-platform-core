@@ -1279,3 +1279,114 @@ describe('Custom Response Headers functionality', () => {
 		expect(responseWithHeaders).toBeUndefined();
 	});
 });
+
+describe('Transform-based status override', () => {
+	it('should allow transform to override status at plugin level', () => {
+		const plugin: Plugin = {
+			id: 'plugin-transform',
+			componentId: 'test',
+			endpoint: '/api/transform',
+			method: 'GET',
+			responses: {
+				200: { message: 'ok' },
+			},
+			defaultStatus: 200,
+			transform: (response, context) => {
+				if (context.featureFlags.FORCE_404) {
+					return { body: { error: 'forced' }, status: 404 };
+				}
+				return response;
+			},
+		};
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+			featureFlags: ['FORCE_404'],
+		});
+		// Default: 200
+		let resp = platform.getResponseWithHeaders('plugin-transform', 200);
+		expect(resp).toEqual({ body: { message: 'ok' }, headers: {} });
+		// With flag: 404
+		platform.setFeatureFlag('FORCE_404', true);
+		resp = platform.getResponseWithHeaders('plugin-transform', 200);
+		expect(resp).toEqual({ body: { error: 'forced' }, headers: {}, status: 404 });
+	});
+
+	it('should allow transform to override status in scenario', () => {
+		const plugin: Plugin = {
+			id: 'plugin-scenario',
+			componentId: 'test',
+			endpoint: '/api/scenario',
+			method: 'GET',
+			responses: { 200: { message: 'ok' } },
+			defaultStatus: 200,
+			scenarios: [
+				{
+					id: 'force-500',
+					label: 'Force 500',
+					responses: {
+						200: { body: { error: 'fail' }, status: 500 },
+					},
+				},
+			],
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		platform.setEndpointScenario('plugin-scenario', 'force-500');
+		const resp = platform.getResponseWithHeaders('plugin-scenario', 200);
+		expect(resp).toEqual({ body: { error: 'fail' }, headers: {}, status: 500 });
+	});
+
+	it('should allow transform to override status in query response', () => {
+		const plugin: Plugin = {
+			id: 'plugin-query',
+			componentId: 'test',
+			endpoint: '/api/query',
+			method: 'GET',
+			responses: { 200: { message: 'ok' } },
+			defaultStatus: 200,
+			queryResponses: {
+				'force=401': {
+					200: { body: { error: 'unauthorized' }, status: 401 },
+				},
+			},
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		const req = { url: 'http://localhost/api/query?force=401' };
+		const resp = platform.getResponseWithHeaders('plugin-query', 200, req);
+		expect(resp).toEqual({ body: { error: 'unauthorized' }, headers: {}, status: 401 });
+	});
+
+	it('should allow transform to set both headers and status', () => {
+		const plugin: Plugin = {
+			id: 'plugin-both',
+			componentId: 'test',
+			endpoint: '/api/both',
+			method: 'GET',
+			responses: { 200: { message: 'ok' } },
+			defaultStatus: 200,
+			transform: (response, context) => {
+				return { body: { error: 'fail' }, headers: { 'X-Test': 'yes' }, status: 418 };
+			},
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		const resp = platform.getResponseWithHeaders('plugin-both', 200);
+		expect(resp).toEqual({ body: { error: 'fail' }, headers: { 'X-Test': 'yes' }, status: 418 });
+	});
+
+	it('should maintain backward compatibility for transform returning only body', () => {
+		const plugin: Plugin = {
+			id: 'plugin-backcompat',
+			componentId: 'test',
+			endpoint: '/api/backcompat',
+			method: 'GET',
+			responses: { 200: { message: 'ok' } },
+			defaultStatus: 200,
+			transform: (response, context) => {
+				return { message: 'transformed' };
+			},
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		const resp = platform.getResponseWithHeaders('plugin-backcompat', 200);
+		expect(resp).toEqual({ body: { message: 'transformed' }, headers: {} });
+	});
+});

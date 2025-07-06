@@ -8,10 +8,11 @@ export interface FeatureFlag {
 	default?: boolean;
 }
 
-// New interface for response data with optional headers
+// New interface for response data with optional headers and status
 export interface ResponseData<T = any> {
 	body: T;
 	headers?: Record<string, string>;
+	status?: number; // Optional: allows transform to override status
 }
 
 // Helper type to support both simple responses (backward compatibility) and ResponseData objects

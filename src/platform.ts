@@ -493,7 +493,10 @@ export class MockPlatformCore {
 		if (resp && typeof resp === 'object' && 'body' in resp) {
 			const body = extractResponseBody(resp);
 			const headers = extractResponseHeaders(resp);
-			return { body, headers };
+			const status = typeof resp.status === 'number' ? resp.status : undefined;
+			const result: any = { body, headers };
+			if (status !== undefined) result.status = status;
+			return result;
 		}
 		
 		// For simple responses, return undefined (no headers)

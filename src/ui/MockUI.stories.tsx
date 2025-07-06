@@ -263,8 +263,30 @@ const platform = createMockPlatform({
 			},
 			defaultStatus: 200,
 		},
+		{
+			id: 'transform-demo',
+			componentId: 'Transform',
+			endpoint: '/api/transform-demo',
+			method: 'GET',
+			responses: {
+				200: { message: 'Normal response' },
+			},
+			defaultStatus: 200,
+			featureFlags: ['FORCE_TRANSFORM'],
+			transform: (response, context) => {
+				if (context.featureFlags.FORCE_TRANSFORM) {
+					return {
+						body: { message: 'Transformed!', info: 'Status and headers set by transform' },
+						headers: { 'X-Transformed': 'yes', 'X-Flag': 'FORCE_TRANSFORM' },
+						status: 418,
+					};
+				}
+				return response;
+			},
+		},
 	],
 	featureFlags: [
+		{ name: 'FORCE_TRANSFORM', description: 'Force the response status in the plugin tranform method', default: false },
 		{ name: 'EXPERIMENTAL_HELLO', description: 'Enables experimental hello message', default: false },
 		{ name: 'NEW_UI_FEATURES', description: 'Enables new UI features and improvements', default: true },
 		{ name: 'BETA_API', description: 'Enables beta API endpoints and functionality', default: false },
@@ -403,6 +425,22 @@ function DemoApp() {
 			setError(String(e));
 		}
 	};
+	const [forceTransform, setForceTransform] = useState(platform.getFeatureFlags().FORCE_TRANSFORM);
+	const toggleForceTransform = () => {
+		platform.setFeatureFlag('FORCE_TRANSFORM', !forceTransform);
+		setForceTransform(!forceTransform);
+	};
+	const fetchTransformDemo = async () => {
+		setError(null);
+		setResult(null);
+		try {
+			const res = await fetch('/api/transform-demo', { method: 'GET' });
+			const data = await res.json();
+			setResult(data);
+		} catch (e) {
+			setError(String(e));
+		}
+	};
 	return (
 		<div style={{ padding: 32 }}>
 			<h2>MSW UI Manager Demo</h2>
@@ -425,6 +463,13 @@ function DemoApp() {
 					<button onClick={fetchWithHeadersQuery}>
 						Fetch /api/with-headers?variant=custom
 					</button>
+				<button onClick={fetchTransformDemo}>
+					Fetch /api/transform-demo (transform demo)
+				</button>
+				<label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<input type="checkbox" checked={forceTransform} onChange={toggleForceTransform} />
+					Enable FORCE_TRANSFORM (see custom status and headers)
+				</label>
 				<pre
 					style={{
 						width: '100%',

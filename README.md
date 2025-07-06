@@ -221,6 +221,27 @@ responses: {
 - **Rate Limiting**: Simulate rate limit headers like `X-RateLimit-Remaining`
 - **CORS**: Test CORS headers like `Access-Control-Allow-Origin`
 
+### 1.2.1. Overriding Status Code in a Transform
+
+You can override the response status code from within your plugin's `transform` function by returning an object with a `status` property:
+
+```js
+transform: (response, context) => {
+  if (context.featureFlags.FORCE_404) {
+    return {
+      body: { error: 'forced by transform' },
+      headers: { 'X-Transformed': 'yes' },
+      status: 404, // <-- custom status code
+    };
+  }
+  return response;
+}
+```
+
+- The returned `status` will be used as the HTTP status code for the response.
+- You can set `body`, `headers`, and `status` together or separately.
+- If you return only a body (for backward compatibility), the default status code logic is used.
+
 ### 1.3. Response Delays
 
 You can configure response delays for each endpoint to simulate real network conditions, slow APIs, or test loading states in your application.

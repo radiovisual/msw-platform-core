@@ -164,9 +164,10 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 						responseValue = simpleResponse;
 					}
 
-					// Extract body and headers from the response value
+					// Extract body, headers, and status from the response value
 					const body = extractResponseBody(responseValue);
 					const headers = extractResponseHeaders(responseValue);
+					const transformedStatus = (responseValue && typeof responseValue === 'object' && 'status' in responseValue && typeof responseValue.status === 'number') ? responseValue.status : status;
 
 					// Apply delay if configured
 					const delay = platform.getEffectiveDelay(bestPlugin.id);
@@ -174,7 +175,7 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 						await new Promise(resolve => setTimeout(resolve, delay));
 					}
 
-					return HttpResponse.json(body, { status, headers });
+					return HttpResponse.json(body, { status: transformedStatus, headers });
 				} catch (err) {
 					// MSW handler error: err
 					return HttpResponse.json({ error: String(err) }, { status: 500 });
