@@ -90,7 +90,9 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 					</span>
 					<div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 						{endpointVariants.map(variant => (
-							<span key={variant} style={{ fontFamily: 'monospace', fontSize: 12, color: '#333', opacity: 0.85 }}>{variant}</span>
+							<span key={variant} style={{ fontFamily: 'monospace', fontSize: 12, color: '#333', opacity: 0.85 }}>
+								{variant}
+							</span>
 						))}
 					</div>
 					<div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -228,7 +230,9 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 				))}
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-				<Label htmlFor={`delay-${plugin.id}`} style={{ fontSize: 12 }}>Delay (ms):</Label>
+				<Label htmlFor={`delay-${plugin.id}`} style={{ fontSize: 12 }}>
+					Delay (ms):
+				</Label>
 				<input
 					type="number"
 					id={`delay-${plugin.id}`}
@@ -236,7 +240,7 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 					max="10000"
 					step="50"
 					value={getDelay(plugin.id)}
-					onChange={(e) => onUpdateDelay(plugin.id, parseInt(e.target.value) || 0)}
+					onChange={e => onUpdateDelay(plugin.id, parseInt(e.target.value) || 0)}
 					style={{
 						width: 80,
 						padding: '4px 8px',

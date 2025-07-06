@@ -377,7 +377,11 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 									</TabPanel>
 									<TabPanel value="settings">
 										{/* Dynamic middleware settings UI */}
-										<DynamicSettingsTab platform={platform} onSettingChange={updateMiddlewareSetting} onGlobalDisableChange={handleGlobalDisableChange} />
+										<DynamicSettingsTab
+											platform={platform}
+											onSettingChange={updateMiddlewareSetting}
+											onGlobalDisableChange={handleGlobalDisableChange}
+										/>
 									</TabPanel>
 									<TabPanel value="feature-flags">
 										<FeatureFlagsTab

@@ -207,7 +207,7 @@ describe('mswHandlersFromPlatform', () => {
 
 		// Test with different user IDs - all should match the wildcard pattern
 		const testIds = ['123', '456', '789', 'abc123'];
-		
+
 		for (const id of testIds) {
 			const res = await fetch(`http://localhost/api/v1/user/${id}`);
 			const json = await res.json();
@@ -239,7 +239,7 @@ describe('mswHandlersFromPlatform', () => {
 			{ orderId: '789', itemId: 'abc' },
 			{ orderId: 'xyz', itemId: 'def' },
 		];
-		
+
 		for (const { orderId, itemId } of testCases) {
 			const res = await fetch(`http://localhost/api/v1/orders/${orderId}/items/${itemId}`);
 			const json = await res.json();
@@ -285,7 +285,7 @@ describe('Query Parameter Matching', () => {
 
 		// Test with different values for the wildcard parameter
 		const testValues = ['member', 'user', '123', 'abc'];
-		
+
 		for (const value of testValues) {
 			const res = await fetch(`http://localhost/api/test?type=${value}`);
 			const json = await res.json();
@@ -301,7 +301,7 @@ describe('Query Parameter Matching', () => {
 
 		// Test with different role values
 		const testRoles = ['admin', 'user', 'guest', 'moderator'];
-		
+
 		for (const role of testRoles) {
 			const res = await fetch(`http://localhost/api/test?status=active&role=${role}`);
 			const json = await res.json();
@@ -768,9 +768,9 @@ describe('Multiple Plugins with Same Endpoint', () => {
 	};
 
 	it('correctly matches exact query parameters with highest specificity', async () => {
-		const platform = createMockPlatform({ 
-			name: 'test', 
-			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin],
 		});
 		server.resetHandlers();
 		server.use(...mswHandlersFromPlatform(platform));
@@ -782,9 +782,9 @@ describe('Multiple Plugins with Same Endpoint', () => {
 	});
 
 	it('correctly matches wildcard query parameters when exact match fails', async () => {
-		const platform = createMockPlatform({ 
-			name: 'test', 
-			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin],
 		});
 		server.resetHandlers();
 		server.use(...mswHandlersFromPlatform(platform));
@@ -796,9 +796,9 @@ describe('Multiple Plugins with Same Endpoint', () => {
 	});
 
 	it('correctly falls back to default plugin when no query parameters match', async () => {
-		const platform = createMockPlatform({ 
-			name: 'test', 
-			plugins: [specificPlugin, wildcardPlugin, defaultPlugin] 
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [specificPlugin, wildcardPlugin, defaultPlugin],
 		});
 		server.resetHandlers();
 		server.use(...mswHandlersFromPlatform(platform));
@@ -825,9 +825,9 @@ describe('Multiple Plugins with Same Endpoint', () => {
 			},
 		};
 
-		const platform = createMockPlatform({ 
-			name: 'test', 
-			plugins: [mixedPlugin, wildcardPlugin, defaultPlugin] 
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [mixedPlugin, wildcardPlugin, defaultPlugin],
 		});
 		server.resetHandlers();
 		server.use(...mswHandlersFromPlatform(platform));
@@ -868,9 +868,9 @@ describe('Multiple Plugins with Same Endpoint', () => {
 			},
 		};
 
-		const platform = createMockPlatform({ 
-			name: 'test', 
-			plugins: [equalSpecificityPlugin1, equalSpecificityPlugin2] 
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [equalSpecificityPlugin1, equalSpecificityPlugin2],
 		});
 		server.resetHandlers();
 		server.use(...mswHandlersFromPlatform(platform));
@@ -955,10 +955,13 @@ describe('Delay functionality', () => {
 			setGlobalDisable: jest.fn(),
 		};
 
-		const platform = createMockPlatform({
-			name: 'test',
-			plugins: [plugin],
-		}, mockPersistence);
+		const platform = createMockPlatform(
+			{
+				name: 'test',
+				plugins: [plugin],
+			},
+			mockPersistence
+		);
 
 		// Should use persisted delay
 		expect(platform.getEffectiveDelay('test-plugin')).toBe(1000);
@@ -1024,10 +1027,13 @@ describe('Global Disable functionality', () => {
 			setGlobalDisable: jest.fn(),
 		};
 
-		const platform = createMockPlatform({
-			name: 'test',
-			plugins: [],
-		}, mockPersistence);
+		const platform = createMockPlatform(
+			{
+				name: 'test',
+				plugins: [],
+			},
+			mockPersistence
+		);
 
 		// Should use persisted global disable setting
 		expect(platform.isGloballyDisabled()).toBe(true);
@@ -1131,15 +1137,15 @@ describe('Custom Response Headers functionality', () => {
 					body: { error: 'Bad Request' },
 					headers: {
 						'Content-Type': 'application/problem+json',
-						'X-Custom-Header': 'custom-value'
-					}
+						'X-Custom-Header': 'custom-value',
+					},
 				},
 				404: {
 					body: { error: 'Not Found' },
 					headers: {
-						'Content-Type': 'application/problem+json'
-					}
-				}
+						'Content-Type': 'application/problem+json',
+					},
+				},
 			},
 			defaultStatus: 200,
 		};
@@ -1159,8 +1165,8 @@ describe('Custom Response Headers functionality', () => {
 			body: { error: 'Bad Request' },
 			headers: {
 				'Content-Type': 'application/problem+json',
-				'X-Custom-Header': 'custom-value'
-			}
+				'X-Custom-Header': 'custom-value',
+			},
 		});
 
 		// Test that getResponse still returns just the body
@@ -1182,11 +1188,11 @@ describe('Custom Response Headers functionality', () => {
 						body: { error: 'Query Error' },
 						headers: {
 							'Content-Type': 'application/problem+json',
-							'X-Error-Type': 'query-error'
-						}
-					}
-				}
-			}
+							'X-Error-Type': 'query-error',
+						},
+					},
+				},
+			},
 		};
 
 		const platform = createMockPlatform({
@@ -1201,8 +1207,8 @@ describe('Custom Response Headers functionality', () => {
 			body: { error: 'Query Error' },
 			headers: {
 				'Content-Type': 'application/problem+json',
-				'X-Error-Type': 'query-error'
-			}
+				'X-Error-Type': 'query-error',
+			},
 		});
 	});
 
@@ -1223,12 +1229,12 @@ describe('Custom Response Headers functionality', () => {
 							body: { error: 'Internal Server Error' },
 							headers: {
 								'Content-Type': 'application/problem+json',
-								'X-Error-Scenario': 'internal-error'
-							}
-						}
-					}
-				}
-			]
+								'X-Error-Scenario': 'internal-error',
+							},
+						},
+					},
+				},
+			],
 		};
 
 		const platform = createMockPlatform({
@@ -1245,8 +1251,8 @@ describe('Custom Response Headers functionality', () => {
 			body: { error: 'Internal Server Error' },
 			headers: {
 				'Content-Type': 'application/problem+json',
-				'X-Error-Scenario': 'internal-error'
-			}
+				'X-Error-Scenario': 'internal-error',
+			},
 		});
 	});
 
@@ -1258,7 +1264,7 @@ describe('Custom Response Headers functionality', () => {
 			method: 'GET',
 			responses: {
 				200: { message: 'simple response' },
-				201: { message: 'created' }
+				201: { message: 'created' },
 			},
 			defaultStatus: 200,
 		};
@@ -1362,7 +1368,7 @@ describe('Transform-based status override', () => {
 			method: 'GET',
 			responses: { 200: { message: 'ok' } },
 			defaultStatus: 200,
-			transform: (response, context) => {
+			transform: () => {
 				return { body: { error: 'fail' }, headers: { 'X-Test': 'yes' }, status: 418 };
 			},
 		};
@@ -1379,7 +1385,7 @@ describe('Transform-based status override', () => {
 			method: 'GET',
 			responses: { 200: { message: 'ok' } },
 			defaultStatus: 200,
-			transform: (response, context) => {
+			transform: () => {
 				return { message: 'transformed' };
 			},
 		};

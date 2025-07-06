@@ -4,7 +4,6 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 
 ## TODO
 
-- [] Test file type response support (html. text responses)
 - [] Manupulate response payloads directly from the UI for each endpoint
 
 ## Goals
@@ -551,6 +550,109 @@ const userPlugin = {
 - **Parameter presence detection:** Use `'param=*'` to match when a parameter is present regardless of its value
 - **Mixed matching:** Combine exact matches for important parameters with wildcards for less critical ones
 - **Fallback responses:** Use wildcards to provide generic responses when specific values don't match
+
+---
+
+## Custom Response Types
+
+You can return different response types from your mock endpoints by specifying the appropriate `Content-Type` header in your plugin's response definition. The mock platform and MSW adapter will automatically use the correct response type for:
+
+- **JSON** (`application/json`)
+- **HTML** (`text/html`)
+- **Plain text** (`text/plain`)
+- **XML** (`application/xml`, `text/xml`)
+- **Binary** (`application/octet-stream`)
+
+### Example: Plugin Definitions
+
+```js
+const plugins = [
+  // JSON (default)
+  {
+    id: 'json',
+    componentId: 'demo',
+    endpoint: '/api/json',
+    method: 'GET',
+    responses: {
+      200: {
+        body: { message: 'Hello, JSON!' },
+        headers: { 'Content-Type': 'application/json' },
+      },
+    },
+    defaultStatus: 200,
+  },
+  // HTML
+  {
+    id: 'html',
+    componentId: 'demo',
+    endpoint: '/api/html',
+    method: 'GET',
+    responses: {
+      200: {
+        body: '<h1>Hello, HTML!</h1>',
+        headers: { 'Content-Type': 'text/html' },
+      },
+    },
+    defaultStatus: 200,
+  },
+  // Plain text
+  {
+    id: 'text',
+    componentId: 'demo',
+    endpoint: '/api/text',
+    method: 'GET',
+    responses: {
+      200: {
+        body: 'Hello, plain text!',
+        headers: { 'Content-Type': 'text/plain' },
+      },
+    },
+    defaultStatus: 200,
+  },
+  // XML
+  {
+    id: 'xml',
+    componentId: 'demo',
+    endpoint: '/api/xml',
+    method: 'GET',
+    responses: {
+      200: {
+        body: '<note><to>User</to><message>Hello XML</message></note>',
+        headers: { 'Content-Type': 'application/xml' },
+      },
+    },
+    defaultStatus: 200,
+  },
+  // Binary
+  {
+    id: 'bin',
+    componentId: 'demo',
+    endpoint: '/api/bin',
+    method: 'GET',
+    responses: {
+      200: {
+        body: new Uint8Array([1,2,3,4]).buffer,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      },
+    },
+    defaultStatus: 200,
+  },
+];
+```
+
+### How it works
+
+- The platform inspects the `Content-Type` header in your response definition.
+- The MSW adapter will use the correct response type:
+  - `application/json` → `HttpResponse.json()`
+  - `text/html` → `HttpResponse.html()`
+  - `text/plain` → `HttpResponse.text()`
+  - `application/xml`/`text/xml` → `HttpResponse.xml()`
+  - `application/octet-stream` (with ArrayBuffer) → `HttpResponse.arrayBuffer()`
+  - Any other type → `new HttpResponse(body, { ... })`
+- If no `Content-Type` is specified, JSON is assumed by default.
+
+See the Storybook demo for live examples.
 
 ---
 

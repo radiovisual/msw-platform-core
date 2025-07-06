@@ -1,6 +1,16 @@
+/**
+ * @jest-environment node
+ */
 import { mswHandlersFromPlatform } from './msw';
 import { createMockPlatform } from '../platform';
-import type { Plugin } from '../types';
+import type { Plugin, HttpMethod } from '../types';
+import { setupServer } from 'msw/node';
+
+const server = setupServer();
+
+beforeAll(() => server.listen());
+afterAll(() => server.close());
+beforeEach(() => server.resetHandlers());
 
 describe('MSW Adapter', () => {
 	it('should create handlers for plugins', () => {
@@ -179,4 +189,122 @@ describe('MSW Adapter', () => {
 		} as any);
 		expect(await defaultResponse.json()).toEqual({ message: 'default' });
 	});
-}); 
+});
+
+describe('Custom response types', () => {
+	it('returns JSON response with correct content-type', async () => {
+		const plugin: Plugin = {
+			id: 'json',
+			componentId: 'test',
+			endpoint: '/api/json',
+			method: 'GET' as HttpMethod,
+			responses: {
+				200: {
+					body: { message: 'Hello, JSON!' },
+					headers: { 'Content-Type': 'application/json' },
+				},
+			},
+			defaultStatus: 200,
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		server.use(...mswHandlersFromPlatform(platform));
+		const res = await fetch('http://localhost/api/json');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toContain('application/json');
+		const json = await res.json();
+		expect(json).toEqual({ message: 'Hello, JSON!' });
+	});
+
+	it('returns HTML response with correct content-type', async () => {
+		const plugin: Plugin = {
+			id: 'html',
+			componentId: 'test',
+			endpoint: '/api/html',
+			method: 'GET' as HttpMethod,
+			responses: {
+				200: {
+					body: '<h1>Hello, HTML!</h1>',
+					headers: { 'Content-Type': 'text/html' },
+				},
+			},
+			defaultStatus: 200,
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		server.use(...mswHandlersFromPlatform(platform));
+		const res = await fetch('http://localhost/api/html');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toContain('text/html');
+		const text = await res.text();
+		expect(text).toBe('<h1>Hello, HTML!</h1>');
+	});
+
+	it('returns plain text response with correct content-type', async () => {
+		const plugin: Plugin = {
+			id: 'text',
+			componentId: 'test',
+			endpoint: '/api/text',
+			method: 'GET' as HttpMethod,
+			responses: {
+				200: {
+					body: 'Hello, plain text!',
+					headers: { 'Content-Type': 'text/plain' },
+				},
+			},
+			defaultStatus: 200,
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		server.use(...mswHandlersFromPlatform(platform));
+		const res = await fetch('http://localhost/api/text');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toContain('text/plain');
+		const text = await res.text();
+		expect(text).toBe('Hello, plain text!');
+	});
+
+	it('returns XML response with correct content-type', async () => {
+		const plugin: Plugin = {
+			id: 'xml',
+			componentId: 'test',
+			endpoint: '/api/xml',
+			method: 'GET' as HttpMethod,
+			responses: {
+				200: {
+					body: '<note><to>User</to><message>Hello XML</message></note>',
+					headers: { 'Content-Type': 'application/xml' },
+				},
+			},
+			defaultStatus: 200,
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		server.use(...mswHandlersFromPlatform(platform));
+		const res = await fetch('http://localhost/api/xml');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toContain('application/xml');
+		const text = await res.text();
+		expect(text).toBe('<note><to>User</to><message>Hello XML</message></note>');
+	});
+
+	it('returns binary response with correct content-type', async () => {
+		const buffer = new Uint8Array([1, 2, 3, 4]).buffer;
+		const plugin: Plugin = {
+			id: 'bin',
+			componentId: 'test',
+			endpoint: '/api/bin',
+			method: 'GET' as HttpMethod,
+			responses: {
+				200: {
+					body: buffer,
+					headers: { 'Content-Type': 'application/octet-stream' },
+				},
+			},
+			defaultStatus: 200,
+		};
+		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+		server.use(...mswHandlersFromPlatform(platform));
+		const res = await fetch('http://localhost/api/bin');
+		expect(res.status).toBe(200);
+		expect(res.headers.get('content-type')).toContain('application/octet-stream');
+		const arrBuf = await res.arrayBuffer();
+		expect(new Uint8Array(arrBuf)).toEqual(new Uint8Array([1, 2, 3, 4]));
+	});
+});

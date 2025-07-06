@@ -467,7 +467,7 @@ export class MockPlatformCore {
 				resp = this.applyMiddleware(plugin, resp, request);
 			}
 		}
-		
+
 		// Otherwise, use status override/default
 		if (resp === undefined) {
 			resp = plugin.responses[useStatus];
@@ -498,7 +498,7 @@ export class MockPlatformCore {
 			if (status !== undefined) result.status = status;
 			return result;
 		}
-		
+
 		// For simple responses, wrap in body/headers structure
 		if (resp !== undefined) {
 			const body = extractResponseBody(resp);
@@ -506,7 +506,7 @@ export class MockPlatformCore {
 			const result: any = { body, headers };
 			return result;
 		}
-		
+
 		return undefined;
 	}
 

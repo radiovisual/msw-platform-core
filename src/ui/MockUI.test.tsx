@@ -268,7 +268,6 @@ describe('MockUI', () => {
 		// Re-query the select element before changing to 'registered'
 		const selectAfter = await screen.findByDisplayValue('User not registered');
 		// Select "User is registered"
-		const selectEl = selectAfter as HTMLSelectElement;
 		await userEvent.selectOptions(selectAfter, 'registered');
 		await waitFor(() => expect(selectAfter).toHaveValue('registered'));
 		// Assert persistence is updated

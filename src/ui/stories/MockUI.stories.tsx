@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import MockUI from './MockUI';
-import { createMockPlatform } from '../platform';
-import { mswHandlersFromPlatform } from '../adapters/msw';
-import { createPathMiddleware, createCustomMiddleware } from '../middleware/helpers';
+import MockUI from '../MockUI';
+import { createMockPlatform } from '../../platform';
+import { mswHandlersFromPlatform } from '../../adapters/msw';
+import { createPathMiddleware, createCustomMiddleware } from '../../middleware/helpers';
 
 // Example of path middleware - updates user.type and contract.user.type
 const contractMiddleware = createPathMiddleware({
@@ -147,7 +147,7 @@ const platform = createMockPlatform({
 			},
 			swaggerUrl: 'https://jsonplaceholder.typicode.com/users/1',
 			defaultStatus: 200,
-	
+
 			transform: (response, context) => {
 				if (context.featureFlags.EXPERIMENTAL_HELLO) {
 					return { ...response, message: 'Hello, experimental world!' };
@@ -272,7 +272,6 @@ const platform = createMockPlatform({
 				200: { message: 'Normal response' },
 			},
 			defaultStatus: 200,
-	
 			transform: (response, context) => {
 				if (context.featureFlags.FORCE_TRANSFORM) {
 					return {
@@ -416,7 +415,7 @@ function DemoApp() {
 	const fetchWithHeadersQuery = async () => {
 		setError(null);
 		setResult(null);
-		
+
 		try {
 			const res = await fetch('/api/with-headers?variant=custom', { method: 'GET' });
 			const data = await res.json();
@@ -445,7 +444,9 @@ function DemoApp() {
 		<div style={{ padding: 32 }}>
 			<h2>MSW UI Manager Demo</h2>
 			<p>Click the buttons to make fetch requests. Click the gear icon to manage the mocks.</p>
-			<p><strong>Tip:</strong> Open the Network tab in your browser&apos;s dev tools to see the custom response headers!</p>
+			<p>
+				<strong>Tip:</strong> Open the Network tab in your browser&apos;s dev tools to see the custom response headers!
+			</p>
 			<hr />
 			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>
 				<button onClick={fetchHello}>Fetch /api/hello</button>
@@ -457,15 +458,9 @@ function DemoApp() {
 				<button onClick={fetchUserActiveRole}>Fetch /api/user?status=active&role=admin (wildcard)</button>
 				<button onClick={fetchUserStatus}>Fetch /api/user-status</button>
 				<button onClick={fetchExternalUser}>Fetch https://jsonplaceholder.typicode.com/users/1</button>
-					<button onClick={fetchWithHeaders}>
-						Fetch /api/with-headers
-					</button>
-					<button onClick={fetchWithHeadersQuery}>
-						Fetch /api/with-headers?variant=custom
-					</button>
-				<button onClick={fetchTransformDemo}>
-					Fetch /api/transform-demo (transform demo)
-				</button>
+				<button onClick={fetchWithHeaders}>Fetch /api/with-headers</button>
+				<button onClick={fetchWithHeadersQuery}>Fetch /api/with-headers?variant=custom</button>
+				<button onClick={fetchTransformDemo}>Fetch /api/transform-demo (transform demo)</button>
 				<label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 					<input type="checkbox" checked={forceTransform} onChange={toggleForceTransform} />
 					Enable FORCE_TRANSFORM (see custom status and headers)
