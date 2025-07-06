@@ -2,6 +2,8 @@
  * Middleware utility functions for common operations
  */
 
+import type { ResponseValue, ResponseData } from '../types';
+
 /**
  * Updates a value at a specific path in an object
  * @param obj - The object to update
@@ -142,4 +144,31 @@ export function findPaths(obj: any, pattern: string): string[] {
 
 	search(obj, [], 0);
 	return paths;
+}
+
+/**
+ * Extract the body from a ResponseValue (supports both simple values and ResponseData objects)
+ */
+export function extractResponseBody<T>(responseValue: ResponseValue<T>): T {
+	if (responseValue && typeof responseValue === 'object' && 'body' in responseValue) {
+		return (responseValue as ResponseData<T>).body;
+	}
+	return responseValue as T;
+}
+
+/**
+ * Extract headers from a ResponseValue (returns empty object if no headers)
+ */
+export function extractResponseHeaders(responseValue: ResponseValue<any>): Record<string, string> {
+	if (responseValue && typeof responseValue === 'object' && 'headers' in responseValue) {
+		return (responseValue as ResponseData<any>).headers || {};
+	}
+	return {};
+}
+
+/**
+ * Check if a ResponseValue is a ResponseData object
+ */
+export function isResponseData(responseValue: ResponseValue<any>): responseValue is ResponseData<any> {
+	return responseValue !== null && responseValue !== undefined && typeof responseValue === 'object' && 'body' in responseValue;
 }

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { MockPlatformCore } from '../platform';
 import { Plugin } from '../types';
+import { extractResponseBody, extractResponseHeaders } from '../middleware/utils';
 
 export interface MSWHandlersOptions {
 	/**
@@ -137,25 +138,35 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					
 					// Get the response from the best matching plugin
 					const status = platform.getStatusOverride(bestPlugin.id) ?? bestPlugin.defaultStatus;
-					let response;
+					let responseValue;
 					
 					if (bestQueryMatch && bestPlugin.queryResponses) {
 						const qr = bestPlugin.queryResponses[bestQueryMatch];
 						if (qr && typeof qr === 'object' && Object.keys(qr).some(k => !isNaN(Number(k)))) {
 							// Map of status codes
-							response = qr[status] ?? qr[bestPlugin.defaultStatus] ?? Object.values(qr)[0];
+							responseValue = qr[status] ?? qr[bestPlugin.defaultStatus] ?? Object.values(qr)[0];
 						} else {
-							response = qr;
+							responseValue = qr;
 						}
 					}
 					
-					if (response === undefined) {
-						response = platform.getResponse(bestPlugin.id, status);
+					if (responseValue === undefined) {
+						const requestForPlatform = { url: urlString };
+						responseValue = platform.getResponseWithHeaders(bestPlugin.id, status, requestForPlatform);
 					}
 					
-					if (response === undefined) {
-						return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+					if (responseValue === undefined) {
+						// Fall back to getResponse for simple responses
+						const simpleResponse = platform.getResponse(bestPlugin.id, status);
+						if (simpleResponse === undefined) {
+							return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+						}
+						responseValue = simpleResponse;
 					}
+
+					// Extract body and headers from the response value
+					const body = extractResponseBody(responseValue);
+					const headers = extractResponseHeaders(responseValue);
 
 					// Apply delay if configured
 					const delay = platform.getEffectiveDelay(bestPlugin.id);
@@ -163,7 +174,7 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 						await new Promise(resolve => setTimeout(resolve, delay));
 					}
 
-					return HttpResponse.json(response, { status });
+					return HttpResponse.json(body, { status, headers });
 				} catch (err) {
 					// MSW handler error: err
 					return HttpResponse.json({ error: String(err) }, { status: 500 });

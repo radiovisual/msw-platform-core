@@ -5,7 +5,6 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 ## TODO
 
 - [] Test file type response support (html. text responses)
-- [] Set custom headers for the different response types (application/problem+json, etc)
 - [] Manupulate response payloads directly from the UI for each endpoint
 
 ## Goals
@@ -52,7 +51,177 @@ const platform = createMockPlatform({
 });
 ```
 
-### 1.1. Response Delays
+### 1.2. Custom Response Headers
+
+You can specify custom response headers for any response in your plugins. This is useful for APIs that require specific headers like `Content-Type: application/problem+json` for error responses, or custom headers for authentication, caching, etc.
+
+#### Basic Header Support
+
+Add a `headers` property to any response object:
+
+```js
+const platform = createMockPlatform({
+  plugins: [
+    {
+      id: 'api-with-headers',
+      endpoint: '/api/with-headers',
+      method: 'GET',
+      responses: {
+        200: {
+          body: { message: 'Success response with custom headers' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Custom-Header': 'custom-value',
+            'Cache-Control': 'no-cache',
+          },
+        },
+        400: {
+          body: { error: 'Bad request', code: 400 },
+          headers: {
+            'Content-Type': 'application/problem+json',
+            'X-Error-Type': 'bad-request',
+          },
+        },
+        404: {
+          body: { error: 'Not found' },
+          headers: {
+            'Content-Type': 'application/problem+json',
+            'X-Error-Type': 'not-found',
+          },
+        },
+      },
+      defaultStatus: 200,
+    },
+  ],
+});
+```
+
+#### Headers in Scenarios
+
+Custom headers work with endpoint scenarios as well:
+
+```js
+const platform = createMockPlatform({
+  plugins: [
+    {
+      id: 'user-api',
+      endpoint: '/api/user',
+      method: 'GET',
+      responses: {
+        200: { user: { name: 'Default User' } },
+        404: { error: 'User not found' },
+      },
+      defaultStatus: 200,
+      scenarios: [
+        {
+          id: 'admin-user',
+          label: 'Admin User',
+          responses: {
+            200: {
+              body: { user: { name: 'Admin User', role: 'admin' } },
+              headers: {
+                'X-User-Role': 'admin',
+                'X-Permissions': 'read,write,delete',
+              },
+            },
+          },
+        },
+        {
+          id: 'guest-user',
+          label: 'Guest User',
+          responses: {
+            200: {
+              body: { user: { name: 'Guest User', role: 'guest' } },
+              headers: {
+                'X-User-Role': 'guest',
+                'X-Permissions': 'read',
+              },
+            },
+          },
+        },
+      ],
+    },
+  ],
+});
+```
+
+#### Headers in Query Parameter Responses
+
+Custom headers are also supported in query parameter responses:
+
+```js
+const platform = createMockPlatform({
+  plugins: [
+    {
+      id: 'search-api',
+      endpoint: '/api/search',
+      method: 'GET',
+      responses: {
+        200: { results: [] },
+        400: { error: 'Invalid search parameters' },
+      },
+      defaultStatus: 200,
+      queryResponses: {
+        'type=admin': {
+          200: {
+            body: { results: [{ id: 1, name: 'Admin Result' }] },
+            headers: {
+              'X-Result-Type': 'admin',
+              'X-Total-Count': '1',
+            },
+          },
+        },
+        'type=*': {
+          200: {
+            body: { results: [{ id: 2, name: 'Any Type Result' }] },
+            headers: {
+              'X-Result-Type': 'any',
+              'X-Total-Count': '1',
+            },
+          },
+        },
+        'error=true': {
+          400: {
+            body: { error: 'Search error' },
+            headers: {
+              'Content-Type': 'application/problem+json',
+              'X-Error-Code': 'SEARCH_ERROR',
+            },
+          },
+        },
+      },
+    },
+  ],
+});
+```
+Lastly, a reminder that settings custom headers is optional. These examples are still valid:
+
+```js
+// This works (no headers)
+responses: {
+  200: { message: 'Simple response' },
+  404: { error: 'Not found' },
+}
+
+// This also works (with headers)
+responses: {
+  200: {
+    body: { message: 'Response with headers' },
+    headers: { 'X-Custom': 'value' },
+  },
+}
+```
+
+#### Use Cases
+
+- **Error Responses**: Set `Content-Type: application/problem+json` for 4xx/5xx responses
+- **Authentication**: Include `Authorization` or custom auth headers
+- **Caching**: Set `Cache-Control`, `ETag`, or `Last-Modified` headers
+- **API Versioning**: Include `X-API-Version` or similar version headers
+- **Rate Limiting**: Simulate rate limit headers like `X-RateLimit-Remaining`
+- **CORS**: Test CORS headers like `Access-Control-Allow-Origin`
+
+### 1.3. Response Delays
 
 You can configure response delays for each endpoint to simulate real network conditions, slow APIs, or test loading states in your application.
 

@@ -214,6 +214,55 @@ const platform = createMockPlatform({
 			},
 			defaultStatus: 200,
 		},
+		{
+			id: 'with-headers',
+			componentId: 'Headers',
+			endpoint: '/api/with-headers',
+			method: 'GET',
+			responses: {
+				200: {
+					body: { message: 'This response has custom headers!' },
+					headers: {
+						'X-Custom-Header': 'custom-value',
+						'Content-Type': 'application/json',
+					},
+				},
+				400: {
+					body: { error: 'Bad request', code: 400 },
+					headers: {
+						'Content-Type': 'application/problem+json',
+						'X-Error-Type': 'bad-request',
+					},
+				},
+			},
+			scenarios: [
+				{
+					id: 'special-scenario',
+					label: 'Special Scenario',
+					responses: {
+						200: {
+							body: { message: 'Special scenario with custom headers!' },
+							headers: {
+								'X-Scenario-Header': 'special-scenario-value',
+								'Content-Type': 'application/json',
+							},
+						},
+					},
+				},
+			],
+			queryResponses: {
+				'variant=custom': {
+					200: {
+						body: { message: 'Query param response with custom headers!' },
+						headers: {
+							'X-Query-Header': 'custom-query-value',
+							'Content-Type': 'application/json',
+						},
+					},
+				},
+			},
+			defaultStatus: 200,
+		},
 	],
 	featureFlags: [
 		{ name: 'EXPERIMENTAL_HELLO', description: 'Enables experimental hello message', default: false },
@@ -329,10 +378,36 @@ function DemoApp() {
 			setError(String(e));
 		}
 	};
+	const fetchWithHeaders = async () => {
+		setError(null);
+		setResult(null);
+
+		try {
+			const res = await fetch('/api/with-headers', { method: 'GET' });
+			const data = await res.json();
+			setResult(data);
+		} catch (e) {
+			setError(String(e));
+		}
+	};
+
+	const fetchWithHeadersQuery = async () => {
+		setError(null);
+		setResult(null);
+		
+		try {
+			const res = await fetch('/api/with-headers?variant=custom', { method: 'GET' });
+			const data = await res.json();
+			setResult(data);
+		} catch (e) {
+			setError(String(e));
+		}
+	};
 	return (
 		<div style={{ padding: 32 }}>
 			<h2>MSW UI Manager Demo</h2>
 			<p>Click the buttons to make fetch requests. Click the gear icon to manage the mocks.</p>
+			<p><strong>Tip:</strong> Open the Network tab in your browser&apos;s dev tools to see the custom response headers!</p>
 			<hr />
 			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>
 				<button onClick={fetchHello}>Fetch /api/hello</button>
@@ -344,6 +419,12 @@ function DemoApp() {
 				<button onClick={fetchUserActiveRole}>Fetch /api/user?status=active&role=admin (wildcard)</button>
 				<button onClick={fetchUserStatus}>Fetch /api/user-status</button>
 				<button onClick={fetchExternalUser}>Fetch https://jsonplaceholder.typicode.com/users/1</button>
+					<button onClick={fetchWithHeaders}>
+						Fetch /api/with-headers
+					</button>
+					<button onClick={fetchWithHeadersQuery}>
+						Fetch /api/with-headers?variant=custom
+					</button>
 				<pre
 					style={{
 						width: '100%',

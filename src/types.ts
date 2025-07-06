@@ -8,15 +8,24 @@ export interface FeatureFlag {
 	default?: boolean;
 }
 
+// New interface for response data with optional headers
+export interface ResponseData<T = any> {
+	body: T;
+	headers?: Record<string, string>;
+}
+
+// Helper type to support both simple responses (backward compatibility) and ResponseData objects
+export type ResponseValue<T = any> = T | ResponseData<T>;
+
 export interface EndpointScenario<T = any> {
 	id: string; // e.g. "user-not-registered"
 	label: string; // e.g. "User not registered"
-	responses: { [key: number]: T }; // status code -> payload (overrides plugin responses)
+	responses: { [key: number]: ResponseValue<T> }; // status code -> payload (overrides plugin responses)
 }
 
 // Allow queryResponses to be an object where each key is a query string, and the value is either a response object or a map of status codes to responses
 export type QueryResponses = {
-	[query: string]: any | { [status: number]: any };
+	[query: string]: ResponseValue<any> | { [status: number]: ResponseValue<any> };
 };
 
 export interface Plugin<T = any> {
@@ -25,7 +34,7 @@ export interface Plugin<T = any> {
 	endpoint: string;
 	method: HttpMethod;
 	nickname?: string;
-	responses: { [key: number]: any }; // status code -> payload
+	responses: { [key: number]: ResponseValue<any> }; // status code -> payload
 	defaultStatus: number;
 	featureFlags?: string[];
 	scenarios?: EndpointScenario<T>[];

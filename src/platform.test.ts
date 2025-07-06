@@ -1119,3 +1119,163 @@ describe('Global Disable functionality', () => {
 		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin3']);
 	});
 });
+
+describe('Custom Response Headers functionality', () => {
+	it('should support custom response headers in plugin responses', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: {
+				200: { message: 'success' },
+				400: {
+					body: { error: 'Bad Request' },
+					headers: {
+						'Content-Type': 'application/problem+json',
+						'X-Custom-Header': 'custom-value'
+					}
+				},
+				404: {
+					body: { error: 'Not Found' },
+					headers: {
+						'Content-Type': 'application/problem+json'
+					}
+				}
+			},
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Test default response (no headers)
+		const defaultResponse = platform.getResponse('test-plugin', 200);
+		expect(defaultResponse).toEqual({ message: 'success' });
+
+		// Test response with headers
+		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 400);
+		expect(responseWithHeaders).toEqual({
+			body: { error: 'Bad Request' },
+			headers: {
+				'Content-Type': 'application/problem+json',
+				'X-Custom-Header': 'custom-value'
+			}
+		});
+
+		// Test that getResponse still returns just the body
+		const bodyOnly = platform.getResponse('test-plugin', 400);
+		expect(bodyOnly).toEqual({ error: 'Bad Request' });
+	});
+
+	it('should support custom headers in query responses', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: { 200: { message: 'default' } },
+			defaultStatus: 200,
+			queryResponses: {
+				'error=true': {
+					400: {
+						body: { error: 'Query Error' },
+						headers: {
+							'Content-Type': 'application/problem+json',
+							'X-Error-Type': 'query-error'
+						}
+					}
+				}
+			}
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Test query response with headers
+		const mockRequest = { url: 'http://localhost/api/test?error=true' };
+		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 400, mockRequest);
+		expect(responseWithHeaders).toEqual({
+			body: { error: 'Query Error' },
+			headers: {
+				'Content-Type': 'application/problem+json',
+				'X-Error-Type': 'query-error'
+			}
+		});
+	});
+
+	it('should support custom headers in endpoint scenarios', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: { 200: { message: 'default' } },
+			defaultStatus: 200,
+			scenarios: [
+				{
+					id: 'error-scenario',
+					label: 'Error Scenario',
+					responses: {
+						500: {
+							body: { error: 'Internal Server Error' },
+							headers: {
+								'Content-Type': 'application/problem+json',
+								'X-Error-Scenario': 'internal-error'
+							}
+						}
+					}
+				}
+			]
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Set the endpoint scenario
+		platform.setEndpointScenario('test-plugin', 'error-scenario');
+
+		// Test scenario response with headers
+		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 500);
+		expect(responseWithHeaders).toEqual({
+			body: { error: 'Internal Server Error' },
+			headers: {
+				'Content-Type': 'application/problem+json',
+				'X-Error-Scenario': 'internal-error'
+			}
+		});
+	});
+
+	it('should maintain backward compatibility with simple responses', () => {
+		const plugin: Plugin = {
+			id: 'test-plugin',
+			componentId: 'test',
+			endpoint: '/api/test',
+			method: 'GET',
+			responses: {
+				200: { message: 'simple response' },
+				201: { message: 'created' }
+			},
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Test that simple responses still work
+		const response = platform.getResponse('test-plugin', 200);
+		expect(response).toEqual({ message: 'simple response' });
+
+		// Test that getResponseWithHeaders returns undefined for simple responses
+		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 200);
+		expect(responseWithHeaders).toBeUndefined();
+	});
+});

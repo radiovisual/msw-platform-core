@@ -1,4 +1,6 @@
 import { Plugin, MockPlatformConfig, Scenario } from './types';
+import { extractResponseBody, extractResponseHeaders } from './middleware/utils';
+import type { ResponseValue } from './types';
 
 export interface PersistenceProvider {
 	getFlag(flag: string): boolean | undefined;
@@ -346,7 +348,7 @@ export class MockPlatformCore {
 		// If endpoint scenario is set and plugin has scenarios, use it
 		const scenarioId = this.getEndpointScenario(pluginId);
 		const useStatus = status ?? this.statusOverrides[pluginId] ?? plugin.defaultStatus;
-		let resp;
+		let resp: ResponseValue | undefined;
 		if (scenarioId && plugin.scenarios) {
 			const scenario = plugin.scenarios.find(s => s.id === scenarioId);
 			if (scenario) {
@@ -371,7 +373,7 @@ export class MockPlatformCore {
 				}
 				// Apply middleware
 				resp = this.applyMiddleware(plugin, resp, request);
-				return resp;
+				return extractResponseBody(resp);
 			}
 		}
 		// Otherwise, use status override/default
@@ -392,7 +394,110 @@ export class MockPlatformCore {
 		}
 		// Apply middleware
 		resp = this.applyMiddleware(plugin, resp, request);
-		return resp;
+		return extractResponseBody(resp);
+	}
+
+	getResponseWithHeaders(pluginId: string, status?: number, request?: any) {
+		const plugin = this.plugins.find(p => p.id === pluginId);
+		if (!plugin) return undefined;
+		const scenarioId = this.getEndpointScenario(pluginId);
+		const useStatus = status ?? this.statusOverrides[pluginId] ?? plugin.defaultStatus;
+		let resp: ResponseValue | undefined;
+
+		// Check for query responses first if we have a request
+		if (request && plugin.queryResponses) {
+			const url = new URL(request.url);
+			for (const queryString of Object.keys(plugin.queryResponses)) {
+				// Simple query string matching - this could be enhanced
+				const queryPairs = queryString.split('&');
+				let matches = true;
+				for (const pair of queryPairs) {
+					const [key, value] = pair.split('=');
+					const urlValue = url.searchParams.get(key);
+					if (value === '*') {
+						// Wildcard matches any value
+						if (urlValue === null) {
+							matches = false;
+							break;
+						}
+					} else {
+						// Exact match
+						if (urlValue !== value) {
+							matches = false;
+							break;
+						}
+					}
+				}
+				if (matches) {
+					const qr = plugin.queryResponses[queryString];
+					if (qr && typeof qr === 'object' && Object.keys(qr).some(k => !isNaN(Number(k)))) {
+						// Map of status codes
+						resp = qr[useStatus] ?? qr[plugin.defaultStatus] ?? Object.values(qr)[0];
+					} else {
+						resp = qr;
+					}
+					break;
+				}
+			}
+		}
+
+		if (scenarioId && plugin.scenarios && resp === undefined) {
+			const scenario = plugin.scenarios.find(s => s.id === scenarioId);
+			if (scenario) {
+				resp = scenario.responses[useStatus];
+				if (resp === undefined) {
+					// Fallback to plugin responses
+					resp = plugin.responses[useStatus];
+				}
+				if (resp === undefined) return undefined;
+				if (plugin.transform) {
+					const context: MiddlewareContext = {
+						plugin,
+						request,
+						response: resp,
+						settings: this.middlewareSettings,
+						featureFlags: this.featureFlags,
+						currentStatus: useStatus,
+						endpointScenario: scenarioId,
+						activeScenario: this.activeScenario,
+					};
+					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
+				}
+				// Apply middleware
+				resp = this.applyMiddleware(plugin, resp, request);
+			}
+		}
+		
+		// Otherwise, use status override/default
+		if (resp === undefined) {
+			resp = plugin.responses[useStatus];
+			if (resp === undefined) return undefined;
+			if (plugin.transform) {
+				const context: MiddlewareContext = {
+					plugin,
+					request,
+					response: resp,
+					settings: this.middlewareSettings,
+					featureFlags: this.featureFlags,
+					currentStatus: useStatus,
+					endpointScenario: scenarioId,
+					activeScenario: this.activeScenario,
+				};
+				resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
+			}
+			// Apply middleware
+			resp = this.applyMiddleware(plugin, resp, request);
+		}
+
+		// Check if this is a ResponseData object
+		if (resp && typeof resp === 'object' && 'body' in resp) {
+			const body = extractResponseBody(resp);
+			const headers = extractResponseHeaders(resp);
+			return { body, headers };
+		}
+		
+		// For simple responses, return undefined (no headers)
+		return undefined;
 	}
 
 	registerScenario(scenario: Scenario) {
