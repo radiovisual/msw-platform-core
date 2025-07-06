@@ -953,6 +953,8 @@ describe('Delay functionality', () => {
 			setEndpointScenario: jest.fn(),
 			getDelay: jest.fn(() => 1000),
 			setDelay: jest.fn(),
+			getGlobalDisable: jest.fn(),
+			setGlobalDisable: jest.fn(),
 		};
 
 		const platform = createMockPlatform({
@@ -966,5 +968,102 @@ describe('Delay functionality', () => {
 		// Should call persistence when setting delay
 		platform.setDelayOverride('test-plugin', 2000);
 		expect(mockPersistence.setDelay).toHaveBeenCalledWith('test-plugin', 2000);
+	});
+});
+
+describe('Global Disable functionality', () => {
+	it('should disable all plugins when global disable is enabled', () => {
+		const plugin1: Plugin = {
+			id: 'plugin1',
+			componentId: 'test',
+			endpoint: '/api/test1',
+			method: 'GET',
+			responses: { 200: { message: 'test1' } },
+			defaultStatus: 200,
+		};
+
+		const plugin2: Plugin = {
+			id: 'plugin2',
+			componentId: 'test',
+			endpoint: '/api/test2',
+			method: 'GET',
+			responses: { 200: { message: 'test2' } },
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin1, plugin2],
+		});
+
+		// Initially all plugins should be enabled
+		expect(platform.getDisabledPluginIds()).toEqual([]);
+
+		// Enable global disable
+		platform.setGlobalDisable(true);
+		expect(platform.isGloballyDisabled()).toBe(true);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1', 'plugin2']);
+
+		// Disable global disable
+		platform.setGlobalDisable(false);
+		expect(platform.isGloballyDisabled()).toBe(false);
+		expect(platform.getDisabledPluginIds()).toEqual([]);
+	});
+
+	it('should persist global disable setting', () => {
+		const mockPersistence = {
+			getFlag: jest.fn(),
+			setFlag: jest.fn(),
+			getStatus: jest.fn(),
+			setStatus: jest.fn(),
+			getActiveScenario: jest.fn(),
+			setActiveScenario: jest.fn(),
+			getEndpointScenario: jest.fn(),
+			setEndpointScenario: jest.fn(),
+			getDelay: jest.fn(),
+			setDelay: jest.fn(),
+			getGlobalDisable: jest.fn(() => true),
+			setGlobalDisable: jest.fn(),
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [],
+		}, mockPersistence);
+
+		// Should use persisted global disable setting
+		expect(platform.isGloballyDisabled()).toBe(true);
+
+		// Should call persistence when setting global disable
+		platform.setGlobalDisable(false);
+		expect(mockPersistence.setGlobalDisable).toHaveBeenCalledWith(false);
+	});
+
+	it('should override individual plugin disable settings when global disable is enabled', () => {
+		const plugin: Plugin = {
+			id: 'plugin1',
+			componentId: 'test',
+			endpoint: '/api/test1',
+			method: 'GET',
+			responses: { 200: { message: 'test1' } },
+			defaultStatus: 200,
+		};
+
+		const platform = createMockPlatform({
+			name: 'test',
+			plugins: [plugin],
+		});
+
+		// Initially enable individual plugin disable
+		platform.setDisabledPluginIds(['plugin1']);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1']);
+
+		// Enable global disable - should override individual settings
+		platform.setGlobalDisable(true);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1']);
+
+		// Disable global disable - should return to individual settings
+		platform.setGlobalDisable(false);
+		expect(platform.getDisabledPluginIds()).toEqual(['plugin1']);
 	});
 });

@@ -6,7 +6,6 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 
 - [] Test file type response support (html. text responses)
 - [] Set custom headers for the different response types (application/problem+json, etc)
-- [] Global disable
 - [] Manupulate response payloads directly from the UI for each endpoint
 
 ## Goals

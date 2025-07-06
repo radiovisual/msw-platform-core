@@ -258,6 +258,12 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		[platform, onStateChange, disabledPluginIds]
 	);
 
+	// UI: handle global disable change
+	const handleGlobalDisableChange = useCallback(() => {
+		forceUpdate(x => x + 1);
+		onStateChange?.({ disabledPluginIds });
+	}, [onStateChange, disabledPluginIds]);
+
 	return (
 		<>
 			{/* Floating Button */}
@@ -371,7 +377,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 									</TabPanel>
 									<TabPanel value="settings">
 										{/* Dynamic middleware settings UI */}
-										<DynamicSettingsTab platform={platform} onSettingChange={updateMiddlewareSetting} />
+										<DynamicSettingsTab platform={platform} onSettingChange={updateMiddlewareSetting} onGlobalDisableChange={handleGlobalDisableChange} />
 									</TabPanel>
 									<TabPanel value="feature-flags">
 										<FeatureFlagsTab

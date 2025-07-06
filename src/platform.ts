@@ -11,6 +11,8 @@ export interface PersistenceProvider {
 	setEndpointScenario(pluginId: string, scenarioId: string): void;
 	getDelay(pluginId: string): number | undefined;
 	setDelay(pluginId: string, delay: number): void;
+	getGlobalDisable(): boolean | undefined;
+	setGlobalDisable(value: boolean): void;
 }
 
 export class InMemoryPersistence implements PersistenceProvider {
@@ -20,6 +22,7 @@ export class InMemoryPersistence implements PersistenceProvider {
 	private activeScenario: string | undefined;
 	private endpointScenarios: { [key: string]: string } = {};
 	private delays: { [key: string]: number } = {};
+	private globalDisable: boolean = false;
 
 	constructor(name: string) {
 		this.name = name;
@@ -53,6 +56,12 @@ export class InMemoryPersistence implements PersistenceProvider {
 	}
 	setDelay(pluginId: string, delay: number) {
 		this.delays[pluginId] = delay;
+	}
+	getGlobalDisable() {
+		return this.globalDisable;
+	}
+	setGlobalDisable(value: boolean) {
+		this.globalDisable = value;
 	}
 }
 
@@ -109,6 +118,7 @@ export class MockPlatformCore {
 	private persistence: PersistenceProvider;
 	private endpointScenarioOverrides: { [key: string]: string } = {};
 	private disabledPluginIds: string[] = [];
+	private globalDisable: boolean = false;
 	private pluginMiddleware: Map<string, Middleware[]> = new Map();
 	private middlewareSettings: Record<string, any> = {};
 
@@ -157,6 +167,9 @@ export class MockPlatformCore {
 		}
 
 		this.activeScenario = this.persistence.getActiveScenario();
+
+		// Initialize global disable from persistence
+		this.globalDisable = this.persistence.getGlobalDisable() ?? false;
 
 		// Register middleware from plugin configurations
 		for (const plugin of this.plugins) {
@@ -430,11 +443,23 @@ export class MockPlatformCore {
 	}
 
 	getDisabledPluginIds(): string[] {
+		if (this.globalDisable) {
+			return this.plugins.map(p => p.id);
+		}
 		return this.disabledPluginIds;
 	}
 
 	setDisabledPluginIds(ids: string[]): void {
 		this.disabledPluginIds = ids;
+	}
+
+	isGloballyDisabled(): boolean {
+		return this.globalDisable;
+	}
+
+	setGlobalDisable(disabled: boolean): void {
+		this.globalDisable = disabled;
+		this.persistence.setGlobalDisable(disabled);
 	}
 }
 
