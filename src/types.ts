@@ -7,24 +7,14 @@ export interface FeatureFlag {
 	default?: boolean;
 }
 
-export interface MiddlewareWithBadge {
-	middleware: Middleware;
-	badge?: {
-		id: string;
-		label: string;
-		pluginMatcher: (plugin: Plugin) => boolean;
-		render: (plugin: Plugin, settings: Record<string, any>) => string | null;
-	};
-}
-
 // Middleware types
 export type MiddlewareContext = {
-	key: string,
-	label: string,
+	key: string;
+	label: string;
 	type: keyof typeof MIDDLEWARE_TYPE;
 	options: Array<{ value: string; label: string }>;
 	request?: any;
-	plugin?: Plugin,
+	plugin?: Plugin;
 	response: any;
 	defaultValue?: any;
 	description?: string;
@@ -40,24 +30,24 @@ export type CreatePathMiddlewareConfig = {
 	key: string;
 	label: string;
 	description?: string;
-	type: keyof typeof MIDDLEWARE_TYPE,
+	type: keyof typeof MIDDLEWARE_TYPE;
 	options?: Array<{ value: string; label: string }>;
 	defaultValue?: any;
 	paths: Array<{ path: string; settingKey: string }>;
 	badge?: (context: any) => string | null;
 	transform?: (response: any, context: any) => any;
-}
+};
 
 export type CreateCustomMiddlewareConfig = {
 	key: string;
 	label: string;
 	description?: string;
-	type: keyof typeof MIDDLEWARE_TYPE,
+	type: keyof typeof MIDDLEWARE_TYPE;
 	options?: Array<{ value: string; label: string }>;
 	defaultValue?: any;
 	transform: (response: any, context: any) => any;
 	badge?: (context: any) => string | null;
-}
+};
 
 export type Middleware = (payload: any, context: MiddlewareContext, next: (payload: any) => any) => any;
 
@@ -76,7 +66,6 @@ export interface EndpointBadge {
 	pluginMatcher: (plugin: Plugin) => boolean;
 	render: (plugin: Plugin, settings: Record<string, any>) => string | null;
 }
-
 
 export interface MiddlewareConfig {
 	key: string;

@@ -1,4 +1,13 @@
-import { EndpointBadge, Middleware, MiddlewareContext, MiddlewareSetting, MockPlatformConfig, ResponseValue, Scenario, Plugin } from '../types';
+import {
+	EndpointBadge,
+	Middleware,
+	MiddlewareContext,
+	MiddlewareSetting,
+	MockPlatformConfig,
+	ResponseValue,
+	Scenario,
+	Plugin,
+} from '../types';
 import { InMemoryPersistence } from './InMemoryPersistance';
 import { PersistenceProvider } from './interfaces/PersistanceProvider';
 import { PlatformMiddleware } from './PlatformMiddleware';
@@ -217,8 +226,8 @@ export class MockPlatformCore {
 		const chain = this.pluginMiddleware.get(plugin.id) || [];
 		let idx = 0;
 		const context: MiddlewareContext = {
-            // TODO: Dont spread this, apply the key, label, and other context explicitly
-            ...this,
+			// TODO: Dont spread this, apply the key, label, and other context explicitly
+			...this,
 			plugin,
 			request,
 			response: payload,
@@ -257,8 +266,8 @@ export class MockPlatformCore {
 				if (resp === undefined) return undefined;
 				if (plugin.transform) {
 					const context: MiddlewareContext = {
-                        // TODO: Dont spread this, apply the key, label, and other context explicitly
-                        ...this,
+						// TODO: Dont spread this, apply the key, label, and other context explicitly
+						...this,
 						plugin,
 						request,
 						response: resp,
@@ -280,8 +289,8 @@ export class MockPlatformCore {
 		if (resp === undefined) return undefined;
 		if (plugin.transform) {
 			const context: MiddlewareContext = {
-                // TODO: Dont spread this, apply the key, label, and other context explicitly
-                ...this,
+				// TODO: Dont spread this, apply the key, label, and other context explicitly
+				...this,
 				plugin,
 				request,
 				response: resp,
@@ -353,8 +362,8 @@ export class MockPlatformCore {
 				if (resp === undefined) return undefined;
 				if (plugin.transform) {
 					const context: MiddlewareContext = {
-                        // TODO: Dont spread this, apply the key, label, and other context explicitly
-                        ...this,
+						// TODO: Dont spread this, apply the key, label, and other context explicitly
+						...this,
 						plugin,
 						request,
 						response: resp,
@@ -377,8 +386,8 @@ export class MockPlatformCore {
 			if (resp === undefined) return undefined;
 			if (plugin.transform) {
 				const context: MiddlewareContext = {
-                    // TODO: Dont spread this, apply the key, label, and other context explicitly
-                    ...this,
+					// TODO: Dont spread this, apply the key, label, and other context explicitly
+					...this,
 					plugin,
 					request,
 					response: resp,

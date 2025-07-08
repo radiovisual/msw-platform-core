@@ -17,7 +17,7 @@ export function createPathMiddleware(config: CreatePathMiddlewareConfig): Platfo
 		defaultValue: config.defaultValue,
 		responseTransform: (response, context) => {
 			const pathUpdates = config.paths
-				.map(({ path, settingKey }: {path: string, settingKey: string }) => {
+				.map(({ path, settingKey }: { path: string; settingKey: string }) => {
 					const value = context.settings[settingKey];
 					return value !== undefined ? { path, value } : null;
 				})
