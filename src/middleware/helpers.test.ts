@@ -1,3 +1,5 @@
+import { HTTP_METHOD, MIDDLEWARE_TYPE } from '../constants';
+import { MiddlewareContext } from '../types';
 import { createPathMiddleware, createCustomMiddleware } from './helpers';
 
 describe('middleware helpers', () => {
@@ -5,19 +7,25 @@ describe('middleware helpers', () => {
 		id: 'p',
 		componentId: 'c',
 		endpoint: '/e',
-		method: 'GET' as const,
+		method: HTTP_METHOD.GET,
 		responses: {},
 		defaultStatus: 200,
 	};
-	const makeContext = (settings: any = {}, overrides: any = {}) => ({
-		settings,
+	const makeContext = (settings: any = {}, overrides: any = {}): MiddlewareContext => ({
 		plugin: minimalPlugin,
 		response: {},
 		request: {},
+		settings, // <-- ensure settings is always present
 		featureFlags: overrides.featureFlags || {},
 		currentStatus: overrides.currentStatus || 200,
 		endpointScenario: overrides.endpointScenario,
 		activeScenario: overrides.activeScenario,
+		key: '',
+		label: '',
+		type: 'TEXT' as const,
+		options: [],
+		defaultValue: undefined,
+		description: '',
 	});
 	const next = (x: any) => x;
 
@@ -25,7 +33,7 @@ describe('middleware helpers', () => {
 		const mw = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'select',
+			type: 'SELECT',
 			options: [
 				{ value: 'guest', label: 'Guest' },
 				{ value: 'admin', label: 'Admin' },
@@ -46,7 +54,7 @@ describe('middleware helpers', () => {
 		const mw = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'user.type', settingKey: 'userType' }],
 		});
 		const payload = { user: { type: 'guest' } };
@@ -59,7 +67,7 @@ describe('middleware helpers', () => {
 		const mw = createPathMiddleware({
 			key: 'multiUpdate',
 			label: 'Multi Update',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'user.type', settingKey: 'userType' },
 				{ path: 'contract.id', settingKey: 'contractId' },
@@ -75,7 +83,7 @@ describe('middleware helpers', () => {
 		const mw = createPathMiddleware({
 			key: 'multiUpdate',
 			label: 'Multi Update',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'user.type', settingKey: 'userType' },
 				{ path: 'contract.id', settingKey: 'contractId' },
@@ -91,7 +99,7 @@ describe('middleware helpers', () => {
 		const mw = createCustomMiddleware({
 			key: 'experimentalFeature',
 			label: 'Experimental Feature',
-			type: 'boolean',
+			type: MIDDLEWARE_TYPE.BOOLEAN,
 			transform: (response, context) => {
 				const { experimentalFeature } = context.settings;
 				const { featureFlags } = context;
@@ -119,7 +127,7 @@ describe('middleware helpers', () => {
 		const mw = createCustomMiddleware({
 			key: 'errorMessage',
 			label: 'Error Message',
-			type: 'text',
+			type: 'TEXT',
 			transform: (response, context) => {
 				const { errorMessage } = context.settings;
 				const { currentStatus } = context;
@@ -147,7 +155,7 @@ describe('middleware helpers', () => {
 		const mw = createCustomMiddleware({
 			key: 'scenarioOverride',
 			label: 'Scenario Override',
-			type: 'select',
+			type: MIDDLEWARE_TYPE.SELECT,
 			transform: (response, context) => {
 				const { scenarioOverride } = context.settings;
 				const { endpointScenario } = context;
@@ -175,7 +183,7 @@ describe('middleware helpers', () => {
 		const mw = createCustomMiddleware({
 			key: 'customTransform',
 			label: 'Custom Transform',
-			type: 'text',
+			type: 'TEXT',
 			transform: (response, context) => {
 				const { customTransform } = context.settings;
 				const { featureFlags, currentStatus, endpointScenario } = context;
@@ -242,14 +250,20 @@ describe('middleware helpers (advanced)', () => {
 		defaultStatus: 200,
 	};
 	const makeContext = (settings: any = {}, overrides: any = {}) => ({
-		settings,
 		plugin: minimalPlugin,
 		response: {},
 		request: {},
+		settings, // <-- ensure settings is always present
 		featureFlags: overrides.featureFlags || {},
 		currentStatus: overrides.currentStatus || 200,
 		endpointScenario: overrides.endpointScenario,
 		activeScenario: overrides.activeScenario,
+		key: '',
+		label: '',
+		type: 'TEXT' as const,
+		options: [],
+		defaultValue: undefined,
+		description: '',
 	});
 	const next = (x: any) => x;
 
@@ -257,7 +271,7 @@ describe('middleware helpers (advanced)', () => {
 		const mw = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'users.1.type', settingKey: 'userType' }],
 		});
 		const payload = { users: [{ type: 'guest' }, { type: 'admin' }] };
@@ -271,7 +285,7 @@ describe('middleware helpers (advanced)', () => {
 		const mw = createPathMiddleware({
 			key: 'multiUpdate',
 			label: 'Multi Update',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'users.0.type', settingKey: 'userType0' },
 				{ path: 'users.1.type', settingKey: 'userType1' },
@@ -290,7 +304,7 @@ describe('middleware helpers (advanced)', () => {
 		const mw = createCustomMiddleware({
 			key: 'conditionalTransform',
 			label: 'Conditional Transform',
-			type: 'boolean',
+			type: 'BOOLEAN',
 			transform: (response, context) => {
 				const { conditionalTransform } = context.settings;
 				const { featureFlags, currentStatus, endpointScenario } = context;

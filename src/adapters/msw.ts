@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { MockPlatformCore } from '../platform';
+import { MockPlatformCore } from '../classes/MockPlatformCore';
 import { Plugin } from '../types';
 import { extractResponseBody, extractResponseHeaders } from '../middleware/utils';
 

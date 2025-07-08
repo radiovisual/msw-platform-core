@@ -5,7 +5,7 @@ import { ChevronDown, X } from './Icon';
 import EndpointRow from './EndpointRow';
 import GroupFilterPopover from './GroupFilterPopover';
 import type { Plugin } from '../../types';
-import type { MockPlatformCore } from '../../platform';
+import type { MockPlatformCore } from '../../classes/MockPlatformCore';
 
 interface Group {
 	id: string;

@@ -1,21 +1,13 @@
 import { updateMultiplePaths } from './utils';
-import { PlatformMiddleware } from '../platform';
+import { PlatformMiddleware } from '../classes/PlatformMiddleware';
+import { CreatePathMiddlewareConfig, CreateCustomMiddlewareConfig } from '../types';
 
 /**
  * Creates a PlatformMiddleware that updates paths in responses
  * @param config - Configuration for the middleware
  * @returns PlatformMiddleware instance
  */
-export function createPathMiddleware(config: {
-	key: string;
-	label: string;
-	description?: string;
-	type: 'select' | 'text' | 'number' | 'boolean';
-	options?: Array<{ value: string; label: string }>;
-	defaultValue?: any;
-	paths: Array<{ path: string; settingKey: string }>;
-	badge?: (context: any) => string | null;
-}): PlatformMiddleware {
+export function createPathMiddleware(config: CreatePathMiddlewareConfig): PlatformMiddleware {
 	return new PlatformMiddleware({
 		key: config.key,
 		label: config.label,
@@ -25,7 +17,7 @@ export function createPathMiddleware(config: {
 		defaultValue: config.defaultValue,
 		responseTransform: (response, context) => {
 			const pathUpdates = config.paths
-				.map(({ path, settingKey }) => {
+				.map(({ path, settingKey }: {path: string, settingKey: string }) => {
 					const value = context.settings[settingKey];
 					return value !== undefined ? { path, value } : null;
 				})
@@ -45,16 +37,7 @@ export function createPathMiddleware(config: {
  * @param config - Configuration for the middleware
  * @returns PlatformMiddleware instance
  */
-export function createCustomMiddleware(config: {
-	key: string;
-	label: string;
-	description?: string;
-	type: 'select' | 'text' | 'number' | 'boolean';
-	options?: Array<{ value: string; label: string }>;
-	defaultValue?: any;
-	transform: (response: any, context: any) => any;
-	badge?: (context: any) => string | null;
-}): PlatformMiddleware {
+export function createCustomMiddleware(config: CreateCustomMiddlewareConfig): PlatformMiddleware {
 	return new PlatformMiddleware({
 		key: config.key,
 		label: config.label,
@@ -62,7 +45,7 @@ export function createCustomMiddleware(config: {
 		type: config.type,
 		options: config.options,
 		defaultValue: config.defaultValue,
-		responseTransform: config.transform,
+		responseTransform: config?.transform,
 		badge: config.badge,
 	});
 }

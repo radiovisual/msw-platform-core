@@ -1,11 +1,92 @@
-import type { PlatformMiddleware, MiddlewareContext } from './platform';
-
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+import type { PlatformMiddleware } from './classes/PlatformMiddleware';
+import { HTTP_METHOD, MIDDLEWARE_TYPE } from './constants';
 
 export interface FeatureFlag {
 	name: string;
 	description?: string;
 	default?: boolean;
+}
+
+export interface MiddlewareWithBadge {
+	middleware: Middleware;
+	badge?: {
+		id: string;
+		label: string;
+		pluginMatcher: (plugin: Plugin) => boolean;
+		render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+	};
+}
+
+// Middleware types
+export type MiddlewareContext = {
+	key: string,
+	label: string,
+	type: keyof typeof MIDDLEWARE_TYPE;
+	options: Array<{ value: string; label: string }>;
+	request?: any;
+	plugin?: Plugin,
+	response: any;
+	defaultValue?: any;
+	description?: string;
+	settings: Record<string, any>;
+	// Enhanced context information
+	featureFlags: Record<string, boolean>;
+	currentStatus: number;
+	endpointScenario?: string;
+	activeScenario?: string;
+};
+
+export type CreatePathMiddlewareConfig = {
+	key: string;
+	label: string;
+	description?: string;
+	type: keyof typeof MIDDLEWARE_TYPE,
+	options?: Array<{ value: string; label: string }>;
+	defaultValue?: any;
+	paths: Array<{ path: string; settingKey: string }>;
+	badge?: (context: any) => string | null;
+	transform?: (response: any, context: any) => any;
+}
+
+export type CreateCustomMiddlewareConfig = {
+	key: string;
+	label: string;
+	description?: string;
+	type: keyof typeof MIDDLEWARE_TYPE,
+	options?: Array<{ value: string; label: string }>;
+	defaultValue?: any;
+	transform: (response: any, context: any) => any;
+	badge?: (context: any) => string | null;
+}
+
+export type Middleware = (payload: any, context: MiddlewareContext, next: (payload: any) => any) => any;
+
+export interface MiddlewareSetting {
+	key: string;
+	label: string;
+	type: keyof typeof MIDDLEWARE_TYPE;
+	options?: Array<{ value: string; label: string }>;
+	defaultValue?: any;
+	description?: string;
+}
+
+export interface EndpointBadge {
+	id: string;
+	label: string;
+	pluginMatcher: (plugin: Plugin) => boolean;
+	render: (plugin: Plugin, settings: Record<string, any>) => string | null;
+}
+
+
+export interface MiddlewareConfig {
+	key: string;
+	label: string;
+	description?: string;
+	type: keyof typeof MIDDLEWARE_TYPE;
+	options?: Array<{ value: string; label: string }>;
+	defaultValue?: any;
+	responseTransform: (originalResponse: any, context: MiddlewareContext) => any;
+	badge?: (context: MiddlewareContext) => string | null;
 }
 
 // New interface for response data with optional headers and status
@@ -33,7 +114,7 @@ export interface Plugin<T = any> {
 	id: string;
 	componentId: string;
 	endpoint: string;
-	method: HttpMethod;
+	method: keyof typeof HTTP_METHOD;
 	nickname?: string;
 	responses: { [key: number]: ResponseValue<any> }; // status code -> payload
 	defaultStatus: number;

@@ -5,6 +5,10 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 ## TODO
 
 - [] Manupulate response payloads directly from the UI for each endpoint
+- Add automatic support for 5xx Service Unavailable on all endpoints
+- scenarios can auto-switch to a specific status code
+- Support auto-magic paginated endpoints out of the box. Is this already possible with the queryResponses?
+- Extract query parameter values from url (like express) and adding them to the plugin context
 
 ## Goals
 - Register mock API endpoints with minimal config (just JSON payloads, endpoint, method, status codes, feature flags)

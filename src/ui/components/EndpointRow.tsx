@@ -6,7 +6,7 @@ import Popover from './Popover';
 import Label from './Label';
 import { Plus, FileText } from './Icon';
 import type { Plugin } from '../../types';
-import type { MockPlatformCore } from '../../platform';
+import type { MockPlatformCore } from '../../classes/MockPlatformCore';
 
 interface EndpointRowProps {
 	plugin: Plugin;

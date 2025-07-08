@@ -2,9 +2,10 @@ import React from 'react';
 import { render, fireEvent, screen, waitFor, within, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import MockUI from './MockUI';
-import { createMockPlatform, InMemoryPersistence } from '../platform';
+import { createMockPlatform } from '../platform';
 import type { Plugin } from '../types';
 import userEvent from '@testing-library/user-event';
+import { InMemoryPersistence } from '../classes/InMemoryPersistance';
 
 function makePlatform(overrides: Plugin[] = []) {
 	const plugins: Plugin[] = [

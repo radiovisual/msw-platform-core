@@ -1,5 +1,5 @@
 import React from 'react';
-import { MockPlatformCore } from '../../platform';
+import { MockPlatformCore } from '../../classes/MockPlatformCore';
 
 interface DynamicSettingsTabProps {
 	platform: MockPlatformCore;
@@ -98,7 +98,7 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 									{setting.description && <div style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>{setting.description}</div>}
 								</div>
 								<div style={{ minWidth: 120 }}>
-									{setting.type === 'select' && setting.options ? (
+									{setting.type === 'SELECT' && setting.options ? (
 										<select
 											id={`setting-${setting.key}`}
 											value={platform.getMiddlewareSetting(setting.key) || setting.defaultValue || ''}
@@ -117,7 +117,7 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 												</option>
 											))}
 										</select>
-									) : setting.type === 'text' ? (
+									) : setting.type === 'TEXT' ? (
 										<input
 											id={`setting-${setting.key}`}
 											type="text"
@@ -131,7 +131,7 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 												width: '100%',
 											}}
 										/>
-									) : setting.type === 'number' ? (
+									) : setting.type === 'NUMBER' ? (
 										<input
 											id={`setting-${setting.key}`}
 											type="number"
@@ -145,7 +145,7 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 												width: '100%',
 											}}
 										/>
-									) : setting.type === 'boolean' ? (
+									) : setting.type === 'BOOLEAN' ? (
 										<input
 											id={`setting-${setting.key}`}
 											type="checkbox"

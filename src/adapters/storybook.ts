@@ -1,5 +1,5 @@
 import { mswHandlersFromPlatform, MSWHandlersOptions } from './msw';
-import type { MockPlatformCore } from '../platform';
+import type { MockPlatformCore } from '../classes/MockPlatformCore';
 
 /**
  * Generates MSW handlers for Storybook integration.

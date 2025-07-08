@@ -1,10 +1,11 @@
 /**
  * @jest-environment node
  */
-import { createMockPlatform, Plugin, InMemoryPersistence, Scenario } from './index';
+import { createMockPlatform, Plugin, Scenario } from './index';
 import { mswHandlersFromPlatform } from './adapters/msw';
 import { setupServer } from 'msw/node';
 import { createPathMiddleware, createCustomMiddleware } from './middleware/helpers';
+import { InMemoryPersistence } from './classes/InMemoryPersistance';
 
 let server: any;
 
@@ -365,7 +366,7 @@ describe('Middleware system', () => {
 		const userTypeMiddleware = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'user.type', settingKey: 'userType' },
 				{ path: 'contract.user.type', settingKey: 'userType' },
@@ -386,7 +387,7 @@ describe('Middleware system', () => {
 		const userTypeMiddleware = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'user.type', settingKey: 'userType' },
 				{ path: 'contract.user.type', settingKey: 'userType' },
@@ -413,7 +414,7 @@ describe('Middleware system', () => {
 		const userTypeMiddleware = createPathMiddleware({
 			key: 'userType',
 			label: 'User Type',
-			type: 'text',
+			type: 'TEXT',
 			paths: [
 				{ path: 'user.type', settingKey: 'userType' },
 				{ path: 'contract.user.type', settingKey: 'userType' },
@@ -437,7 +438,7 @@ describe('Middleware Registration', () => {
 		const middleware = createPathMiddleware({
 			key: 'testKey',
 			label: 'Test Middleware',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'test.path', settingKey: 'testKey' }],
 		});
 
@@ -473,7 +474,7 @@ describe('Middleware Registration', () => {
 		const middlewareWithNullBadge = createCustomMiddleware({
 			key: 'nullBadge',
 			label: 'Null Badge',
-			type: 'text',
+			type: 'TEXT',
 			transform: response => response,
 			badge: () => null,
 		});
@@ -482,7 +483,7 @@ describe('Middleware Registration', () => {
 		const middlewareWithValueBadge = createCustomMiddleware({
 			key: 'valueBadge',
 			label: 'Value Badge',
-			type: 'text',
+			type: 'TEXT',
 			transform: response => response,
 			badge: () => 'Badge Text',
 		});
@@ -491,7 +492,7 @@ describe('Middleware Registration', () => {
 		const middlewareWithoutBadge = createCustomMiddleware({
 			key: 'noBadge',
 			label: 'No Badge',
-			type: 'text',
+			type: 'TEXT',
 			transform: response => response,
 		});
 
@@ -512,7 +513,7 @@ describe('Middleware Registration', () => {
 		const middleware = createPathMiddleware({
 			key: 'pluginConfig',
 			label: 'Plugin Config Middleware',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'test.path', settingKey: 'pluginConfig' }],
 		});
 
@@ -570,7 +571,7 @@ describe('Middleware Registration', () => {
 		const middleware = createPathMiddleware({
 			key: 'sharedSetting',
 			label: 'Shared Setting',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'data.value', settingKey: 'sharedSetting' }],
 		});
 
@@ -616,7 +617,7 @@ describe('Middleware Registration', () => {
 		const middlewareWithBadge = createCustomMiddleware({
 			key: 'badgeTest',
 			label: 'Badge Test',
-			type: 'text',
+			type: 'TEXT',
 			transform: response => response,
 			badge: () => 'Test Badge',
 		});
@@ -672,14 +673,14 @@ describe('Middleware Registration', () => {
 		const middleware1 = createPathMiddleware({
 			key: 'setting1',
 			label: 'Setting 1',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'data.value1', settingKey: 'setting1' }],
 		});
 
 		const middleware2 = createPathMiddleware({
 			key: 'setting2',
 			label: 'Setting 2',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'data.value2', settingKey: 'setting2' }],
 		});
 
@@ -705,7 +706,7 @@ describe('Middleware Registration', () => {
 		const middleware = createPathMiddleware({
 			key: 'duplicateTest',
 			label: 'Duplicate Test',
-			type: 'text',
+			type: 'TEXT',
 			paths: [{ path: 'test.path', settingKey: 'duplicateTest' }],
 		});
 

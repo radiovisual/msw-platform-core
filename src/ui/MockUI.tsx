@@ -8,7 +8,7 @@ import EndpointsTab from './components/EndpointsTab';
 import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
 import { DynamicSettingsTab } from './components/DynamicSettingsTab';
-import type { MockPlatformCore } from '../platform';
+import type { MockPlatformCore } from '../classes/MockPlatformCore';
 import type { Plugin } from '../types';
 
 // UI-only group type

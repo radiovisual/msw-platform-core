@@ -3,8 +3,9 @@
  */
 import { mswHandlersFromPlatform } from './msw';
 import { createMockPlatform } from '../platform';
-import type { Plugin, HttpMethod } from '../types';
+import type { Plugin } from '../types';
 import { setupServer } from 'msw/node';
+import { HTTP_METHOD } from '../constants';
 
 const server = setupServer();
 
@@ -197,7 +198,7 @@ describe('Custom response types', () => {
 			id: 'json',
 			componentId: 'test',
 			endpoint: '/api/json',
-			method: 'GET' as HttpMethod,
+			method: HTTP_METHOD.GET,
 			responses: {
 				200: {
 					body: { message: 'Hello, JSON!' },
@@ -220,7 +221,7 @@ describe('Custom response types', () => {
 			id: 'html',
 			componentId: 'test',
 			endpoint: '/api/html',
-			method: 'GET' as HttpMethod,
+			method: HTTP_METHOD.GET,
 			responses: {
 				200: {
 					body: '<h1>Hello, HTML!</h1>',
@@ -243,7 +244,7 @@ describe('Custom response types', () => {
 			id: 'text',
 			componentId: 'test',
 			endpoint: '/api/text',
-			method: 'GET' as HttpMethod,
+			method: HTTP_METHOD.GET,
 			responses: {
 				200: {
 					body: 'Hello, plain text!',
@@ -266,7 +267,7 @@ describe('Custom response types', () => {
 			id: 'xml',
 			componentId: 'test',
 			endpoint: '/api/xml',
-			method: 'GET' as HttpMethod,
+			method: HTTP_METHOD.GET,
 			responses: {
 				200: {
 					body: '<note><to>User</to><message>Hello XML</message></note>',
@@ -290,7 +291,7 @@ describe('Custom response types', () => {
 			id: 'bin',
 			componentId: 'test',
 			endpoint: '/api/bin',
-			method: 'GET' as HttpMethod,
+			method: HTTP_METHOD.GET,
 			responses: {
 				200: {
 					body: buffer,

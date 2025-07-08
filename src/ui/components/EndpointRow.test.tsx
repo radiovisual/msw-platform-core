@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import EndpointRow from './EndpointRow';
 import type { Plugin } from '../../types';
-import type { MockPlatformCore } from '../../platform';
+import type { MockPlatformCore } from '../../classes/MockPlatformCore';
 
 const mockPlugin: Plugin = {
 	id: 'test-plugin',

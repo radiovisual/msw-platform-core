@@ -4,13 +4,14 @@ import MockUI from '../MockUI';
 import { createMockPlatform } from '../../platform';
 import { mswHandlersFromPlatform } from '../../adapters/msw';
 import { createPathMiddleware, createCustomMiddleware } from '../../middleware/helpers';
+import { MIDDLEWARE_TYPE } from '../../constants';
 
 // Example of path middleware - updates user.type and contract.user.type
 const contractMiddleware = createPathMiddleware({
 	key: 'userType',
 	label: 'User Type',
 	description: 'Sets user type across multiple paths',
-	type: 'select',
+	type: MIDDLEWARE_TYPE.SELECT,
 	options: [
 		{ value: 'member', label: 'Member' },
 		{ value: 'admin', label: 'Admin' },
@@ -28,7 +29,7 @@ const _statusMiddleware = createCustomMiddleware({
 	key: 'statusOverride',
 	label: 'Status Override',
 	description: 'Overrides status based on user type and contract type',
-	type: 'select',
+	type: MIDDLEWARE_TYPE.SELECT,
 	options: [
 		{ value: 'active', label: 'Active' },
 		{ value: 'pending', label: 'Pending' },
@@ -52,7 +53,7 @@ const _experimentalMiddleware = createCustomMiddleware({
 	key: 'experimentalFeature',
 	label: 'Experimental Feature',
 	description: 'Adds experimental features when EXPERIMENTAL_HELLO is enabled',
-	type: 'boolean',
+	type: MIDDLEWARE_TYPE.BOOLEAN,
 	defaultValue: false,
 	transform: (response, context) => {
 		const { experimentalFeature } = context.settings;
@@ -74,7 +75,7 @@ const _errorHandlingMiddleware = createCustomMiddleware({
 	key: 'errorMessage',
 	label: 'Error Message',
 	description: 'Customizes error messages based on status code',
-	type: 'text',
+	type: MIDDLEWARE_TYPE.TEXT,
 	defaultValue: 'Something went wrong',
 	transform: (response, context) => {
 		const { errorMessage } = context.settings;
@@ -95,7 +96,7 @@ const _errorHandlingMiddleware = createCustomMiddleware({
 const _advancedMiddleware = createCustomMiddleware({
 	key: 'advancedTransform',
 	label: 'Advanced Transform',
-	type: 'text',
+	type: MIDDLEWARE_TYPE.TEXT,
 	transform: (response, context) => {
 		const { advancedTransform } = context.settings;
 		const { featureFlags, currentStatus, endpointScenario, plugin } = context;
