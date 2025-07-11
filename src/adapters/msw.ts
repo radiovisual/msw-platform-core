@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, passthrough } from 'msw';
 import { MockPlatformCore } from '../classes/MockPlatformCore';
 import { Plugin } from '../types';
 import { extractResponseBody, extractResponseHeaders } from '../middleware/utils';
@@ -126,13 +126,33 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					}
 					// If no plugin matched, but there is a plugin with queryResponses and a default response, use it
 					if (!bestPlugin && fallbackPluginWithDefault) {
-						bestPlugin = fallbackPluginWithDefault;
-						bestSpecificity = 0;
-						bestQueryMatch = null;
+						// Only use fallback if there are no query parameters in the request
+						// AND the plugin has a default response in its responses object
+						// AND the plugin does NOT have queryResponses
+						if (
+							url.searchParams.toString() === '' &&
+							fallbackPluginWithDefault.responses &&
+							fallbackPluginWithDefault.responses[fallbackPluginWithDefault.defaultStatus] !== undefined &&
+							!fallbackPluginWithDefault.queryResponses
+						) {
+							bestPlugin = fallbackPluginWithDefault;
+							bestSpecificity = 0;
+							bestQueryMatch = null;
+						}
 					}
 
-					// If no plugin matched, return 404
+					// If no plugin matched, implement passthrough
 					if (!bestPlugin) {
+						// Check if any plugin for this endpoint is disabled (indicating passthrough is desired)
+						const hasDisabledPlugins = plugins.some(plugin => 
+							platform.getDisabledPluginIds().includes(plugin.id)
+						);
+						
+						if (hasDisabledPlugins) {
+							return passthrough();
+						}
+						
+						// If no plugins are disabled, return 404 as before
 						return HttpResponse.json({ error: 'Not found' }, { status: 404 });
 					}
 
