@@ -557,6 +557,143 @@ const userPlugin = {
 
 ---
 
+## Query Parameter Reconciliation Rules
+
+When multiple plugins target the same endpoint, the platform uses a sophisticated reconciliation system to determine which plugin should handle each request. Understanding these rules is crucial for predictable behavior in complex scenarios.
+
+### Plugin Selection Algorithm
+
+The platform evaluates plugins in the following order:
+
+1. **Query Parameter Matching**: If a plugin has `queryResponses`, it checks if any query patterns match the incoming request
+2. **Specificity Calculation**: Matched plugins are ranked by specificity score
+3. **Fallback Evaluation**: If no query patterns match, the platform considers fallback options
+4. **Passthrough Decision**: If no suitable plugin is found, determine whether to passthrough or return 404
+
+### Specificity Scoring
+
+The platform calculates a specificity score for each matching query pattern:
+
+- **Exact matches**: 10 points per parameter (e.g., `type=admin` = 10 points)
+- **Wildcard matches**: 1 point per parameter (e.g., `type=*` = 1 point)
+- **Multi-parameter**: Sum of all parameter scores (e.g., `type=admin&role=*` = 11 points)
+
+**Example:**
+```ts
+// Given these query patterns:
+'type=admin'           // Specificity: 10
+'type=*'              // Specificity: 1  
+'type=admin&role=*'   // Specificity: 11
+'type=*&role=user'    // Specificity: 11
+
+// For request '/api/user?type=admin&role=guest':
+// - 'type=admin&role=*' wins (specificity 11)
+// - 'type=admin' doesn't match (missing role parameter)
+```
+
+### Fallback Behavior
+
+When no query patterns match, the platform follows these fallback rules:
+
+1. **Plugin with queryResponses + default response**: Falls back to the `responses` object
+2. **Plugin without queryResponses**: Always available as fallback
+3. **No fallback when disabled plugins present**: Prefers passthrough over fallback
+
+**Example:**
+```ts
+const plugin = {
+  id: 'user',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { message: 'Default response' }, // ← Fallback response
+  },
+  queryResponses: {
+    'type=admin': { 200: { message: 'Admin response' } },
+  },
+};
+
+// '/api/user' → Returns "Default response" (fallback)
+// '/api/user?type=user' → Returns "Default response" (fallback)
+// '/api/user?type=admin' → Returns "Admin response" (exact match)
+```
+
+### Multiple Plugins for Same Endpoint
+
+When multiple plugins target the same endpoint, the platform applies these rules:
+
+#### 1. **Enabled Plugins Take Priority**
+Disabled plugins are excluded from matching entirely.
+
+#### 2. **Query-Specific Plugins vs Generic Plugins**
+Plugins with `queryResponses` only match when query parameters satisfy their patterns. Plugins without `queryResponses` serve as catch-all fallbacks.
+
+#### 3. **Highest Specificity Wins**
+Among matching plugins, the one with the highest specificity score is selected.
+
+**Example:**
+```ts
+const plugins = [
+  {
+    id: 'admin-plugin',
+    endpoint: '/api/user',
+    queryResponses: { 'type=admin': { 200: { role: 'admin' } } },
+    responses: { 200: { role: 'user' } },
+  },
+  {
+    id: 'generic-plugin', 
+    endpoint: '/api/user',
+    responses: { 200: { message: 'generic user' } },
+    // No queryResponses = catch-all
+  },
+];
+
+// '/api/user?type=admin' → admin-plugin (query match)
+// '/api/user?type=guest' → admin-plugin (fallback to responses)
+// '/api/user' → admin-plugin (fallback to responses)
+```
+
+### Passthrough Behavior
+
+The platform returns passthrough responses (letting the real backend handle requests) when:
+
+1. **Any plugins are disabled** for the endpoint AND no enabled plugins match
+2. **All plugins are disabled** for the endpoint
+
+**Example:**
+```ts
+// Two plugins for /api/user, one disabled
+platform.setDisabledPluginIds(['plugin-2']);
+
+// '/api/user' (no match for plugin-1) → Passthrough (302)
+// '/api/user?type=admin' (matches plugin-1) → Mock response (200)
+```
+
+### Error Responses
+
+The platform returns 404 responses when:
+
+1. **No plugins are disabled** AND no plugins match the request
+2. **No plugins exist** for the endpoint
+
+### Best Practices
+
+1. **Use specific query patterns** for exact control over matching
+2. **Include fallback responses** in plugins with `queryResponses` for predictable behavior
+3. **Test disabled plugin scenarios** to understand passthrough behavior
+4. **Leverage specificity scoring** for complex multi-parameter scenarios
+5. **Monitor plugin order** - while specificity determines winners, order can affect tie-breaking
+
+### Debugging Tips
+
+Use the included Storybook demos to test edge cases:
+- **Default**: Basic query parameter matching
+- **FallbackBehavior**: Testing fallback to default responses
+- **PassthroughBehavior**: Understanding disabled plugin behavior
+- **PriorityRules**: Exact vs wildcard precedence
+
+---
+
 ## Custom Response Types
 
 You can return different response types from your mock endpoints by specifying the appropriate `Content-Type` header in your plugin's response definition. The mock platform and MSW adapter will automatically use the correct response type for:

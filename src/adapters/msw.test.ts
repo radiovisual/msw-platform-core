@@ -293,7 +293,7 @@ describe('MSW Adapter Passthrough', () => {
 		expect(await result.json()).toEqual({ message: 'admin response' });
 	});
 
-	it('should return 404 when no plugins are disabled and no plugins match', async () => {
+	it('should return default response when no plugins are disabled and no query params match', async () => {
 		const plugin: Plugin = {
 			id: 'test-plugin',
 			componentId: 'test',
@@ -318,16 +318,16 @@ describe('MSW Adapter Passthrough', () => {
 		const handler = handlers.find((h: any) => h.info?.path === '/api/test');
 		expect(handler).toBeDefined();
 
-		// Request that doesn't match any plugin (no query params)
+		// Request that doesn't match any query response (no query params)
 		const req = new Request('http://localhost/api/test', { method: 'GET' });
 		const result = await handler?.resolver({ request: req, params: {}, cookies: {} } as any);
 
-		// Should return 404, not passthrough
-		expect(result.status).toBe(404);
-		expect(await result.json()).toEqual({ error: 'Not found' });
+		// Should return default response, not 404
+		expect(result.status).toBe(200);
+		expect(await result.json()).toEqual({ message: 'test' });
 	});
 
-	it('should return 404 when no plugins are disabled and query params don\'t match', async () => {
+	it('should return default response when no plugins are disabled and query params don\'t match', async () => {
 		const plugin: Plugin = {
 			id: 'test-plugin',
 			componentId: 'test',
@@ -356,9 +356,9 @@ describe('MSW Adapter Passthrough', () => {
 		const req = new Request('http://localhost/api/test?type=user', { method: 'GET' });
 		const result = await handler?.resolver({ request: req, params: {}, cookies: {} } as any);
 
-		// Should return 404, not passthrough
-		expect(result.status).toBe(404);
-		expect(await result.json()).toEqual({ error: 'Not found' });
+		// Should return default response, not 404
+		expect(result.status).toBe(200);
+		expect(await result.json()).toEqual({ message: 'test' });
 	});
 });
 
