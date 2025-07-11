@@ -179,7 +179,14 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 						const qr = bestPlugin.queryResponses[bestQueryMatch];
 						if (qr && typeof qr === 'object' && Object.keys(qr).some(k => !isNaN(Number(k)))) {
 							// Map of status codes
-							responseValue = qr[status] ?? qr[bestPlugin.defaultStatus] ?? Object.values(qr)[0];
+							responseValue = qr[status];
+							// If no response for this status but it's 503, let platform handle default 503
+							if (responseValue === undefined && status === 503) {
+								// Let platform handle default 503
+								responseValue = undefined;
+							} else if (responseValue === undefined) {
+								responseValue = qr[bestPlugin.defaultStatus] ?? Object.values(qr)[0];
+							}
 						} else {
 							responseValue = qr;
 						}

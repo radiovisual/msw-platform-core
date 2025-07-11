@@ -248,6 +248,22 @@ export class MockPlatformCore {
 		return next(payload);
 	}
 
+	// Helper method to provide default 503 Service Unavailable response
+	private getDefault503Response(): ResponseValue {
+		return { 
+			body: { error: 'Service Unavailable' },
+			headers: { 'Content-Type': 'application/json' }
+		};
+	}
+
+	// Helper method to provide default 503 Service Unavailable response with headers
+	private getDefault503ResponseWithHeaders(): { body: any; headers: Record<string, string> } {
+		return {
+			body: { error: 'Service Unavailable' },
+			headers: { 'Content-Type': 'application/json' }
+		};
+	}
+
 	getResponse(pluginId: string, status?: number, request?: any) {
 		const plugin = this.plugins.find(p => p.id === pluginId);
 		if (!plugin) return undefined;
@@ -262,6 +278,10 @@ export class MockPlatformCore {
 				if (resp === undefined) {
 					// Fallback to plugin responses
 					resp = plugin.responses[useStatus];
+				}
+				// If still undefined and requesting 503, provide default 503
+				if (resp === undefined && useStatus === 503) {
+					resp = this.getDefault503Response();
 				}
 				if (resp === undefined) return undefined;
 				if (plugin.transform) {
@@ -286,6 +306,10 @@ export class MockPlatformCore {
 		}
 		// Otherwise, use status override/default
 		resp = plugin.responses[useStatus];
+		// If undefined and requesting 503, provide default 503
+		if (resp === undefined && useStatus === 503) {
+			resp = this.getDefault503Response();
+		}
 		if (resp === undefined) return undefined;
 		if (plugin.transform) {
 			const context: MiddlewareContext = {
@@ -342,7 +366,15 @@ export class MockPlatformCore {
 					const qr = plugin.queryResponses[queryString];
 					if (qr && typeof qr === 'object' && Object.keys(qr).some(k => !isNaN(Number(k)))) {
 						// Map of status codes
-						resp = qr[useStatus] ?? qr[plugin.defaultStatus] ?? Object.values(qr)[0];
+						resp = qr[useStatus];
+						if (resp === undefined) {
+							// If requesting 503 and no custom 503 in query response, provide default 503
+							if (useStatus === 503) {
+								resp = this.getDefault503Response();
+							} else {
+								resp = qr[plugin.defaultStatus] ?? Object.values(qr)[0];
+							}
+						}
 					} else {
 						resp = qr;
 					}
@@ -358,6 +390,10 @@ export class MockPlatformCore {
 				if (resp === undefined) {
 					// Fallback to plugin responses
 					resp = plugin.responses[useStatus];
+				}
+				// If still undefined and requesting 503, provide default 503
+				if (resp === undefined && useStatus === 503) {
+					resp = this.getDefault503Response();
 				}
 				if (resp === undefined) return undefined;
 				if (plugin.transform) {
@@ -383,6 +419,10 @@ export class MockPlatformCore {
 		// Otherwise, use status override/default
 		if (resp === undefined) {
 			resp = plugin.responses[useStatus];
+			// If undefined and requesting 503, provide default 503
+			if (resp === undefined && useStatus === 503) {
+				resp = this.getDefault503Response();
+			}
 			if (resp === undefined) return undefined;
 			if (plugin.transform) {
 				const context: MiddlewareContext = {
@@ -419,6 +459,11 @@ export class MockPlatformCore {
 			const headers = extractResponseHeaders(resp);
 			const result: any = { body, headers };
 			return result;
+		}
+
+		// Special case: if we're looking for a 503 response and got here, return default 503
+		if (useStatus === 503) {
+			return this.getDefault503ResponseWithHeaders();
 		}
 
 		return undefined;

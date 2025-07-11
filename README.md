@@ -5,7 +5,7 @@ A reusable, portable mock platform core for frontend and full-stack projects.
 ## TODO
 
 - [] Manupulate response payloads directly from the UI for each endpoint
-- Add automatic support for 5xx Service Unavailable on all endpoints
+- [x] Add automatic support for 5xx Service Unavailable on all endpoints
 - scenarios can auto-switch to a specific status code
 - Support auto-magic paginated endpoints out of the box. Is this already possible with the queryResponses?
 - Extract query parameter values from url (like express) and adding them to the plugin context
@@ -691,6 +691,235 @@ Use the included Storybook demos to test edge cases:
 - **FallbackBehavior**: Testing fallback to default responses
 - **PassthroughBehavior**: Understanding disabled plugin behavior
 - **PriorityRules**: Exact vs wildcard precedence
+
+---
+
+## 503 Service Unavailable Feature
+
+The mock platform provides built-in support for 503 Service Unavailable responses on all endpoints. This feature allows you to simulate service outages, maintenance modes, and temporary unavailability scenarios without additional configuration.
+
+### Key Features
+
+1. **Available for Free**: 503 status code works on all endpoints, even if not explicitly defined in the plugin
+2. **Custom 503 Responses**: Override the default 503 response with custom content and headers
+3. **Scenario Support**: Scenarios can define their own 503 responses
+4. **Query Parameter Support**: Query-specific 503 responses are supported
+5. **Transform Functions**: Transform functions apply to 503 responses
+6. **Fallback Behavior**: Graceful fallback from scenarios to plugin responses to default 503
+
+### Default 503 Response
+
+When you set any endpoint's status to 503, the platform automatically returns a default Service Unavailable response if no custom 503 is defined:
+
+```js
+// Default 503 response
+{
+  "error": "Service Unavailable"
+}
+```
+
+**Example:**
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    404: { error: 'Not found' },
+    // No 503 defined - but still available!
+  },
+  defaultStatus: 200,
+};
+
+// Set status to 503
+platform.setStatusOverride('user-service', 503);
+
+// GET /api/user → 503 { "error": "Service Unavailable" }
+```
+
+### Custom 503 Responses
+
+Define custom 503 responses just like any other status code:
+
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    404: { error: 'Not found' },
+    503: {
+      error: 'User Service Unavailable',
+      maintenance: true,
+      retryAfter: 300,
+      message: 'We are performing scheduled maintenance. Please try again in 5 minutes.'
+    }
+  },
+  defaultStatus: 200,
+};
+```
+
+### Custom 503 Headers
+
+Use the ResponseData format to include custom headers:
+
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    503: {
+      body: { 
+        error: 'Maintenance Mode',
+        estimatedDowntime: '2 hours'
+      },
+      headers: {
+        'Retry-After': '7200',
+        'X-Maintenance': 'true',
+        'Content-Type': 'application/json'
+      }
+    }
+  },
+  defaultStatus: 200,
+};
+```
+
+### 503 with Scenarios
+
+Scenarios can define their own 503 responses:
+
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    503: { error: 'Default Service Unavailable' }
+  },
+  scenarios: [
+    {
+      id: 'database-maintenance',
+      label: 'Database Maintenance',
+      responses: {
+        200: { name: 'Alice', mode: 'maintenance' },
+        503: {
+          error: 'Database Maintenance in Progress',
+          reason: 'Scheduled database upgrade',
+          estimatedCompletion: '2024-01-15T10:00:00Z'
+        }
+      }
+    }
+  ],
+  defaultStatus: 200,
+};
+
+// Activate scenario and set 503 status
+platform.setEndpointScenario('user-service', 'database-maintenance');
+platform.setStatusOverride('user-service', 503);
+
+// Returns scenario-specific 503 response
+```
+
+### 503 with Query Parameters
+
+Query-specific 503 responses are supported:
+
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    503: { error: 'Default Service Unavailable' }
+  },
+  queryResponses: {
+    'type=admin': {
+      200: { name: 'Admin User' },
+      503: {
+        error: 'Admin Service Unavailable',
+        contact: 'admin@example.com',
+        escalationRequired: true
+      }
+    }
+  },
+  defaultStatus: 200,
+};
+
+// GET /api/user?type=admin with status 503
+// Returns admin-specific 503 response
+```
+
+### 503 with Transform Functions
+
+Transform functions apply to 503 responses:
+
+```js
+const plugin = {
+  id: 'user-service',
+  endpoint: '/api/user',
+  method: 'GET',
+  responses: {
+    200: { name: 'Alice' },
+    503: { error: 'Service Unavailable' }
+  },
+  defaultStatus: 200,
+  transform: (response, context) => {
+    if (context.currentStatus === 503) {
+      // Add timestamp and request ID to all 503 responses
+      return {
+        ...response,
+        timestamp: new Date().toISOString(),
+        requestId: context.plugin?.id + '-' + Date.now()
+      };
+    }
+    return response;
+  }
+};
+```
+
+### Response Precedence
+
+The platform follows this precedence order for 503 responses:
+
+1. **Scenario 503 Response** (if scenario is active and defines 503)
+2. **Plugin 503 Response** (if defined in plugin responses)
+3. **Default 503 Response** (platform's built-in fallback)
+
+### Platform API
+
+The 503 feature integrates with all platform APIs:
+
+```js
+// Direct API access
+const response = platform.getResponse('user-service', 503);
+// Returns default 503 if no custom 503 defined
+
+const responseWithHeaders = platform.getResponseWithHeaders('user-service', 503);
+// Returns { body: { error: 'Service Unavailable' }, headers: { 'Content-Type': 'application/json' } }
+```
+
+### Use Cases
+
+- **Maintenance Windows**: Simulate scheduled maintenance
+- **Load Testing**: Test how your app handles service outages
+- **Error Handling**: Verify 503 error handling in your frontend
+- **Retry Logic**: Test exponential backoff and retry mechanisms
+- **Graceful Degradation**: Ensure your app degrades gracefully during outages
+
+### Testing with Storybook
+
+Use the included Storybook demo to test 503 scenarios:
+
+1. Navigate to "MockUI/503 Service Unavailable"
+2. Set any endpoint's status to 503 using MockUI
+3. Click test buttons to see responses
+4. Try different scenarios, query parameters, and custom responses
 
 ---
 

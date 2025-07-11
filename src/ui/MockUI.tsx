@@ -236,7 +236,12 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	// Helper: get statusCodes for a plugin
 	const getStatusCodes = (plugin: Plugin) => {
-		return Object.keys(plugin.responses).map(Number);
+		const statusCodes = Object.keys(plugin.responses).map(Number);
+		// Always include 503 Service Unavailable as it's available for free on all endpoints
+		if (!statusCodes.includes(503)) {
+			statusCodes.push(503);
+		}
+		return statusCodes.sort((a, b) => a - b);
 	};
 
 	const allGroups = [...autoGroups, ...groups];
