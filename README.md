@@ -1173,7 +1173,6 @@ const preview: Preview = {
   // the reset of your preview config...
 };
 
-export const decorators = [mswDecorator];
 export default preview;
 ```
 
