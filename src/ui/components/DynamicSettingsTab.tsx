@@ -1,5 +1,8 @@
 import React from 'react';
 import { MockPlatformCore } from '../../classes/MockPlatformCore';
+import ModernToggle from './ModernToggle';
+import { useResponsive } from '../hooks/useResponsive';
+import { theme } from '../theme';
 
 interface DynamicSettingsTabProps {
 	platform: MockPlatformCore;
@@ -9,12 +12,24 @@ interface DynamicSettingsTabProps {
 
 export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableChange }: DynamicSettingsTabProps) {
 	const settings = platform.getRegisteredSettings();
+	const screenSize = useResponsive();
+	const isMobile = screenSize === 'mobile';
 
 	return (
-		<div style={{ marginBottom: 24 }}>
+		<div style={{ padding: isMobile ? '16px' : '24px' }}>
 			{/* Global Disable Control */}
-			<div style={{ marginBottom: 32 }}>
-				<h3 style={{ fontSize: 18, fontWeight: 500, marginBottom: 16 }}>Global Settings</h3>
+			<div style={{ marginBottom: '32px' }}>
+				<h3
+					style={{
+						fontSize: isMobile ? '16px' : '18px',
+						fontWeight: '600',
+						marginBottom: '16px',
+						margin: 0,
+						color: theme.colors.gray[800],
+					}}
+				>
+					Global Settings
+				</h3>
 				<div
 					style={{
 						display: 'flex',
@@ -22,42 +37,46 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 						justifyContent: 'space-between',
 						boxSizing: 'border-box',
 						width: '100%',
-						padding: '16px',
-						border: '1px solid #eee',
-						borderRadius: 8,
-						background: '#fafafa',
+						padding: isMobile ? '16px' : '20px',
+						border: `1px solid ${theme.colors.gray[200]}`,
+						borderRadius: theme.borderRadius.lg,
+						background: theme.colors.gray[50],
+						boxShadow: theme.shadows.sm,
+						flexDirection: isMobile ? 'column' : 'row',
+						gap: isMobile ? '12px' : '16px',
 					}}
 				>
-					<div style={{ flex: 1, marginRight: 16 }}>
+					<div style={{ flex: 1 }}>
 						<label
 							htmlFor="global-disable"
 							style={{
-								fontWeight: 600,
-								fontSize: 14,
+								fontWeight: '600',
+								fontSize: '14px',
 								display: 'block',
-								marginBottom: 4,
+								marginBottom: '4px',
+								color: theme.colors.gray[800],
 							}}
 						>
 							Disable All Endpoints
 						</label>
-						<div style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>
+						<div
+							style={{
+								color: theme.colors.gray[600],
+								fontSize: '12px',
+								lineHeight: 1.4,
+							}}
+						>
 							When enabled, all endpoints will passthrough to the real API, bypassing all mocks regardless of individual endpoint settings.
 						</div>
 					</div>
-					<div style={{ minWidth: 120 }}>
-						<input
-							id="global-disable"
-							type="checkbox"
+					<div style={{ minWidth: isMobile ? 'auto' : '120px' }}>
+						<ModernToggle
 							checked={platform.isGloballyDisabled()}
-							onChange={e => {
-								platform.setGlobalDisable(e.target.checked);
+							onChange={() => {
+								platform.setGlobalDisable(!platform.isGloballyDisabled());
 								onGlobalDisableChange?.();
 							}}
-							style={{
-								width: 20,
-								height: 20,
-								cursor: 'pointer',
-							}}
+							label=""
 						/>
 					</div>
 				</div>
@@ -66,8 +85,18 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 			{/* Middleware Settings */}
 			{settings.length > 0 && (
 				<>
-					<h3 style={{ fontSize: 18, fontWeight: 500 }}>Middleware Settings</h3>
-					<div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 12 }}>
+					<h3
+						style={{
+							fontSize: isMobile ? '16px' : '18px',
+							fontWeight: '600',
+							margin: 0,
+							marginBottom: '16px',
+							color: theme.colors.gray[800],
+						}}
+					>
+						Middleware Settings
+					</h3>
+					<div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 						{settings.map(setting => (
 							<div
 								key={setting.key}
@@ -77,38 +106,54 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 									justifyContent: 'space-between',
 									boxSizing: 'border-box',
 									width: '100%',
-									padding: '16px',
-									border: '1px solid #eee',
-									borderRadius: 8,
-									background: '#fafafa',
+									padding: isMobile ? '16px' : '20px',
+									border: `1px solid ${theme.colors.gray[200]}`,
+									borderRadius: theme.borderRadius.lg,
+									background: theme.colors.gray[50],
+									boxShadow: theme.shadows.sm,
+									flexDirection: isMobile ? 'column' : 'row',
+									gap: isMobile ? '12px' : '16px',
 								}}
 							>
-								<div style={{ flex: 1, marginRight: 16 }}>
+								<div style={{ flex: 1 }}>
 									<label
 										htmlFor={`setting-${setting.key}`}
 										style={{
-											fontWeight: 600,
-											fontSize: 14,
+											fontWeight: '600',
+											fontSize: '14px',
 											display: 'block',
-											marginBottom: 4,
+											marginBottom: '4px',
+											color: theme.colors.gray[800],
 										}}
 									>
 										{setting.label}
 									</label>
-									{setting.description && <div style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>{setting.description}</div>}
+									{setting.description && (
+										<div
+											style={{
+												color: theme.colors.gray[600],
+												fontSize: '12px',
+												lineHeight: 1.4,
+											}}
+										>
+											{setting.description}
+										</div>
+									)}
 								</div>
-								<div style={{ minWidth: 120 }}>
+								<div style={{ minWidth: isMobile ? 'auto' : '120px', width: isMobile ? '100%' : 'auto' }}>
 									{setting.type === 'SELECT' && setting.options ? (
 										<select
 											id={`setting-${setting.key}`}
 											value={platform.getMiddlewareSetting(setting.key) || setting.defaultValue || ''}
 											onChange={e => onSettingChange(setting.key, e.target.value)}
 											style={{
-												borderRadius: 6,
+												borderRadius: theme.borderRadius.md,
 												padding: '8px 12px',
-												fontSize: 14,
-												border: '1px solid #ccc',
+												fontSize: '14px',
+												border: `1px solid ${theme.colors.gray[300]}`,
 												width: '100%',
+												outline: 'none',
+												transition: 'border-color 0.2s ease',
 											}}
 										>
 											{setting.options.map(option => (
@@ -124,11 +169,13 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 											value={platform.getMiddlewareSetting(setting.key) || setting.defaultValue || ''}
 											onChange={e => onSettingChange(setting.key, e.target.value)}
 											style={{
-												borderRadius: 6,
+												borderRadius: theme.borderRadius.md,
 												padding: '8px 12px',
-												fontSize: 14,
-												border: '1px solid #ccc',
+												fontSize: '14px',
+												border: `1px solid ${theme.colors.gray[300]}`,
 												width: '100%',
+												outline: 'none',
+												transition: 'border-color 0.2s ease',
 											}}
 										/>
 									) : setting.type === 'NUMBER' ? (
@@ -138,24 +185,22 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 											value={platform.getMiddlewareSetting(setting.key) || setting.defaultValue || ''}
 											onChange={e => onSettingChange(setting.key, Number(e.target.value))}
 											style={{
-												borderRadius: 6,
+												borderRadius: theme.borderRadius.md,
 												padding: '8px 12px',
-												fontSize: 14,
-												border: '1px solid #ccc',
+												fontSize: '14px',
+												border: `1px solid ${theme.colors.gray[300]}`,
 												width: '100%',
+												outline: 'none',
+												transition: 'border-color 0.2s ease',
 											}}
 										/>
 									) : setting.type === 'BOOLEAN' ? (
-										<input
-											id={`setting-${setting.key}`}
-											type="checkbox"
+										<ModernToggle
 											checked={platform.getMiddlewareSetting(setting.key) ?? setting.defaultValue ?? false}
-											onChange={e => onSettingChange(setting.key, e.target.checked)}
-											style={{
-												width: 20,
-												height: 20,
-												cursor: 'pointer',
-											}}
+											onChange={() =>
+												onSettingChange(setting.key, !(platform.getMiddlewareSetting(setting.key) ?? setting.defaultValue ?? false))
+											}
+											label=""
 										/>
 									) : null}
 								</div>

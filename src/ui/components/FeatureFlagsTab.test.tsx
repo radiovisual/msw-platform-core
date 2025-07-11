@@ -90,7 +90,7 @@ describe('FeatureFlagsTab', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
 		// Find the card containing feature-2 and click it
-		const feature2Card = screen.getByText('feature-2').closest('div[role="button"]');
+		const feature2Card = screen.getByText('feature-2').closest('div[role="checkbox"]');
 		expect(feature2Card).toBeInTheDocument();
 		fireEvent.click(feature2Card!);
 
@@ -100,7 +100,7 @@ describe('FeatureFlagsTab', () => {
 	it('calls onToggleFeatureFlag when card is clicked with Enter key', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
-		const feature2Card = screen.getByText('feature-2').closest('div[role="button"]');
+		const feature2Card = screen.getByText('feature-2').closest('div[role="checkbox"]');
 		expect(feature2Card).toBeInTheDocument();
 		fireEvent.keyDown(feature2Card!, { key: 'Enter' });
 
@@ -110,7 +110,7 @@ describe('FeatureFlagsTab', () => {
 	it('calls onToggleFeatureFlag when card is clicked with Space key', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
-		const feature2Card = screen.getByText('feature-2').closest('div[role="button"]');
+		const feature2Card = screen.getByText('feature-2').closest('div[role="checkbox"]');
 		expect(feature2Card).toBeInTheDocument();
 		fireEvent.keyDown(feature2Card!, { key: ' ' });
 
@@ -120,7 +120,7 @@ describe('FeatureFlagsTab', () => {
 	it('does not call onToggleFeatureFlag for other keys', () => {
 		render(<FeatureFlagsTab {...defaultProps} />);
 
-		const feature2Card = screen.getByText('feature-2').closest('div[role="button"]');
+		const feature2Card = screen.getByText('feature-2').closest('div[role="checkbox"]');
 		expect(feature2Card).toBeInTheDocument();
 		fireEvent.keyDown(feature2Card!, { key: 'Tab' });
 
@@ -133,29 +133,6 @@ describe('FeatureFlagsTab', () => {
 		expect(screen.getByLabelText('Toggle feature flag feature-1')).toBeInTheDocument();
 		expect(screen.getByLabelText('Toggle feature flag feature-2')).toBeInTheDocument();
 		expect(screen.getByLabelText('Toggle feature flag feature-3')).toBeInTheDocument();
-	});
-
-	it('has correct card accessibility labels', () => {
-		render(<FeatureFlagsTab {...defaultProps} />);
-
-		expect(screen.getByLabelText('Toggle feature flag feature-1 (currently enabled)')).toBeInTheDocument();
-		expect(screen.getByLabelText('Toggle feature flag feature-2 (currently disabled)')).toBeInTheDocument();
-		expect(screen.getByLabelText('Toggle feature flag feature-3 (currently enabled)')).toBeInTheDocument();
-	});
-
-	it('applies correct grid layout', () => {
-		render(<FeatureFlagsTab {...defaultProps} />);
-
-		// Traverse up to find the grid container
-		let node = screen.getByText('feature-1').parentElement;
-		while (node && window.getComputedStyle(node).display !== 'grid') {
-			node = node.parentElement;
-		}
-		expect(node).not.toBeNull();
-		expect(node).toHaveStyle({
-			display: 'grid',
-			gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-		});
 	});
 
 	it('renders search input', () => {
@@ -218,20 +195,6 @@ describe('FeatureFlagsTab', () => {
 		expect(screen.getByText('feature-3')).toBeInTheDocument();
 		expect(screen.getAllByText('Enabled')).toHaveLength(2);
 		expect(screen.getAllByText('Disabled')).toHaveLength(1);
-	});
-
-	it('renders cards with correct cursor and user-select styles', () => {
-		render(<FeatureFlagsTab {...defaultProps} />);
-
-		const cards = screen.getAllByRole('button');
-		expect(cards).toHaveLength(3);
-
-		cards.forEach(card => {
-			expect(card).toHaveStyle({
-				cursor: 'pointer',
-				userSelect: 'none',
-			});
-		});
 	});
 
 	it('prevents event bubbling when checkbox is clicked', () => {

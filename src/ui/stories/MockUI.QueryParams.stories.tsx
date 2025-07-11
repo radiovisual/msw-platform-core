@@ -67,20 +67,22 @@ const platform = createMockPlatform({
 // Create platforms for different edge case scenarios
 const fallbackPlatform = createMockPlatform({
 	name: 'fallback-demo',
-	plugins: [{
-		id: 'with-fallback',
-		componentId: 'Demo',
-		endpoint: '/api/fallback',
-		method: 'GET' as const,
-		responses: {
-			200: { message: 'Default fallback response' },
+	plugins: [
+		{
+			id: 'with-fallback',
+			componentId: 'Demo',
+			endpoint: '/api/fallback',
+			method: 'GET' as const,
+			responses: {
+				200: { message: 'Default fallback response' },
+			},
+			defaultStatus: 200,
+			queryResponses: {
+				'type=admin': { 200: { message: 'Admin-specific response' } },
+				'status=active': { 200: { message: 'Active status response' } },
+			},
 		},
-		defaultStatus: 200,
-		queryResponses: {
-			'type=admin': { 200: { message: 'Admin-specific response' } },
-			'status=active': { 200: { message: 'Active status response' } },
-		},
-	}],
+	],
 });
 
 const passthroughPlatform = createMockPlatform({
@@ -285,7 +287,7 @@ function FallbackBehaviorDemo() {
 		<div style={{ padding: 32 }}>
 			<h2>Fallback Behavior Demo</h2>
 			<p>
-				When a plugin has queryResponses but the request doesn't match any of them, it falls back to the default response in the 
+				When a plugin has queryResponses but the request doesn&apos;t match any of them, it falls back to the default response in the
 				<code>responses</code> object.
 			</p>
 			<hr />
@@ -350,8 +352,8 @@ function PassthroughDemo() {
 		<div style={{ padding: 32 }}>
 			<h2>Passthrough Behavior Demo</h2>
 			<p>
-				When some plugins are disabled and enabled plugins don't match the request, the system returns passthrough (letting real backend handle it).
-				Try disabling the "disabled-plugin" in the MockUI below and test different scenarios.
+				When some plugins are disabled and enabled plugins don&apos;t match the request, the system returns passthrough (letting real
+				backend handle it). Try disabling the &quot;disabled-plugin&quot; in the MockUI below and test different scenarios.
 			</p>
 			<hr />
 			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -412,8 +414,8 @@ function PriorityDemo() {
 		<div style={{ padding: 32 }}>
 			<h2>Priority Rules Demo</h2>
 			<p>
-				Exact matches have higher priority than wildcard matches. The system calculates specificity: exact matches get 10 points, 
-				wildcards get 1 point per parameter.
+				Exact matches have higher priority than wildcard matches. The system calculates specificity: exact matches get 10 points, wildcards
+				get 1 point per parameter.
 			</p>
 			<hr />
 			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -26,21 +26,18 @@ describe('MockUI 503 Service Unavailable Feature', () => {
 			],
 		});
 
-		// Create a mock instance to access the getStatusCodes function
-		const mockUIInstance = render(<MockUI platform={platform} />);
-		
 		// Test that the getStatusCodes function would include 503
 		const basicPlugin = platform.getPlugins().find(p => p.id === 'basic-service');
 		expect(basicPlugin).toBeDefined();
-		
+
 		if (basicPlugin) {
 			// Manually test the logic - the plugin should have responses for 200, 404, and 503 should be added
 			const statusCodes = Object.keys(basicPlugin.responses).map(Number);
 			const expectedStatusCodes = [...statusCodes, 503].sort((a, b) => a - b);
-			
+
 			// The plugin originally has [200, 404]
 			expect(statusCodes).toEqual([200, 404]);
-			
+
 			// After adding 503, it should be [200, 404, 503]
 			expect(expectedStatusCodes).toEqual([200, 404, 503]);
 		}
@@ -65,11 +62,11 @@ describe('MockUI 503 Service Unavailable Feature', () => {
 		});
 
 		render(<MockUI platform={platform} />);
-		
+
 		// Test that the getStatusCodes function would include 503
 		const customPlugin = platform.getPlugins().find(p => p.id === 'custom-503-service');
 		expect(customPlugin).toBeDefined();
-		
+
 		if (customPlugin) {
 			// Manually test the logic - the plugin should have responses for 200, 503, and 503 should NOT be added twice
 			const statusCodes = Object.keys(customPlugin.responses).map(Number);
@@ -78,10 +75,10 @@ describe('MockUI 503 Service Unavailable Feature', () => {
 				expectedStatusCodes.push(503);
 			}
 			expectedStatusCodes.sort((a, b) => a - b);
-			
+
 			// The plugin originally has [200, 503]
 			expect(statusCodes).toEqual([200, 503]);
-			
+
 			// After processing, it should still be [200, 503] (no duplicates)
 			expect(expectedStatusCodes).toEqual([200, 503]);
 		}
@@ -108,19 +105,19 @@ describe('MockUI 503 Service Unavailable Feature', () => {
 		});
 
 		render(<MockUI platform={platform} />);
-		
+
 		// Test that the getStatusCodes function sorts correctly
 		const mixedPlugin = platform.getPlugins().find(p => p.id === 'mixed-statuses');
 		expect(mixedPlugin).toBeDefined();
-		
+
 		if (mixedPlugin) {
 			// Manually test the logic - the plugin should have responses for 500, 200, 400, and 503 should be added
 			const statusCodes = Object.keys(mixedPlugin.responses).map(Number);
 			const expectedStatusCodes = [...statusCodes, 503].sort((a, b) => a - b);
-			
+
 			// The plugin originally has [500, 200, 400] (order from responses object)
 			expect(statusCodes.sort()).toEqual([200, 400, 500]);
-			
+
 			// After adding 503 and sorting, it should be [200, 400, 500, 503]
 			expect(expectedStatusCodes).toEqual([200, 400, 500, 503]);
 		}

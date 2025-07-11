@@ -114,10 +114,10 @@ describe('503 Service Unavailable Feature', () => {
 				method: 'GET',
 				responses: {
 					200: { message: 'success' },
-					503: { 
+					503: {
 						error: 'Custom Service Unavailable',
 						maintenance: true,
-						retryAfter: 300
+						retryAfter: 300,
 					},
 				},
 				defaultStatus: 200,
@@ -134,10 +134,10 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Custom Service Unavailable',
 				maintenance: true,
-				retryAfter: 300
+				retryAfter: 300,
 			});
 		});
 
@@ -149,13 +149,13 @@ describe('503 Service Unavailable Feature', () => {
 				method: 'GET',
 				responses: {
 					200: { message: 'success' },
-					503: { 
+					503: {
 						body: { error: 'Maintenance Mode', estimatedDowntime: '2 hours' },
 						headers: {
 							'Retry-After': '7200',
 							'X-Maintenance': 'true',
-							'Content-Type': 'application/json'
-						}
+							'Content-Type': 'application/json',
+						},
 					},
 				},
 				defaultStatus: 200,
@@ -172,9 +172,9 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Maintenance Mode',
-				estimatedDowntime: '2 hours'
+				estimatedDowntime: '2 hours',
 			});
 			expect(res.headers.get('retry-after')).toBe('7200');
 			expect(res.headers.get('x-maintenance')).toBe('true');
@@ -236,9 +236,9 @@ describe('503 Service Unavailable Feature', () => {
 						label: 'Maintenance Scenario',
 						responses: {
 							200: { message: 'scenario response' },
-							503: { 
+							503: {
 								error: 'Scenario Maintenance Mode',
-								reason: 'Database upgrade in progress'
+								reason: 'Database upgrade in progress',
 							},
 						},
 					},
@@ -257,9 +257,9 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Scenario Maintenance Mode',
-				reason: 'Database upgrade in progress'
+				reason: 'Database upgrade in progress',
 			});
 		});
 
@@ -314,9 +314,9 @@ describe('503 Service Unavailable Feature', () => {
 				},
 				defaultStatus: 200,
 				queryResponses: {
-					'type=admin': { 
+					'type=admin': {
 						200: { message: 'admin response' },
-						404: { error: 'admin not found' }
+						404: { error: 'admin not found' },
 					},
 				},
 			};
@@ -347,12 +347,12 @@ describe('503 Service Unavailable Feature', () => {
 				},
 				defaultStatus: 200,
 				queryResponses: {
-					'type=admin': { 
+					'type=admin': {
 						200: { message: 'admin response' },
-						503: { 
+						503: {
 							error: 'Admin Service Unavailable',
-							adminContact: 'admin@example.com'
-						}
+							adminContact: 'admin@example.com',
+						},
 					},
 				},
 			};
@@ -368,9 +368,9 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Admin Service Unavailable',
-				adminContact: 'admin@example.com'
+				adminContact: 'admin@example.com',
 			});
 		});
 	});
@@ -395,15 +395,15 @@ describe('503 Service Unavailable Feature', () => {
 								body: {
 									...response.body,
 									timestamp: '2023-01-01T00:00:00Z',
-									requestId: 'test-request-id'
-								}
+									requestId: 'test-request-id',
+								},
 							};
 						}
 						// Handle simple response objects
 						return {
 							...response,
 							timestamp: '2023-01-01T00:00:00Z',
-							requestId: 'test-request-id'
+							requestId: 'test-request-id',
 						};
 					}
 					return response;
@@ -421,10 +421,10 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Service Unavailable',
 				timestamp: '2023-01-01T00:00:00Z',
-				requestId: 'test-request-id'
+				requestId: 'test-request-id',
 			});
 		});
 
@@ -444,7 +444,7 @@ describe('503 Service Unavailable Feature', () => {
 						return {
 							...response,
 							transformed: true,
-							pluginId: context.plugin?.id
+							pluginId: context.plugin?.id,
 						};
 					}
 					return response;
@@ -462,10 +462,10 @@ describe('503 Service Unavailable Feature', () => {
 			const json = await res.json();
 
 			expect(res.status).toBe(503);
-			expect(json).toEqual({ 
+			expect(json).toEqual({
 				error: 'Custom Service Unavailable',
 				transformed: true,
-				pluginId: 'transform-custom-503-plugin'
+				pluginId: 'transform-custom-503-plugin',
 			});
 		});
 	});
@@ -484,10 +484,10 @@ describe('503 Service Unavailable Feature', () => {
 			};
 
 			const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
-			
+
 			// Test getResponse with 503 status
 			const response = platform.getResponse('api-test-plugin', 503);
-			
+
 			expect(response).toEqual({ error: 'Service Unavailable' });
 		});
 
@@ -505,10 +505,10 @@ describe('503 Service Unavailable Feature', () => {
 			};
 
 			const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
-			
+
 			// Test getResponse with 503 status
 			const response = platform.getResponse('api-custom-plugin', 503);
-			
+
 			expect(response).toEqual({ error: 'Custom API Unavailable' });
 		});
 
@@ -525,13 +525,13 @@ describe('503 Service Unavailable Feature', () => {
 			};
 
 			const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
-			
+
 			// Test getResponseWithHeaders with 503 status
 			const response = platform.getResponseWithHeaders('api-headers-plugin', 503);
-			
+
 			expect(response).toEqual({
 				body: { error: 'Service Unavailable' },
-				headers: { 'Content-Type': 'application/json' }
+				headers: { 'Content-Type': 'application/json' },
 			});
 		});
 	});

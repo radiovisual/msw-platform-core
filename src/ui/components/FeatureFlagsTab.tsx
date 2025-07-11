@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import Checkbox from './Checkbox';
+import SearchBar from './SearchBar';
+import ModernToggle from './ModernToggle';
+import { useResponsive } from '../hooks/useResponsive';
+import { theme } from '../theme';
 
 interface FeatureFlagsTabProps {
 	featureFlags: { [key: string]: boolean };
@@ -26,36 +29,75 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 		onToggleFeatureFlag(flag, !currentValue);
 	};
 
+	const screenSize = useResponsive();
+	const isMobile = screenSize === 'mobile';
+
 	return (
-		<div>
-			<h3 style={{ fontSize: 18, fontWeight: 500 }}>Feature Flags</h3>
+		<div style={{ padding: isMobile ? '16px' : '24px' }}>
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+					marginBottom: '20px',
+					flexWrap: isMobile ? 'wrap' : 'nowrap',
+					gap: isMobile ? '12px' : '0',
+				}}
+			>
+				<h3
+					style={{
+						fontSize: isMobile ? '16px' : '18px',
+						fontWeight: '600',
+						margin: 0,
+						color: theme.colors.gray[800],
+					}}
+				>
+					Feature Flags
+				</h3>
+				<div
+					style={{
+						padding: '6px 12px',
+						borderRadius: theme.borderRadius.full,
+						fontSize: '12px',
+						background: theme.colors.success,
+						color: 'white',
+						fontWeight: '500',
+						boxShadow: theme.shadows.sm,
+					}}
+				>
+					{Object.values(featureFlags).filter(Boolean).length} / {Object.keys(featureFlags).length} enabled
+				</div>
+			</div>
 
 			{/* Search input */}
-			<div style={{ marginTop: 16, marginBottom: 16 }}>
-				<input
-					type="text"
-					placeholder="Search feature flags..."
-					value={searchTerm}
-					onChange={e => setSearchTerm(e.target.value)}
-					style={{
-						width: '100%',
-						padding: '8px 12px',
-						border: '1px solid #ddd',
-						borderRadius: 6,
-						fontSize: 14,
-						boxSizing: 'border-box',
-					}}
-				/>
+			<div style={{ marginBottom: '20px' }}>
+				<SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Search feature flags..." />
 			</div>
 
 			{/* Results count */}
 			{searchTerm && (
-				<div style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
+				<div
+					style={{
+						fontSize: '12px',
+						color: theme.colors.gray[600],
+						marginBottom: '16px',
+						padding: '8px 12px',
+						background: theme.colors.gray[50],
+						borderRadius: theme.borderRadius.sm,
+						border: `1px solid ${theme.colors.gray[200]}`,
+					}}
+				>
 					{filteredFlags.length} of {Object.keys(featureFlags).length} feature flags
 				</div>
 			)}
 
-			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+			<div
+				style={{
+					display: 'grid',
+					gridTemplateColumns: isMobile ? '1fr' : screenSize === 'tablet' ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
+					gap: isMobile ? '12px' : '16px',
+				}}
+			>
 				{filteredFlags.map(([flag, enabled]) => {
 					const metadata = featureFlagMetadata[flag];
 					const description = metadata?.description;
@@ -65,25 +107,30 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 							key={flag}
 							onClick={() => handleCardClick(flag, enabled)}
 							style={{
-								border: '1px solid #eee',
-								borderRadius: 8,
-								padding: 16,
-								background: enabled ? '#f6fff6' : '#fff6f6',
-								transition: 'background-color 0.2s ease, transform 0.1s ease',
+								border: `1px solid ${theme.colors.gray[200]}`,
+								borderRadius: theme.borderRadius.lg,
+								padding: isMobile ? '16px' : '20px',
+								background: 'white',
+								transition: 'all 0.2s ease',
 								cursor: 'pointer',
 								userSelect: 'none',
+								boxShadow: theme.shadows.sm,
+								opacity: enabled ? 1 : 0.8,
 							}}
 							onMouseEnter={e => {
-								e.currentTarget.style.transform = 'translateY(-1px)';
-								e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+								e.currentTarget.style.transform = 'translateY(-2px)';
+								e.currentTarget.style.boxShadow = theme.shadows.md;
+								e.currentTarget.style.borderColor = theme.colors.primary;
 							}}
 							onMouseLeave={e => {
 								e.currentTarget.style.transform = 'translateY(0)';
-								e.currentTarget.style.boxShadow = 'none';
+								e.currentTarget.style.boxShadow = theme.shadows.sm;
+								e.currentTarget.style.borderColor = theme.colors.gray[200];
 							}}
-							role="button"
+							role="checkbox"
+							aria-checked={enabled}
 							tabIndex={0}
-							aria-label={`Toggle feature flag ${flag} (currently ${enabled ? 'enabled' : 'disabled'})`}
+							aria-label={`Toggle feature flag ${flag}`}
 							onKeyDown={e => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
@@ -91,17 +138,28 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 								}
 							}}
 						>
-							<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+							<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
 								<div style={{ flex: 1 }}>
-									<span style={{ fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 4 }}>{flag}</span>
+									<h4
+										style={{
+											fontSize: '14px',
+											fontWeight: '600',
+											display: 'block',
+											marginBottom: '8px',
+											color: theme.colors.gray[800],
+											margin: 0,
+										}}
+									>
+										{flag}
+									</h4>
 									{description && (
 										<p
 											style={{
-												fontSize: 12,
-												color: '#666',
+												fontSize: '12px',
+												color: theme.colors.gray[600],
 												margin: 0,
 												lineHeight: 1.4,
-												marginBottom: 8,
+												marginBottom: '8px',
 											}}
 										>
 											{description}
@@ -109,9 +167,9 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 									)}
 									<span
 										style={{
-											fontSize: 11,
-											color: enabled ? '#22c55e' : '#ef4444',
-											fontWeight: 500,
+											fontSize: '11px',
+											color: enabled ? theme.colors.success : theme.colors.danger,
+											fontWeight: '500',
 											textTransform: 'uppercase',
 											letterSpacing: '0.5px',
 										}}
@@ -119,13 +177,9 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 										{enabled ? 'Enabled' : 'Disabled'}
 									</span>
 								</div>
-								<Checkbox
-									checked={!!enabled}
-									onChange={() => handleCardClick(flag, enabled)}
-									id={flag}
-									aria-label={`Toggle feature flag ${flag}`}
-									onClick={e => e.stopPropagation()}
-								/>
+								<div onClick={e => e.stopPropagation()}>
+									<ModernToggle checked={!!enabled} onChange={() => handleCardClick(flag, enabled)} label="" />
+								</div>
 							</div>
 						</div>
 					);
@@ -138,8 +192,8 @@ const FeatureFlagsTab: React.FC<FeatureFlagsTabProps> = ({ featureFlags, feature
 					style={{
 						textAlign: 'center',
 						padding: '32px 16px',
-						color: '#666',
-						fontSize: 14,
+						color: theme.colors.gray[600],
+						fontSize: '14px',
 					}}
 				>
 					No feature flags match &quot;{searchTerm}&quot;

@@ -4,6 +4,7 @@ type TabsContextType = {
 	value: string;
 	setValue: (v: string) => void;
 };
+
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export const Tabs: React.FC<{ defaultValue: string; children: React.ReactNode }> = ({ defaultValue, children }) => {
@@ -44,7 +45,7 @@ export const TabPanel: React.FC<{ value: string; children: React.ReactNode }> = 
 	if (!ctx) throw new Error('TabPanel must be used within Tabs');
 	if (ctx.value !== value) return null;
 	return (
-		<div role="tabpanel" style={{ padding: 16 }}>
+		<div role="tabpanel" style={{ padding: 8 }}>
 			{children}
 		</div>
 	);

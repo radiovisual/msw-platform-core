@@ -309,10 +309,8 @@ contractMiddleware.attachTo(['user-status'], platform);
 function DemoApp() {
 	const [result, setResult] = useState<any>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [, forceUpdate] = useState(0); // dummy state for re-render
 	const [experimentalHello, setExperimentalHello] = useState(platform.getFeatureFlags().EXPERIMENTAL_HELLO);
 
-	console.log({ experimentalHello });
 	const fetchHello = async () => {
 		setError(null);
 		setResult(null);
