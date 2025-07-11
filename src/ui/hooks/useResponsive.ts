@@ -32,11 +32,7 @@ export const getResponsiveStyles = (screenSize: ScreenSize) => ({
 	},
 	grid: {
 		display: 'grid',
-		gridTemplateColumns: screenSize === 'mobile' 
-			? '1fr' 
-			: screenSize === 'tablet' 
-				? 'repeat(2, 1fr)' 
-				: 'repeat(3, 1fr)',
+		gridTemplateColumns: screenSize === 'mobile' ? '1fr' : screenSize === 'tablet' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
 		gap: screenSize === 'mobile' ? '8px' : '16px',
 	},
 	dialog: {
@@ -47,5 +43,5 @@ export const getResponsiveStyles = (screenSize: ScreenSize) => ({
 	modalContent: {
 		maxHeight: screenSize === 'mobile' ? '80vh' : '90vh',
 		overflow: 'auto',
-	}
+	},
 });

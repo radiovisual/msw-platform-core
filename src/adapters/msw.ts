@@ -112,10 +112,12 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 							}
 							// Track this plugin as a fallback option if it has a default response
 							// Only consider enabled plugins as fallbacks
-							if (!fallbackPluginWithDefault &&
+							if (
+								!fallbackPluginWithDefault &&
 								plugin.responses &&
 								plugin.responses[plugin.defaultStatus] !== undefined &&
-								!platform.getDisabledPluginIds().includes(plugin.id)) {
+								!platform.getDisabledPluginIds().includes(plugin.id)
+							) {
 								fallbackPluginWithDefault = plugin;
 							}
 						} else {
@@ -127,10 +129,12 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 								bestQueryMatch = null;
 							}
 							// Also track it as a fallback option
-							if (!fallbackPluginWithDefault &&
+							if (
+								!fallbackPluginWithDefault &&
 								plugin.responses &&
 								plugin.responses[plugin.defaultStatus] !== undefined &&
-								!platform.getDisabledPluginIds().includes(plugin.id)) {
+								!platform.getDisabledPluginIds().includes(plugin.id)
+							) {
 								fallbackPluginWithDefault = plugin;
 							}
 						}
@@ -138,13 +142,12 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					// If no plugin matched, check if we should use a fallback plugin
 					if (!bestPlugin && fallbackPluginWithDefault) {
 						// Check if there are disabled plugins for this endpoint
-						const hasDisabledPlugins = plugins.some(plugin =>
-							platform.getDisabledPluginIds().includes(plugin.id)
-						);
-						
+						const hasDisabledPlugins = plugins.some(plugin => platform.getDisabledPluginIds().includes(plugin.id));
+
 						// Only use fallback if there are no disabled plugins
 						// If there are disabled plugins, prefer passthrough over fallback
-						if (!hasDisabledPlugins &&
+						if (
+							!hasDisabledPlugins &&
 							fallbackPluginWithDefault.responses &&
 							fallbackPluginWithDefault.responses[fallbackPluginWithDefault.defaultStatus] !== undefined
 						) {
@@ -157,16 +160,13 @@ export function mswHandlersFromPlatform(platformOrGetter: MockPlatformCore | (()
 					// If no plugin matched, implement passthrough
 					if (!bestPlugin) {
 						// Check if any plugin for this endpoint is disabled
-						const hasDisabledPlugins = plugins.some(plugin =>
-							platform.getDisabledPluginIds().includes(plugin.id)
-						);
-						
-						
+						const hasDisabledPlugins = plugins.some(plugin => platform.getDisabledPluginIds().includes(plugin.id));
+
 						// If there are disabled plugins, use passthrough to let real backend handle it
 						if (hasDisabledPlugins) {
 							return passthrough();
 						}
-						
+
 						// If no plugins are disabled, return 404 as before
 						return HttpResponse.json({ error: 'Not found' }, { status: 404 });
 					}

@@ -24,9 +24,9 @@ const platform = createMockPlatform({
 			componentId: 'service',
 			endpoint: '/api/service/basic',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Basic service is running' },
-				400: { error: 'Bad request' }
+				400: { error: 'Bad request' },
 			},
 			defaultStatus: 200,
 		},
@@ -35,13 +35,13 @@ const platform = createMockPlatform({
 			componentId: 'service',
 			endpoint: '/api/service/custom503',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Service with custom 503 is running' },
-				503: { 
+				503: {
 					error: 'Custom Service Unavailable',
 					maintenance: true,
-					retryAfter: 300
-				}
+					retryAfter: 300,
+				},
 			},
 			defaultStatus: 200,
 		},
@@ -50,16 +50,16 @@ const platform = createMockPlatform({
 			componentId: 'service',
 			endpoint: '/api/service/custom503headers',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Service with custom 503 headers is running' },
-				503: { 
+				503: {
 					body: { error: 'Maintenance Mode', estimatedDowntime: '2 hours' },
 					headers: {
 						'Retry-After': '7200',
 						'X-Maintenance': 'true',
-						'Content-Type': 'application/json'
-					}
-				}
+						'Content-Type': 'application/json',
+					},
+				},
 			},
 			defaultStatus: 200,
 		},
@@ -68,9 +68,9 @@ const platform = createMockPlatform({
 			componentId: 'service',
 			endpoint: '/api/service/scenarios',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Service with scenarios is running' },
-				503: { error: 'Default Service Unavailable' }
+				503: { error: 'Default Service Unavailable' },
 			},
 			defaultStatus: 200,
 			scenarios: [
@@ -79,42 +79,42 @@ const platform = createMockPlatform({
 					label: 'Maintenance Mode',
 					responses: {
 						200: { message: 'Maintenance scenario active' },
-						503: { 
+						503: {
 							error: 'Scenario Maintenance Mode',
-							reason: 'Database upgrade in progress'
-						}
-					}
-				}
-			]
+							reason: 'Database upgrade in progress',
+						},
+					},
+				},
+			],
 		},
 		{
 			id: 'service-with-query-params',
 			componentId: 'service',
 			endpoint: '/api/service/query',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Query service is running' },
-				503: { error: 'Default Service Unavailable' }
+				503: { error: 'Default Service Unavailable' },
 			},
 			defaultStatus: 200,
 			queryResponses: {
-				'type=admin': { 
+				'type=admin': {
 					200: { message: 'Admin query service is running' },
-					503: { 
+					503: {
 						error: 'Admin Service Unavailable',
-						adminContact: 'admin@example.com'
-					}
-				}
-			}
+						adminContact: 'admin@example.com',
+					},
+				},
+			},
 		},
 		{
 			id: 'service-with-transform',
 			componentId: 'service',
 			endpoint: '/api/service/transform',
 			method: 'GET',
-			responses: { 
+			responses: {
 				200: { message: 'Transform service is running' },
-				503: { error: 'Custom Service Unavailable' }
+				503: { error: 'Custom Service Unavailable' },
 			},
 			defaultStatus: 200,
 			transform: (response, context) => {
@@ -126,26 +126,28 @@ const platform = createMockPlatform({
 							body: {
 								...response.body,
 								timestamp: new Date().toISOString(),
-								requestId: 'demo-request-id'
-							}
+								requestId: 'demo-request-id',
+							},
 						};
 					}
 					// Handle simple response objects
 					return {
 						...response,
 						timestamp: new Date().toISOString(),
-						requestId: 'demo-request-id'
+						requestId: 'demo-request-id',
 					};
 				}
 				return response;
-			}
-		}
+			},
+		},
 	],
 });
 
 // Add 503 Service Unavailable demonstration component
 const ServiceUnavailableDemo = () => {
-	const [results, setResults] = React.useState<Array<{ endpoint: string; status: number; response: any; headers: any; timestamp: string }>>([]);
+	const [results, setResults] = React.useState<Array<{ endpoint: string; status: number; response: any; headers: any; timestamp: string }>>(
+		[]
+	);
 	const [loading, setLoading] = React.useState<string | null>(null);
 	const [currentStatuses, setCurrentStatuses] = React.useState({
 		basic: platform.getStatusOverride('basic-service') || 200,
@@ -407,39 +409,45 @@ const ServiceUnavailableDemo = () => {
 									{result.endpoint} - {result.timestamp}
 								</div>
 								<div style={{ marginBottom: '10px' }}>
-									<strong>Status:</strong> 
-									<span style={{ 
-										color: getStatusColor(result.status), 
-										fontWeight: 'bold',
-										marginLeft: '8px'
-									}}>
+									<strong>Status:</strong>
+									<span
+										style={{
+											color: getStatusColor(result.status),
+											fontWeight: 'bold',
+											marginLeft: '8px',
+										}}
+									>
 										{result.status} {result.status === 503 ? '(Service Unavailable)' : result.status === 200 ? '(OK)' : ''}
 									</span>
 								</div>
 								<div style={{ marginBottom: '10px' }}>
 									<strong>Response:</strong>
-									<pre style={{ 
-										backgroundColor: '#f5f5f5', 
-										padding: '10px', 
-										borderRadius: '4px', 
-										fontSize: '12px',
-										overflow: 'auto',
-										margin: '5px 0'
-									}}>
+									<pre
+										style={{
+											backgroundColor: '#f5f5f5',
+											padding: '10px',
+											borderRadius: '4px',
+											fontSize: '12px',
+											overflow: 'auto',
+											margin: '5px 0',
+										}}
+									>
 										{JSON.stringify(result.response, null, 2)}
 									</pre>
 								</div>
 								{Object.keys(result.headers).length > 0 && (
 									<div>
 										<strong>Headers:</strong>
-										<pre style={{ 
-											backgroundColor: '#f5f5f5', 
-											padding: '10px', 
-											borderRadius: '4px', 
-											fontSize: '12px',
-											overflow: 'auto',
-											margin: '5px 0'
-										}}>
+										<pre
+											style={{
+												backgroundColor: '#f5f5f5',
+												padding: '10px',
+												borderRadius: '4px',
+												fontSize: '12px',
+												overflow: 'auto',
+												margin: '5px 0',
+											}}
+										>
 											{JSON.stringify(result.headers, null, 2)}
 										</pre>
 									</div>
@@ -453,19 +461,36 @@ const ServiceUnavailableDemo = () => {
 			<div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
 				<h4>🚀 503 Service Unavailable Feature</h4>
 				<ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
-					<li><strong>Default 503:</strong> Available for free on all endpoints - no configuration needed</li>
-					<li><strong>Custom 503:</strong> Define custom responses with <code>responses: {'{'} 503: {'{'} ... {'}'} {'}'}</code></li>
-					<li><strong>Custom Headers:</strong> Use ResponseData format with <code>body</code> and <code>headers</code></li>
-					<li><strong>Scenarios:</strong> Scenarios can override 503 responses, fallback to plugin responses</li>
-					<li><strong>Query Parameters:</strong> Query-specific 503 responses supported</li>
-					<li><strong>Transform Functions:</strong> Transform functions apply to 503 responses</li>
+					<li>
+						<strong>Default 503:</strong> Available for free on all endpoints - no configuration needed
+					</li>
+					<li>
+						<strong>Custom 503:</strong> Define custom responses with{' '}
+						<code>
+							responses: {'{'} 503: {'{'} ... {'}'} {'}'}
+						</code>
+					</li>
+					<li>
+						<strong>Custom Headers:</strong> Use ResponseData format with <code>body</code> and <code>headers</code>
+					</li>
+					<li>
+						<strong>Scenarios:</strong> Scenarios can override 503 responses, fallback to plugin responses
+					</li>
+					<li>
+						<strong>Query Parameters:</strong> Query-specific 503 responses supported
+					</li>
+					<li>
+						<strong>Transform Functions:</strong> Transform functions apply to 503 responses
+					</li>
 				</ul>
 			</div>
 
 			<div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#e8f5e8', borderRadius: '4px', border: '1px solid #4CAF50' }}>
 				<h4 style={{ color: '#2e7d32', margin: '0 0 10px 0' }}>✅ How to Test</h4>
 				<ol style={{ margin: '10px 0', paddingLeft: '20px' }}>
-					<li>Use MockUI below to set any endpoint's status to <strong>503</strong></li>
+					<li>
+						Use MockUI below to set any endpoint&apos;s status to <strong>503</strong>
+					</li>
 					<li>Click the corresponding test button above</li>
 					<li>See the response - default 503 or custom 503 if defined</li>
 					<li>Try different scenarios and query parameters</li>

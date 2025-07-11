@@ -327,7 +327,7 @@ describe('MSW Adapter Passthrough', () => {
 		expect(await result.json()).toEqual({ message: 'test' });
 	});
 
-	it('should return default response when no plugins are disabled and query params don\'t match', async () => {
+	it("should return default response when no plugins are disabled and query params don't match", async () => {
 		const plugin: Plugin = {
 			id: 'test-plugin',
 			componentId: 'test',
@@ -390,7 +390,7 @@ describe('mswHandlersFromPlatform passthrough', () => {
 		if (res && 'status' in res) {
 			expect(res.status).toBe(200);
 		}
-		
+
 		// Now disable the plugin (should return passthrough)
 		platform.setDisabledPluginIds(['foo']);
 		// @ts-ignore
@@ -429,7 +429,7 @@ describe('mswHandlersFromPlatform passthrough (absolute URL)', () => {
 		if (res && 'status' in res) {
 			expect(res.status).toBe(200);
 		}
-		
+
 		// Now disable the plugin (should return passthrough)
 		platform.setDisabledPluginIds(['bar']);
 		// @ts-ignore

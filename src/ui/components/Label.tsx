@@ -1,14 +1,14 @@
 import React from 'react';
 
 interface LabelProps {
+	htmlFor: string;
 	children: React.ReactNode;
-	htmlFor?: string;
 	style?: React.CSSProperties;
 }
 
-const Label: React.FC<LabelProps> = ({ children, htmlFor, style }) => {
+const Label: React.FC<LabelProps> = ({ htmlFor, children, style }) => {
 	return (
-		<label htmlFor={htmlFor} style={style}>
+		<label htmlFor={htmlFor} style={{ cursor: 'pointer', ...style }}>
 			{children}
 		</label>
 	);

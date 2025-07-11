@@ -1,21 +1,26 @@
 import React from 'react';
+import { theme } from '../theme';
 
-interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface CheckboxProps {
+	id: string;
 	checked: boolean;
-	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	id?: string;
+	onChange: () => void;
+	'aria-label'?: string;
 }
 
-const Checkbox: React.FC<CheckboxProps> = ({ checked, onChange, id, ...rest }) => {
+const Checkbox: React.FC<CheckboxProps> = ({ id, checked, onChange, 'aria-label': ariaLabel }) => {
 	return (
 		<input
 			type="checkbox"
-			role="checkbox"
+			id={id}
 			checked={checked}
 			onChange={onChange}
-			id={id}
-			style={{ width: 18, height: 18, accentColor: '#0070f3', cursor: 'pointer' }}
-			{...rest}
+			aria-label={ariaLabel}
+			style={{
+				width: '16px',
+				height: '16px',
+				accentColor: theme.colors.primary,
+			}}
 		/>
 	);
 };

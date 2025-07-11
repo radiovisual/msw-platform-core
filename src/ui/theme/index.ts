@@ -28,7 +28,7 @@ export const theme = {
 			500: '#ef4444',
 			502: '#ef4444',
 			503: '#8b5cf6',
-		}
+		},
 	},
 	breakpoints: {
 		mobile: 768,
@@ -46,7 +46,7 @@ export const theme = {
 		md: '0 4px 6px rgba(0, 0, 0, 0.07)',
 		lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
 		xl: '0 25px 50px rgba(0, 0, 0, 0.25)',
-	}
+	},
 };
 
 export const getMethodColor = (method: string): string => {

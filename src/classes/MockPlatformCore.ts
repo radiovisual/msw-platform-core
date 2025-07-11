@@ -250,9 +250,9 @@ export class MockPlatformCore {
 
 	// Helper method to provide default 503 Service Unavailable response
 	private getDefault503Response(): ResponseValue {
-		return { 
+		return {
 			body: { error: 'Service Unavailable' },
-			headers: { 'Content-Type': 'application/json' }
+			headers: { 'Content-Type': 'application/json' },
 		};
 	}
 
@@ -260,7 +260,7 @@ export class MockPlatformCore {
 	private getDefault503ResponseWithHeaders(): { body: any; headers: Record<string, string> } {
 		return {
 			body: { error: 'Service Unavailable' },
-			headers: { 'Content-Type': 'application/json' }
+			headers: { 'Content-Type': 'application/json' },
 		};
 	}
 

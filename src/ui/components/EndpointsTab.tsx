@@ -65,45 +65,53 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 }) => {
 	const screenSize = useResponsive();
 	const isMobile = screenSize === 'mobile';
-	
+
 	return (
 		<div style={{ padding: isMobile ? '16px' : '24px' }}>
-			<div style={{ 
-				display: 'flex', 
-				justifyContent: 'space-between', 
-				alignItems: 'center',
-				marginBottom: '20px',
-				flexWrap: isMobile ? 'wrap' : 'nowrap',
-				gap: isMobile ? '12px' : '0'
-			}}>
-				<h3 style={{ 
-					fontSize: isMobile ? '16px' : '18px', 
-					fontWeight: '600', 
-					margin: 0,
-					color: theme.colors.gray[800]
-				}}>
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+					marginBottom: '20px',
+					flexWrap: isMobile ? 'wrap' : 'nowrap',
+					gap: isMobile ? '12px' : '0',
+				}}
+			>
+				<h3
+					style={{
+						fontSize: isMobile ? '16px' : '18px',
+						fontWeight: '600',
+						margin: 0,
+						color: theme.colors.gray[800],
+					}}
+				>
 					All Endpoints
 				</h3>
-				<div style={{
-					padding: '6px 12px',
-					borderRadius: theme.borderRadius.full,
-					fontSize: '12px',
-					background: theme.colors.primary,
-					color: 'white',
-					fontWeight: '500',
-					boxShadow: theme.shadows.sm,
-				}}>
+				<div
+					style={{
+						padding: '6px 12px',
+						borderRadius: theme.borderRadius.full,
+						fontSize: '12px',
+						background: theme.colors.primary,
+						color: 'white',
+						fontWeight: '500',
+						boxShadow: theme.shadows.sm,
+					}}
+				>
 					{plugins.filter(ep => isMocked(ep)).length} / {plugins.length} enabled
 				</div>
 			</div>
-			
-			<div style={{ 
-				display: 'flex', 
-				alignItems: 'center', 
-				gap: '12px', 
-				marginBottom: '20px',
-				flexDirection: isMobile ? 'column' : 'row'
-			}}>
+
+			<div
+				style={{
+					display: 'flex',
+					alignItems: 'center',
+					gap: '12px',
+					marginBottom: '20px',
+					flexDirection: isMobile ? 'column' : 'row',
+				}}
+			>
 				<SearchBar
 					value={searchTerm}
 					onChange={onSearchChange}

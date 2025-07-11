@@ -12,7 +12,7 @@ type DialogProps = {
 const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
 	const screenSize = useResponsive();
 	const responsiveStyles = getResponsiveStyles(screenSize);
-	
+
 	useEffect(() => {
 		injectAnimations();
 	}, []);
@@ -31,7 +31,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
 				background: 'rgba(0, 0, 0, 0.6)',
 				backdropFilter: 'blur(4px)',
 				padding: responsiveStyles.dialog.padding,
-				animation: 'fadeIn 0.3s ease-out'
+				animation: 'fadeIn 0.3s ease-out',
 			}}
 			onClick={() => onOpenChange(false)}
 		>
@@ -44,7 +44,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
 					maxWidth: responsiveStyles.dialog.maxWidth,
 					maxHeight: responsiveStyles.modalContent.maxHeight,
 					overflow: 'hidden',
-					animation: 'slideUp 0.3s ease-out'
+					animation: 'slideUp 0.3s ease-out',
 				}}
 				onClick={e => e.stopPropagation()}
 			>

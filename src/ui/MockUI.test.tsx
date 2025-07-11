@@ -58,14 +58,14 @@ describe('MockUI', () => {
 		const platform = makePlatform();
 		render(<MockUI platform={platform} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
-		// Endpoints tab is default
-		const endpointCheckbox = await screen.findByLabelText('Toggle endpoint /api/v1/foo');
-		// Initially checked
-		await waitFor(() => expect(endpointCheckbox).toBeChecked());
-		fireEvent.click(endpointCheckbox);
-		await waitFor(() => expect(endpointCheckbox).not.toBeChecked());
-		fireEvent.click(endpointCheckbox);
-		await waitFor(() => expect(endpointCheckbox).toBeChecked());
+		// Endpoints tab is default - find first toggle by Mock label
+		const endpointToggles = await screen.findAllByLabelText('Mock');
+		const endpointToggle = endpointToggles[0];
+		fireEvent.click(endpointToggle);
+		// Verify platform state changes
+		await waitFor(() => expect(platform.getDisabledPluginIds().includes('ep1')).toBe(true));
+		fireEvent.click(endpointToggle);
+		await waitFor(() => expect(platform.getDisabledPluginIds().includes('ep1')).toBe(false));
 	});
 
 	it('changes status code and updates platform', async () => {
@@ -73,8 +73,8 @@ describe('MockUI', () => {
 		render(<MockUI platform={platform} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
 		// Endpoints tab is default
-		const radio = await screen.findByLabelText('400');
-		fireEvent.click(radio);
+		const statusBadge = await screen.findByText('400');
+		fireEvent.click(statusBadge);
 		await waitFor(() => expect(platform.getStatusOverride('ep1')).toBe(400));
 	});
 
@@ -146,7 +146,8 @@ describe('MockUI', () => {
 		// Switch to Endpoints tab and toggle endpoint off
 		const endpointsTab = await screen.findByRole('tab', { name: /endpoints/i });
 		fireEvent.click(endpointsTab);
-		const endpointCheckbox = await screen.findByLabelText('Toggle endpoint /api/v1/foo');
+		const endpointToggles = await screen.findAllByLabelText('Mock');
+		const endpointCheckbox = endpointToggles[0];
 		fireEvent.click(endpointCheckbox);
 		await waitFor(() => expect(endpointCheckbox).not.toBeChecked());
 		// Unmount and remount with a fresh platform instance
@@ -159,7 +160,8 @@ describe('MockUI', () => {
 		fireEvent.click(endpointsTab2);
 		await waitFor(() => expect(endpointsTab2).toHaveAttribute('aria-selected', 'true'));
 		// Wait for the checkbox to appear and assert its state
-		const endpointCheckbox2 = await screen.findByLabelText('Toggle endpoint /api/v1/foo');
+		const endpointToggles2 = await screen.findAllByLabelText('Mock');
+		const endpointCheckbox2 = endpointToggles2[0];
 		await waitFor(() => expect(endpointCheckbox2).not.toBeChecked());
 	});
 

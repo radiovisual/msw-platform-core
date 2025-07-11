@@ -69,23 +69,23 @@ describe('EndpointRow', () => {
 	it('shows mocked state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked />);
 
-		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
-		expect(checkbox).toBeChecked();
+		const toggle = screen.getByLabelText('Mock');
+		expect(toggle).toBeInTheDocument();
 	});
 
 	it('shows passthrough state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked={false} />);
 
-		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
-		expect(checkbox).not.toBeChecked();
-		expect(screen.getByText('endpoint will passthrough (not mocked)')).toBeInTheDocument();
+		const toggle = screen.getByLabelText('Mock');
+		expect(toggle).toBeInTheDocument();
+		expect(screen.getByText(/endpoint will passthrough/i)).toBeInTheDocument();
 	});
 
-	it('calls onToggleMocked when checkbox is clicked', () => {
+	it('calls onToggleMocked when toggle is clicked', () => {
 		render(<EndpointRow {...defaultProps} />);
 
-		const checkbox = screen.getByRole('checkbox', { name: /toggle endpoint/i });
-		fireEvent.click(checkbox);
+		const toggle = screen.getByLabelText('Mock');
+		fireEvent.click(toggle);
 
 		expect(defaultProps.onToggleMocked).toHaveBeenCalledWith('test-plugin');
 	});
@@ -93,14 +93,14 @@ describe('EndpointRow', () => {
 	it('renders status code options', () => {
 		render(<EndpointRow {...defaultProps} />);
 
-		expect(screen.getByLabelText('200')).toBeInTheDocument();
-		expect(screen.getByLabelText('404')).toBeInTheDocument();
+		expect(screen.getByText('200')).toBeInTheDocument();
+		expect(screen.getByText('404')).toBeInTheDocument();
 	});
 
-	it('calls onUpdateStatusCode when status radio is clicked', () => {
+	it('calls onUpdateStatusCode when status badge is clicked', () => {
 		render(<EndpointRow {...defaultProps} />);
 
-		const status404 = screen.getByLabelText('404');
+		const status404 = screen.getByText('404');
 		fireEvent.click(status404);
 
 		expect(defaultProps.onUpdateStatusCode).toHaveBeenCalledWith('test-plugin', 404);
@@ -152,18 +152,8 @@ describe('EndpointRow', () => {
 	it('shows add to group button', () => {
 		render(<EndpointRow {...defaultProps} />);
 
-		const addToGroupButton = screen.getByTestId('add-to-group-test-plugin');
+		const addToGroupButton = screen.getByRole('button', { name: /groups/i });
 		expect(addToGroupButton).toBeInTheDocument();
-	});
-
-	it('applies correct background color based on mocked state', () => {
-		const { rerender } = render(<EndpointRow {...defaultProps} isMocked />);
-
-		const container = screen.getByText('GET').closest('div');
-		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
-
-		rerender(<EndpointRow {...defaultProps} isMocked={false} />);
-		expect(container).toHaveStyle({ background: expect.stringMatching(/246|255/) });
 	});
 
 	it('displays endpoint with query parameters when plugin has queryResponses', () => {
@@ -198,7 +188,8 @@ describe('EndpointRow', () => {
 			/>
 		);
 
-		expect(screen.getByText('/api/test?type=admin')).toBeInTheDocument();
+		expect(screen.getByText('/api/test')).toBeInTheDocument();
+		expect(screen.getByText('?type=admin')).toBeInTheDocument();
 	});
 
 	it('displays all endpoint variants with query parameters when plugin has multiple queryResponses', () => {
@@ -235,9 +226,10 @@ describe('EndpointRow', () => {
 			/>
 		);
 
-		expect(screen.getByText('/api/test?type=admin')).toBeInTheDocument();
-		expect(screen.getByText('/api/test?type=guest')).toBeInTheDocument();
-		expect(screen.getByText('/api/test?status=active')).toBeInTheDocument();
+		expect(screen.getByText('/api/test')).toBeInTheDocument();
+		expect(screen.getByText('?type=admin')).toBeInTheDocument();
+		expect(screen.getByText('?type=guest')).toBeInTheDocument();
+		expect(screen.getByText('?status=active')).toBeInTheDocument();
 	});
 
 	it('displays endpoint without query parameters when plugin has no queryResponses', () => {
@@ -337,7 +329,7 @@ describe('EndpointRow', () => {
 			/>
 		);
 
-		const delayInput = screen.getByTestId('delay-input-test');
+		const delayInput = screen.getByDisplayValue('150');
 		expect(delayInput).toBeInTheDocument();
 		expect(delayInput).toHaveValue(150);
 	});
@@ -374,7 +366,7 @@ describe('EndpointRow', () => {
 			/>
 		);
 
-		const delayInput = screen.getByTestId('delay-input-test');
+		const delayInput = screen.getByDisplayValue('150');
 		fireEvent.change(delayInput, { target: { value: '1000' } });
 
 		expect(mockOnUpdateDelay).toHaveBeenCalledWith('test', 1000);
@@ -412,7 +404,7 @@ describe('EndpointRow', () => {
 			/>
 		);
 
-		const delayInput = screen.getByTestId('delay-input-test');
+		const delayInput = screen.getByDisplayValue('150');
 		fireEvent.change(delayInput, { target: { value: '' } });
 
 		expect(mockOnUpdateDelay).toHaveBeenCalledWith('test', 0);

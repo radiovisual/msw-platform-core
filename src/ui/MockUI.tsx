@@ -283,13 +283,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	return (
 		<>
-			{/* Global Disable Banner */}
-			<GlobalDisableBanner
-				isGloballyDisabled={platform.isGloballyDisabled()}
-				disabledCount={disabledPluginIds.length}
-				totalCount={plugins.length}
-				onEnableAll={handleEnableAll}
-			/>
 			{/* Floating Button */}
 			<div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 50 }}>
 				<Button
@@ -359,6 +352,13 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 											<Tab value="feature-flags">Feature Flags</Tab>
 										</TabList>
 									</div>
+									{/* Global Disable Banner - Inside Dialog */}
+									<GlobalDisableBanner
+										isGloballyDisabled={platform.isGloballyDisabled()}
+										disabledCount={disabledPluginIds.length}
+										totalCount={plugins.length}
+										onEnableAll={handleEnableAll}
+									/>
 									<TabPanel value="endpoints">
 										<EndpointsTab
 											plugins={plugins}
