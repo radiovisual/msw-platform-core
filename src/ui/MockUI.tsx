@@ -290,7 +290,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 				setIsOpen(prev => !prev);
 			} else if (event.key === 'Escape') {
 				event.preventDefault();
-				setIsOpen(prev => prev ? false : prev); // Only close if currently open
+				setIsOpen(prev => (prev ? false : prev)); // Only close if currently open
 			}
 		};
 
@@ -301,11 +301,11 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	return (
 		<Portal>
 			{/* Floating Button */}
-			<div 
-				style={{ 
-					position: 'fixed', 
-					bottom: 24, 
-					right: 24, 
+			<div
+				style={{
+					position: 'fixed',
+					bottom: 24,
+					right: 24,
 					zIndex: 1, // Relative to the Portal's stacking context
 				}}
 			>
@@ -327,123 +327,123 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 				</Button>
 			</div>
 			<Dialog open={isOpen} onOpenChange={setIsOpen}>
-					{isOpen && (
+				{isOpen && (
+					<div
+						style={{
+							maxWidth: 800,
+							width: '90vw',
+							maxHeight: '80vh',
+							height: '80vh',
+							background: '#fff',
+							borderRadius: 12,
+							boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+							border: '1px solid #eee',
+							margin: '0 auto',
+							display: 'flex',
+							flexDirection: 'column',
+							padding: 0,
+						}}
+					>
 						<div
 							style={{
-								maxWidth: 800,
-								width: '90vw',
-								maxHeight: '80vh',
-								height: '80vh',
-								background: '#fff',
-								borderRadius: 12,
-								boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
-								border: '1px solid #eee',
-								margin: '0 auto',
 								display: 'flex',
-								flexDirection: 'column',
-								padding: 0,
+								alignItems: 'center',
+								justifyContent: 'space-between',
+								padding: '16px 24px',
+								borderBottom: '1px solid #eee',
+								flex: '0 0 auto',
 							}}
 						>
-							<div
-								style={{
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-									padding: '16px 24px',
-									borderBottom: '1px solid #eee',
-									flex: '0 0 auto',
-								}}
-							>
-								<h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Endpoint Manager</h2>
-								<Button style={{ padding: 8 }} onClick={() => setIsOpen(false)} data-testid="close-dialog">
-									<X style={{ height: 16, width: 16 }} />
-								</Button>
-							</div>
-							<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-								<Tabs defaultValue="endpoints">
-									<div
-										style={{
-											position: 'sticky',
-											top: 0,
-											zIndex: 2,
-											background: '#fff',
-											borderBottom: '1px solid #eee',
-										}}
-									>
-										<TabList>
-											<Tab value="endpoints">Endpoints</Tab>
-											<Tab value="groups">Groups</Tab>
-											<Tab value="settings">Settings</Tab>
-											<Tab value="feature-flags">Feature Flags</Tab>
-										</TabList>
-									</div>
-									{/* Global Disable Banner - Inside Dialog */}
-									<GlobalDisableBanner
-										isGloballyDisabled={platform.isGloballyDisabled()}
-										disabledCount={disabledPluginIds.length}
-										totalCount={plugins.length}
-										onEnableAll={handleEnableAll}
-									/>
-									<TabPanel value="endpoints">
-										<EndpointsTab
-											plugins={plugins}
-											filteredPlugins={filteredPlugins}
-											searchTerm={searchTerm}
-											onSearchChange={setSearchTerm}
-											selectedGroupFilters={selectedGroupFilters}
-											onToggleGroupFilter={toggleGroupFilter}
-											onClearGroupFilters={clearGroupFilters}
-											groups={groups}
-											allGroups={allGroups}
-											isMocked={isMocked}
-											onToggleMocked={toggleEndpointSelection}
-											onUpdateStatusCode={updateStatusCode}
-											onUpdateDelay={updateDelay}
-											getDelay={getDelay}
-											onAddToGroup={addToGroup}
-											onRemoveFromGroup={removeFromGroup}
-											getStatus={getStatus}
-											getStatusCodes={getStatusCodes}
-											endpointScenarios={endpointScenarios}
-											onScenarioChange={handleScenarioChange}
-											platform={platform}
-										/>
-									</TabPanel>
-									<TabPanel value="groups">
-										<GroupsTab
-											groups={groups}
-											autoGroups={autoGroups}
-											plugins={plugins}
-											newGroupName={newGroupName}
-											onNewGroupNameChange={setNewGroupName}
-											onCreateGroup={createGroup}
-											editingGroup={editingGroup}
-											onSetEditingGroup={setEditingGroup}
-											onRenameGroup={renameGroup}
-											onDeleteGroup={deleteGroup}
-											onRemoveFromGroup={removeFromGroup}
-										/>
-									</TabPanel>
-									<TabPanel value="settings">
-										{/* Dynamic middleware settings UI */}
-										<DynamicSettingsTab
-											platform={platform}
-											onSettingChange={updateMiddlewareSetting}
-											onGlobalDisableChange={handleGlobalDisableChange}
-										/>
-									</TabPanel>
-									<TabPanel value="feature-flags">
-										<FeatureFlagsTab
-											featureFlags={featureFlags}
-											featureFlagMetadata={featureFlagMetadata}
-											onToggleFeatureFlag={toggleFeatureFlag}
-										/>
-									</TabPanel>
-								</Tabs>
-							</div>
+							<h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Endpoint Manager</h2>
+							<Button style={{ padding: 8 }} onClick={() => setIsOpen(false)} data-testid="close-dialog">
+								<X style={{ height: 16, width: 16 }} />
+							</Button>
 						</div>
-					)}
-				</Dialog>
+						<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+							<Tabs defaultValue="endpoints">
+								<div
+									style={{
+										position: 'sticky',
+										top: 0,
+										zIndex: 2,
+										background: '#fff',
+										borderBottom: '1px solid #eee',
+									}}
+								>
+									<TabList>
+										<Tab value="endpoints">Endpoints</Tab>
+										<Tab value="groups">Groups</Tab>
+										<Tab value="settings">Settings</Tab>
+										<Tab value="feature-flags">Feature Flags</Tab>
+									</TabList>
+								</div>
+								{/* Global Disable Banner - Inside Dialog */}
+								<GlobalDisableBanner
+									isGloballyDisabled={platform.isGloballyDisabled()}
+									disabledCount={disabledPluginIds.length}
+									totalCount={plugins.length}
+									onEnableAll={handleEnableAll}
+								/>
+								<TabPanel value="endpoints">
+									<EndpointsTab
+										plugins={plugins}
+										filteredPlugins={filteredPlugins}
+										searchTerm={searchTerm}
+										onSearchChange={setSearchTerm}
+										selectedGroupFilters={selectedGroupFilters}
+										onToggleGroupFilter={toggleGroupFilter}
+										onClearGroupFilters={clearGroupFilters}
+										groups={groups}
+										allGroups={allGroups}
+										isMocked={isMocked}
+										onToggleMocked={toggleEndpointSelection}
+										onUpdateStatusCode={updateStatusCode}
+										onUpdateDelay={updateDelay}
+										getDelay={getDelay}
+										onAddToGroup={addToGroup}
+										onRemoveFromGroup={removeFromGroup}
+										getStatus={getStatus}
+										getStatusCodes={getStatusCodes}
+										endpointScenarios={endpointScenarios}
+										onScenarioChange={handleScenarioChange}
+										platform={platform}
+									/>
+								</TabPanel>
+								<TabPanel value="groups">
+									<GroupsTab
+										groups={groups}
+										autoGroups={autoGroups}
+										plugins={plugins}
+										newGroupName={newGroupName}
+										onNewGroupNameChange={setNewGroupName}
+										onCreateGroup={createGroup}
+										editingGroup={editingGroup}
+										onSetEditingGroup={setEditingGroup}
+										onRenameGroup={renameGroup}
+										onDeleteGroup={deleteGroup}
+										onRemoveFromGroup={removeFromGroup}
+									/>
+								</TabPanel>
+								<TabPanel value="settings">
+									{/* Dynamic middleware settings UI */}
+									<DynamicSettingsTab
+										platform={platform}
+										onSettingChange={updateMiddlewareSetting}
+										onGlobalDisableChange={handleGlobalDisableChange}
+									/>
+								</TabPanel>
+								<TabPanel value="feature-flags">
+									<FeatureFlagsTab
+										featureFlags={featureFlags}
+										featureFlagMetadata={featureFlagMetadata}
+										onToggleFeatureFlag={toggleFeatureFlag}
+									/>
+								</TabPanel>
+							</Tabs>
+						</div>
+					</div>
+				)}
+			</Dialog>
 		</Portal>
 	);
 }

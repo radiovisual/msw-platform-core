@@ -36,9 +36,7 @@ const Portal: React.FC<PortalProps> = ({ children }) => {
 				pointerEvents: 'none', // Don't block clicks on the page
 			}}
 		>
-			<div style={{ pointerEvents: 'auto' }}>
-				{children}
-			</div>
+			<div style={{ pointerEvents: 'auto' }}>{children}</div>
 		</div>
 	);
 };
