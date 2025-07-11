@@ -146,7 +146,7 @@ const platform = createMockPlatform({
 				200: { message: 'Hello, world!' },
 				404: { error: 'Not found' },
 			},
-			swaggerUrl: 'https://jsonplaceholder.typicode.com/users/1',
+			swaggerUrl: '',
 			defaultStatus: 200,
 
 			transform: (response, context) => {
@@ -286,8 +286,16 @@ const platform = createMockPlatform({
 		},
 	],
 	featureFlags: [
-		{ name: 'FORCE_TRANSFORM', description: 'Force the response status in the plugin tranform method', default: false },
-		{ name: 'EXPERIMENTAL_HELLO', description: 'Enables experimental hello message', default: false },
+		{
+			name: 'FORCE_TRANSFORM',
+			description: 'Force transform for /api/hello',
+			default: false,
+		},
+		{
+			name: 'EXPERIMENTAL_HELLO',
+			description: 'Enable experimental hello message',
+			default: false,
+		},
 		{ name: 'NEW_UI_FEATURES', description: 'Enables new UI features and improvements', default: true },
 		{ name: 'BETA_API', description: 'Enables beta API endpoints and functionality', default: false },
 		'LEGACY_FLAG',
@@ -301,6 +309,10 @@ contractMiddleware.attachTo(['user-status'], platform);
 function DemoApp() {
 	const [result, setResult] = useState<any>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [, forceUpdate] = useState(0); // dummy state for re-render
+	const [experimentalHello, setExperimentalHello] = useState(platform.getFeatureFlags().EXPERIMENTAL_HELLO);
+
+	console.log({ experimentalHello });
 	const fetchHello = async () => {
 		setError(null);
 		setResult(null);
@@ -425,10 +437,10 @@ function DemoApp() {
 			setError(String(e));
 		}
 	};
-	const [forceTransform, setForceTransform] = useState(platform.getFeatureFlags().FORCE_TRANSFORM);
-	const toggleForceTransform = () => {
-		platform.setFeatureFlag('FORCE_TRANSFORM', !forceTransform);
-		setForceTransform(!forceTransform);
+
+	const toggleExperimentalHello = () => {
+		platform.setFeatureFlag('EXPERIMENTAL_HELLO', !experimentalHello);
+		setExperimentalHello(!experimentalHello);
 	};
 	const fetchTransformDemo = async () => {
 		setError(null);
@@ -450,7 +462,13 @@ function DemoApp() {
 			</p>
 			<hr />
 			<div style={{ padding: '15px 0', alignItems: 'baseline', display: 'flex', flexDirection: 'column', gap: 10 }}>
-				<button onClick={fetchHello}>Fetch /api/hello</button>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<button onClick={fetchHello}>Fetch /api/hello</button>
+					<label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+						<input type="checkbox" checked={platform.getFeatureFlags().EXPERIMENTAL_HELLO} onChange={toggleExperimentalHello} />
+						EXPERIMENTAL_HELLO
+					</label>
+				</div>
 				<button onClick={fetchGoodbye}>Fetch /api/goodbye</button>
 				<button onClick={fetchUser}>Fetch /api/user</button>
 				<button onClick={fetchUserAdmin}>Fetch /api/user?type=admin</button>
@@ -462,10 +480,7 @@ function DemoApp() {
 				<button onClick={fetchWithHeaders}>Fetch /api/with-headers</button>
 				<button onClick={fetchWithHeadersQuery}>Fetch /api/with-headers?variant=custom</button>
 				<button onClick={fetchTransformDemo}>Fetch /api/transform-demo (transform demo)</button>
-				<label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-					<input type="checkbox" checked={forceTransform} onChange={toggleForceTransform} />
-					Enable FORCE_TRANSFORM (see custom status and headers)
-				</label>
+
 				<pre
 					style={{
 						width: '100%',

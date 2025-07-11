@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 interface LabelProps {
 	children: React.ReactNode;
@@ -13,12 +12,6 @@ const Label: React.FC<LabelProps> = ({ children, htmlFor, style }) => {
 			{children}
 		</label>
 	);
-};
-
-Label.propTypes = {
-	children: PropTypes.node.isRequired,
-	htmlFor: PropTypes.string,
-	style: PropTypes.object,
 };
 
 export default Label;
