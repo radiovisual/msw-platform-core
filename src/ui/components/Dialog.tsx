@@ -24,7 +24,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
 			style={{
 				position: 'fixed',
 				inset: 0,
-				zIndex: 1000,
+				zIndex: 2147483646,
 				display: 'flex',
 				alignItems: 'center',
 				justifyContent: 'center',

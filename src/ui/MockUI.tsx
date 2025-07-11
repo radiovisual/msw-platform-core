@@ -9,6 +9,7 @@ import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
 import { DynamicSettingsTab } from './components/DynamicSettingsTab';
 import GlobalDisableBanner from './components/GlobalDisableBanner';
+import Portal from './utils/Portal';
 import type { MockPlatformCore } from '../classes/MockPlatformCore';
 import type { Plugin } from '../types';
 
@@ -298,9 +299,16 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	}, []); // Empty dependency array - listener stays stable
 
 	return (
-		<>
+		<Portal>
 			{/* Floating Button */}
-			<div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 50 }}>
+			<div 
+				style={{ 
+					position: 'fixed', 
+					bottom: 24, 
+					right: 24, 
+					zIndex: 1, // Relative to the Portal's stacking context
+				}}
+			>
 				<Button
 					onClick={() => setIsOpen(true)}
 					style={{
@@ -317,7 +325,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 				>
 					<Settings style={{ height: 24, width: 24 }} />
 				</Button>
-				<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			</div>
+			<Dialog open={isOpen} onOpenChange={setIsOpen}>
 					{isOpen && (
 						<div
 							style={{
@@ -435,7 +444,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 						</div>
 					)}
 				</Dialog>
-			</div>
-		</>
+		</Portal>
 	);
 }
