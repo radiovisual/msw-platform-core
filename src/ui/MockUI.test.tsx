@@ -330,4 +330,128 @@ describe('MockUI', () => {
 		expect(openSpy).toHaveBeenCalledWith('https://example.com/swagger.json', '_blank', 'noopener,noreferrer');
 		openSpy.mockRestore();
 	});
+
+	it('toggles MockUI visibility with Ctrl+M hotkey', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially, the dialog should be closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Press Ctrl+M to open the dialog
+		fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+
+		// Press Ctrl+M again to close the dialog
+		fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+		await waitFor(() => expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument());
+	});
+
+	it('handles Ctrl+M with uppercase M', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially, the dialog should be closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Press Ctrl+M (uppercase) to open the dialog
+		fireEvent.keyDown(document, { key: 'M', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+	});
+
+	it('ignores M key without Ctrl modifier', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially, the dialog should be closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Press M without Ctrl - should not open dialog
+		fireEvent.keyDown(document, { key: 'm' });
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+	});
+
+	it('ignores Ctrl with other keys', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially, the dialog should be closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Press Ctrl+N - should not open dialog
+		fireEvent.keyDown(document, { key: 'n', ctrlKey: true });
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+	});
+
+	it('closes MockUI with Escape key when open', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Open the dialog first
+		fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+
+		// Press Escape to close the dialog
+		fireEvent.keyDown(document, { key: 'Escape' });
+		await waitFor(() => expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument());
+	});
+
+	it('ignores Escape key when dialog is closed', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially, the dialog should be closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Press Escape - should do nothing
+		fireEvent.keyDown(document, { key: 'Escape' });
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+	});
+
+	it('works with both Ctrl+M and Escape together', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Initially closed
+		expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+		// Open with Ctrl+M
+		fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+
+		// Close with Escape
+		fireEvent.keyDown(document, { key: 'Escape' });
+		await waitFor(() => expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument());
+
+		// Open again with Ctrl+M
+		fireEvent.keyDown(document, { key: 'M', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+
+		// Close again with Escape
+		fireEvent.keyDown(document, { key: 'Escape' });
+		await waitFor(() => expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument());
+	});
+
+	it('Ctrl+M continues working after multiple open/close cycles', async () => {
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+
+		// Test multiple cycles to ensure the event listener persists
+		for (let i = 0; i < 5; i++) {
+			// Initially or after previous cycle, should be closed
+			expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument();
+
+			// Open with Ctrl+M
+			fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+			expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+
+			// Close with Ctrl+M
+			fireEvent.keyDown(document, { key: 'M', ctrlKey: true });
+			await waitFor(() => expect(screen.queryByText('Endpoint Manager')).not.toBeInTheDocument());
+		}
+
+		// Final verification that it still works
+		fireEvent.keyDown(document, { key: 'm', ctrlKey: true });
+		expect(await screen.findByText('Endpoint Manager')).toBeInTheDocument();
+	});
 });

@@ -1822,6 +1822,18 @@ function App() {
 
 3. **Control your mocks at runtime:**
 
-- Open the floating widget (bottom-right).
+- Open the floating widget (bottom-right) by clicking it or pressing **Ctrl+M**.
 - Toggle endpoints on/off, change status codes, manage groups, enable/disable feature flags and manage your middleware settings
 - Changes are saved to localStorage and persist across reloads.
+
+### Keyboard Shortcuts
+
+- **Ctrl+M**: Toggle the MockUI visibility (open/close the settings dialog)
+  - Works when the MockUI component is mounted
+  - Prevents default browser behavior for the key combination
+  - Can be used to quickly access mock controls without reaching for the mouse
+
+- **Escape**: Close the MockUI dialog (when open)
+  - Only works when the dialog is currently open
+  - Standard modal behavior for quick dismissal
+  - Prevents default browser behavior to avoid conflicts

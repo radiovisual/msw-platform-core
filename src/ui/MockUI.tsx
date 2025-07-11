@@ -281,6 +281,22 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		onStateChange?.({ disabledPluginIds: [] });
 	}, [platform, disabledKey, onStateChange]);
 
+	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.ctrlKey && event.key.toLowerCase() === 'm') {
+				event.preventDefault();
+				setIsOpen(prev => !prev);
+			} else if (event.key === 'Escape') {
+				event.preventDefault();
+				setIsOpen(prev => prev ? false : prev); // Only close if currently open
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, []); // Empty dependency array - listener stays stable
+
 	return (
 		<>
 			{/* Floating Button */}
