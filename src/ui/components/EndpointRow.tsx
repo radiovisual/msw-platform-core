@@ -4,7 +4,11 @@ import Checkbox from './Checkbox';
 import Radio from './Radio';
 import Popover from './Popover';
 import Label from './Label';
+import StatusBadge from './StatusBadge';
+import ModernToggle from './ModernToggle';
 import { Plus, FileText } from './Icon';
+import { useResponsive } from '../hooks/useResponsive';
+import { getMethodColor, theme } from '../theme';
 import type { Plugin } from '../../types';
 import type { MockPlatformCore } from '../../classes/MockPlatformCore';
 
@@ -50,8 +54,10 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 	onUpdateDelay,
 	getDelay,
 }) => {
+	const screenSize = useResponsive();
 	const scenarioList = plugin.scenarios;
 	const activeScenarioId = endpointScenarios[plugin.id];
+	const isMobile = screenSize === 'mobile';
 
 	// Get dynamic badges from platform
 	const badges = platform.getEndpointBadges(plugin);
@@ -66,222 +72,362 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 	return (
 		<div
 			style={{
-				border: '1px solid #eee',
-				borderRadius: 8,
-				padding: 16,
-				marginBottom: 12,
-				background: isMocked ? '#f6fff6' : '#fff6f6',
-				boxSizing: 'border-box',
+				background: 'white',
+				borderRadius: theme.borderRadius.lg,
+				padding: isMobile ? '16px' : '20px',
+				marginBottom: '12px',
+				boxShadow: theme.shadows.sm,
+				border: `1px solid ${theme.colors.gray[200]}`,
+				transition: 'all 0.2s ease',
+				opacity: isMocked ? 1 : 0.7,
+				transform: isMocked ? 'scale(1)' : 'scale(0.98)',
 			}}
 		>
-			<div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-						<Checkbox
-							checked={isMocked}
-							onChange={() => onToggleMocked(plugin.id)}
-							id={`mocked-${plugin.id}`}
-							aria-label={`Toggle endpoint ${plugin.endpoint}`}
-						/>
-						<Label htmlFor={`mocked-${plugin.id}`}>mocked?</Label>
-					</div>
-					<span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, background: '#e6f7ff', color: '#0070f3' }}>
-						{plugin.method}
-					</span>
-					<div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-						{endpointVariants.map(variant => (
-							<span key={variant} style={{ fontFamily: 'monospace', fontSize: 12, color: '#333', opacity: 0.85 }}>
-								{variant}
-							</span>
-						))}
-					</div>
-					<div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-						{/* Auto group badge */}
-						<span
-							style={{ border: '1px solid #eee', padding: '0 4px', borderRadius: 4, fontSize: 12, background: '#f0f0f0', opacity: 0.7 }}
-						>
-							{plugin.componentId}
-						</span>
-						{/* User group badges */}
-						{groups
-							.filter(group => group.endpointIds.includes(plugin.id))
-							.map(group => (
-								<span key={group.id} style={{ border: '1px solid #eee', padding: '0 4px', borderRadius: 4, fontSize: 12 }}>
-									{group.name}
-								</span>
-							))}
-						{/* Scenario dropdown */}
-						{scenarioList && scenarioList.length > 0 && (
-							<select
-								value={activeScenarioId || ''}
-								onChange={handleScenarioChange}
-								style={{ marginLeft: 8, borderRadius: 4, padding: '2px 8px', fontSize: 12 }}
-							>
-								<option value="">Default</option>
-								{scenarioList.map(scenario => (
-									<option key={scenario.id} value={scenario.id}>
-										{scenario.label}
-									</option>
-								))}
-							</select>
-						)}
-					</div>
+			{/* Main Content Section */}
+			<div style={{
+				display: 'flex',
+				alignItems: 'center',
+				gap: '12px',
+				marginBottom: '16px',
+				flexWrap: isMobile ? 'wrap' : 'nowrap'
+			}}>
+				{/* Method Badge */}
+				<div style={{
+					padding: '8px 16px',
+					borderRadius: theme.borderRadius.full,
+					fontSize: '12px',
+					fontWeight: 'bold',
+					background: getMethodColor(plugin.method),
+					color: 'white',
+					minWidth: '60px',
+					textAlign: 'center',
+					boxShadow: theme.shadows.sm,
+				}}>
+					{plugin.method}
 				</div>
-				<div style={{ display: 'flex', alignItems: 'center', gap: 0, marginLeft: 'auto' }}>
-					<div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-						<Popover
-							placement="right"
-							trigger={
-								<Button
-									style={{
-										border: 'none',
-										background: 'none',
-										cursor: 'pointer',
-										padding: 2,
-										display: 'inline-flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										fontSize: 16,
-									}}
-									title="Add to group"
-									aria-label="Add to group"
-									data-testid={`add-to-group-${plugin.id}`}
-								>
-									<Plus style={{ width: 16, height: 16 }} />
-								</Button>
-							}
-						>
-							{() => (
-								<div
-									style={{
-										minWidth: 180,
-										maxWidth: '90vw',
-										left: 'auto',
-										right: 0,
-										padding: 8,
-										position: 'absolute',
-										top: '100%',
-										zIndex: 1000,
-										background: '#fff',
-										boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-										borderRadius: 6,
-									}}
-								>
-									<div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Add to Groups</div>
-									{groups.length === 0 && <div style={{ color: '#888', fontSize: 12 }}>No groups yet</div>}
-									{groups.map(group => {
-										const checked = group.endpointIds.includes(plugin.id);
-										return (
-											<div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-												<Checkbox
-													id={`addtogroup-${plugin.id}-${group.id}`}
-													checked={checked}
-													onChange={() => {
-														if (checked) onRemoveFromGroup(plugin.id, group.id);
-														else onAddToGroup(plugin.id, group.id);
-													}}
-													aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
-												/>
-												<Label htmlFor={`addtogroup-${plugin.id}-${group.id}`}>{group.name}</Label>
-											</div>
-										);
-									})}
-								</div>
-							)}
-						</Popover>
-						{plugin.swaggerUrl && (
-							<button
-								style={{
-									border: 'none',
-									background: 'none',
-									cursor: 'pointer',
-									marginLeft: 4,
-									padding: 2,
-									display: 'inline-flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									fontSize: 16,
-								}}
-								title="Open swagger file"
-								aria-label="Open swagger file"
-								onClick={() => {
-									window.open(plugin.swaggerUrl, '_blank', 'noopener,noreferrer');
-								}}
-								data-testid={`open-swagger-${plugin.id}`}
-							>
-								<FileText style={{ width: 16, height: 16 }} />
-							</button>
-						)}
-					</div>
-				</div>
-			</div>
-			<div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
-				{getStatusCodes(plugin).map((code: number) => (
-					<div key={code} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-						<Radio
-							name={`status-${plugin.id}`}
-							value={code}
-							checked={getStatus(plugin) === code}
-							onChange={() => onUpdateStatusCode(plugin.id, code)}
-							id={`${plugin.id}-${code}`}
-						/>
-						<Label htmlFor={`${plugin.id}-${code}`}>{code}</Label>
-					</div>
-				))}
-			</div>
-			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-				<Label htmlFor={`delay-${plugin.id}`} style={{ fontSize: 12 }}>
-					Delay (ms):
-				</Label>
-				<input
-					type="number"
-					id={`delay-${plugin.id}`}
-					min="0"
-					max="10000"
-					step="50"
-					value={getDelay(plugin.id)}
-					onChange={e => onUpdateDelay(plugin.id, parseInt(e.target.value) || 0)}
-					style={{
-						width: 80,
-						padding: '4px 8px',
-						border: '1px solid #ddd',
-						borderRadius: 4,
-						fontSize: 12,
+				
+				{/* Endpoint Information */}
+				<div style={{ flex: 1, minWidth: 0 }}>
+					<div style={{
 						fontFamily: 'monospace',
-					}}
-					data-testid={`delay-input-${plugin.id}`}
+						fontSize: '14px',
+						fontWeight: 'bold',
+						color: theme.colors.gray[800],
+						wordBreak: 'break-all'
+					}}>
+						{plugin.endpoint}
+					</div>
+					{plugin.queryResponses && Object.keys(plugin.queryResponses).length > 0 && (
+						<div style={{
+							fontSize: '12px',
+							color: theme.colors.gray[500],
+							marginTop: '4px'
+						}}>
+							{Object.keys(plugin.queryResponses).length} query variants
+						</div>
+					)}
+				</div>
+				
+				{/* Component Badge */}
+				<div style={{
+					padding: '4px 8px',
+					borderRadius: theme.borderRadius.sm,
+					fontSize: '11px',
+					background: theme.colors.gray[100],
+					color: theme.colors.gray[600],
+					border: `1px solid ${theme.colors.gray[200]}`,
+				}}>
+					{plugin.componentId}
+				</div>
+
+				{/* Toggle */}
+				<ModernToggle
+					checked={isMocked}
+					onChange={() => onToggleMocked(plugin.id)}
+					label="Mock"
 				/>
 			</div>
-			{/* Dynamic middleware badges */}
-			{badges.length > 0 && (
-				<div
-					style={{
-						display: 'flex',
-						flexWrap: 'wrap',
-						gap: 8,
-						marginTop: 12,
-						paddingTop: 12,
-						borderTop: '1px solid #eee',
-					}}
-				>
-					{badges.map(badge => (
-						<div
-							key={badge.id}
+
+			{/* Controls Section */}
+			<div style={{
+				display: 'flex',
+				flexDirection: isMobile ? 'column' : 'row',
+				gap: isMobile ? '12px' : '16px',
+				alignItems: isMobile ? 'stretch' : 'center',
+				marginBottom: '16px',
+			}}>
+				{/* Status Badges */}
+				<div style={{
+					display: 'flex',
+					gap: '8px',
+					flexWrap: 'wrap',
+					alignItems: 'center'
+				}}>
+					<span style={{
+						fontSize: '12px',
+						color: theme.colors.gray[600],
+						fontWeight: '500',
+						marginRight: '4px'
+					}}>
+						Status:
+					</span>
+					{getStatusCodes(plugin).map(code => (
+						<StatusBadge
+							key={code}
+							code={code}
+							isActive={getStatus(plugin) === code}
+							onClick={() => onUpdateStatusCode(plugin.id, code)}
+						/>
+					))}
+				</div>
+			</div>
+
+			{/* Additional Controls Row */}
+			<div style={{
+				display: 'flex',
+				flexDirection: isMobile ? 'column' : 'row',
+				gap: isMobile ? '12px' : '16px',
+				alignItems: isMobile ? 'stretch' : 'center',
+				paddingTop: '12px',
+				borderTop: `1px solid ${theme.colors.gray[100]}`,
+				width: '100%',
+			}}>
+				{/* Delay Control */}
+				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+					<span style={{
+						fontSize: '12px',
+						color: theme.colors.gray[600],
+						fontWeight: '500',
+						minWidth: '60px'
+					}}>
+						Delay:
+					</span>
+					<input
+						type="number"
+						min="0"
+						max="10000"
+						step="50"
+						value={getDelay(plugin.id)}
+						onChange={e => onUpdateDelay(plugin.id, parseInt(e.target.value) || 0)}
+						style={{
+							width: '80px',
+							padding: '6px 8px',
+							border: `1px solid ${theme.colors.gray[300]}`,
+							borderRadius: theme.borderRadius.sm,
+							fontSize: '12px',
+							outline: 'none',
+							transition: 'border-color 0.2s ease',
+						}}
+					/>
+					<span style={{
+						fontSize: '12px',
+						color: theme.colors.gray[500]
+					}}>
+						ms
+					</span>
+				</div>
+
+				{/* Scenario Dropdown */}
+				{scenarioList && scenarioList.length > 0 && (
+					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+						<span style={{
+							fontSize: '12px',
+							color: theme.colors.gray[600],
+							fontWeight: '500',
+							minWidth: '60px'
+						}}>
+							Scenario:
+						</span>
+						<select
+							value={activeScenarioId || ''}
+							onChange={handleScenarioChange}
 							style={{
+								padding: '6px 8px',
+								border: `1px solid ${theme.colors.gray[300]}`,
+								borderRadius: theme.borderRadius.sm,
 								fontSize: '12px',
-								padding: '2px 6px',
-								borderRadius: '4px',
-								backgroundColor: '#f0e6ff',
-								color: '#7c3aed',
-								marginLeft: '8px',
+								outline: 'none',
+								minWidth: '120px',
 							}}
 						>
+							<option value="">Default</option>
+							{scenarioList.map(scenario => (
+								<option key={scenario.id} value={scenario.id}>
+									{scenario.label}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+
+				{/* Action Buttons */}
+				<div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
+					{/* Group Management */}
+					<Popover
+						trigger={
+							<Button
+								style={{
+									padding: '6px 8px',
+									fontSize: '12px',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '4px',
+									border: `1px solid ${theme.colors.gray[300]}`,
+									borderRadius: theme.borderRadius.sm,
+									background: theme.colors.gray[50],
+									color: theme.colors.gray[600],
+									cursor: 'pointer',
+								}}
+							>
+								<Plus style={{ width: 14, height: 14 }} />
+								Groups
+							</Button>
+						}
+					>
+						{() => (
+							<div
+								style={{
+									minWidth: 180,
+									maxWidth: '90vw',
+									left: 'auto',
+									right: 0,
+									padding: 12,
+									position: 'absolute',
+									top: '100%',
+									zIndex: 1000,
+									background: 'white',
+									boxShadow: theme.shadows.lg,
+									borderRadius: theme.borderRadius.md,
+									border: `1px solid ${theme.colors.gray[200]}`,
+								}}
+							>
+								<div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '8px', color: theme.colors.gray[700] }}>
+									Add to Groups
+								</div>
+								{groups.length === 0 && (
+									<div style={{ color: theme.colors.gray[500], fontSize: '12px' }}>
+										No groups yet
+									</div>
+								)}
+								{groups.map(group => {
+									const checked = group.endpointIds.includes(plugin.id);
+									return (
+										<div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+											<Checkbox
+												id={`addtogroup-${plugin.id}-${group.id}`}
+												checked={checked}
+												onChange={() => {
+													if (checked) onRemoveFromGroup(plugin.id, group.id);
+													else onAddToGroup(plugin.id, group.id);
+												}}
+												aria-label={`Add ${plugin.endpoint} to group ${group.name}`}
+											/>
+											<Label htmlFor={`addtogroup-${plugin.id}-${group.id}`} style={{ fontSize: '12px' }}>
+												{group.name}
+											</Label>
+										</div>
+									);
+								})}
+							</div>
+						)}
+					</Popover>
+
+					{/* Swagger Button */}
+					{plugin.swaggerUrl && (
+						<button
+							style={{
+								border: 'none',
+								background: 'none',
+								cursor: 'pointer',
+								padding: '6px',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								borderRadius: theme.borderRadius.sm,
+								color: theme.colors.gray[500],
+								transition: 'all 0.2s ease',
+							}}
+							title="Open swagger file"
+							aria-label="Open swagger file"
+							onClick={() => {
+								window.open(plugin.swaggerUrl, '_blank', 'noopener,noreferrer');
+							}}
+							data-testid={`open-swagger-${plugin.id}`}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.background = theme.colors.gray[100];
+								e.currentTarget.style.color = theme.colors.gray[700];
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.background = 'none';
+								e.currentTarget.style.color = theme.colors.gray[500];
+							}}
+						>
+							<FileText style={{ width: 16, height: 16 }} />
+						</button>
+					)}
+				</div>
+			</div>
+
+			{/* Group and Badge Display */}
+			{(groups.filter(group => group.endpointIds.includes(plugin.id)).length > 0 || badges.length > 0) && (
+				<div style={{
+					display: 'flex',
+					flexWrap: 'wrap',
+					gap: '6px',
+					paddingTop: '12px',
+					borderTop: `1px solid ${theme.colors.gray[100]}`,
+				}}>
+					{/* User group badges */}
+					{groups
+						.filter(group => group.endpointIds.includes(plugin.id))
+						.map(group => (
+							<span key={group.id} style={{
+								padding: '4px 8px',
+								borderRadius: theme.borderRadius.sm,
+								fontSize: '11px',
+								background: theme.colors.primary,
+								color: 'white',
+								fontWeight: '500',
+							}}>
+								{group.name}
+							</span>
+						))}
+					
+					{/* Dynamic badges */}
+					{badges.map(badge => (
+						<span key={badge.id} style={{
+							padding: '4px 8px',
+							borderRadius: theme.borderRadius.sm,
+							fontSize: '11px',
+							background: theme.colors.info,
+							color: 'white',
+							fontWeight: '500',
+						}}>
 							{badge.text}
-						</div>
+						</span>
 					))}
 				</div>
 			)}
-			{!isMocked && <p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>endpoint will passthrough (not mocked)</p>}
+
+			{/* Passthrough Notice */}
+			{!isMocked && (
+				<div style={{
+					padding: '8px 12px',
+					borderRadius: theme.borderRadius.sm,
+					background: theme.colors.gray[50],
+					border: `1px solid ${theme.colors.gray[200]}`,
+					marginTop: '12px',
+				}}>
+					<p style={{
+						fontSize: '12px',
+						color: theme.colors.gray[600],
+						fontStyle: 'italic',
+						margin: 0,
+					}}>
+						🔄 Endpoint will passthrough (not mocked)
+					</p>
+				</div>
+			)}
 		</div>
 	);
 };

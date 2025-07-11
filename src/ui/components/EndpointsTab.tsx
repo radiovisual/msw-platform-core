@@ -1,9 +1,12 @@
 import React from 'react';
 import Button from './Button';
 import Popover from './Popover';
+import SearchBar from './SearchBar';
 import { ChevronDown, X } from './Icon';
 import EndpointRow from './EndpointRow';
 import GroupFilterPopover from './GroupFilterPopover';
+import { useResponsive } from '../hooks/useResponsive';
+import { theme } from '../theme';
 import type { Plugin } from '../../types';
 import type { MockPlatformCore } from '../../classes/MockPlatformCore';
 
@@ -60,32 +63,71 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 	onUpdateDelay,
 	getDelay,
 }) => {
+	const screenSize = useResponsive();
+	const isMobile = screenSize === 'mobile';
+	
 	return (
-		<div>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<h3 style={{ fontSize: 18, fontWeight: 500 }}>All Endpoints</h3>
-				<span style={{ borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#e0f2fe', color: '#0070f3' }}>
-					{plugins.filter(ep => isMocked(ep)).length} selected
-				</span>
+		<div style={{ padding: isMobile ? '16px' : '24px' }}>
+			<div style={{ 
+				display: 'flex', 
+				justifyContent: 'space-between', 
+				alignItems: 'center',
+				marginBottom: '20px',
+				flexWrap: isMobile ? 'wrap' : 'nowrap',
+				gap: isMobile ? '12px' : '0'
+			}}>
+				<h3 style={{ 
+					fontSize: isMobile ? '16px' : '18px', 
+					fontWeight: '600', 
+					margin: 0,
+					color: theme.colors.gray[800]
+				}}>
+					All Endpoints
+				</h3>
+				<div style={{
+					padding: '6px 12px',
+					borderRadius: theme.borderRadius.full,
+					fontSize: '12px',
+					background: theme.colors.primary,
+					color: 'white',
+					fontWeight: '500',
+					boxShadow: theme.shadows.sm,
+				}}>
+					{plugins.filter(ep => isMocked(ep)).length} / {plugins.length} enabled
+				</div>
 			</div>
-			<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-				<input
-					placeholder="Search endpoints..."
+			
+			<div style={{ 
+				display: 'flex', 
+				alignItems: 'center', 
+				gap: '12px', 
+				marginBottom: '20px',
+				flexDirection: isMobile ? 'column' : 'row'
+			}}>
+				<SearchBar
 					value={searchTerm}
-					onChange={e => onSearchChange(e.currentTarget.value)}
-					style={{ flex: 1, borderRadius: 6, padding: '8px 12px', border: '1px solid #ccc' }}
+					onChange={onSearchChange}
+					placeholder="Search endpoints..."
+					style={{ flex: 1, width: isMobile ? '100%' : 'auto' }}
 				/>
 				<Popover
 					trigger={
 						<Button
 							style={{
-								borderRadius: 6,
-								padding: '8px 12px',
+								borderRadius: theme.borderRadius.md,
+								padding: '10px 16px',
 								display: 'flex',
 								alignItems: 'center',
-								gap: 4,
-								background: '#fff',
-								border: '1px solid #ccc',
+								gap: '8px',
+								background: 'white',
+								border: `1px solid ${theme.colors.gray[300]}`,
+								color: theme.colors.gray[700],
+								fontSize: '14px',
+								fontWeight: '500',
+								cursor: 'pointer',
+								transition: 'all 0.2s ease',
+								width: isMobile ? '100%' : 'auto',
+								justifyContent: isMobile ? 'center' : 'flex-start',
 							}}
 						>
 							{selectedGroupFilters.length === 0
