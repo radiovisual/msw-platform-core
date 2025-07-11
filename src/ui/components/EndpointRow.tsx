@@ -80,7 +80,7 @@ const EndpointRow: React.FC<EndpointRowProps> = ({
 				}}
 			>
 				<ModernToggle
-					aria-label={`Toggle endpoint ${plugin.endpoint}`}
+					ariaLabel={`Toggle endpoint ${plugin.endpoint}`}
 					checked={isMocked}
 					onChange={() => onToggleMocked(plugin.id)}
 					label="Mock"
