@@ -8,6 +8,7 @@ import EndpointsTab from './components/EndpointsTab';
 import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
 import { DynamicSettingsTab } from './components/DynamicSettingsTab';
+import GlobalDisableBanner from './components/GlobalDisableBanner';
 import type { MockPlatformCore } from '../classes/MockPlatformCore';
 import type { Plugin } from '../types';
 
@@ -269,8 +270,26 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		onStateChange?.({ disabledPluginIds });
 	}, [onStateChange, disabledPluginIds]);
 
+	// UI: enable all endpoints
+	const handleEnableAll = useCallback(() => {
+		// Clear disabled plugin IDs and global disable
+		setDisabledPluginIds([]);
+		platform.setDisabledPluginIds([]);
+		platform.setGlobalDisable(false);
+		saveDisabledPluginIds([], disabledKey);
+		forceUpdate(x => x + 1);
+		onStateChange?.({ disabledPluginIds: [] });
+	}, [platform, disabledKey, onStateChange]);
+
 	return (
 		<>
+			{/* Global Disable Banner */}
+			<GlobalDisableBanner
+				isGloballyDisabled={platform.isGloballyDisabled()}
+				disabledCount={disabledPluginIds.length}
+				totalCount={plugins.length}
+				onEnableAll={handleEnableAll}
+			/>
 			{/* Floating Button */}
 			<div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 50 }}>
 				<Button
