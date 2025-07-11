@@ -25,6 +25,7 @@ interface MockUIProps {
 	onStateChange?: (opts: { disabledPluginIds: string[] }) => void;
 	groupStorageKey?: string;
 	disabledPluginIdsStorageKey?: string;
+	usePopupWindow?: boolean;
 }
 
 function loadGroups(storageKey: string): Group[] {
@@ -68,7 +69,13 @@ function saveEndpointScenarios(map: { [key: string]: string }, storageKey: strin
 	localStorage.setItem(storageKey, JSON.stringify(map));
 }
 
-export default function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsStorageKey }: MockUIProps) {
+export default function MockUI({
+	platform,
+	onStateChange,
+	groupStorageKey,
+	disabledPluginIdsStorageKey,
+	usePopupWindow = false,
+}: MockUIProps) {
 	const platformName = platform.getName();
 	if (!platformName) {
 		throw new Error('Platform name is required for MockUI localStorage namespacing. Received platform: ' + JSON.stringify(platform));
@@ -85,6 +92,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		return ids;
 	});
 	const [newGroupName, setNewGroupName] = useState('');
+
 	const [editingGroup, setEditingGroup] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([]);
@@ -282,22 +290,203 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		onStateChange?.({ disabledPluginIds: [] });
 	}, [platform, disabledKey, onStateChange]);
 
-	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close
+	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close (if not popup mode)
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.ctrlKey && event.key.toLowerCase() === 'm') {
 				event.preventDefault();
 				setIsOpen(prev => !prev);
-			} else if (event.key === 'Escape') {
+			} else if (event.key === 'Escape' && !usePopupWindow) {
 				event.preventDefault();
 				setIsOpen(prev => (prev ? false : prev)); // Only close if currently open
 			}
+			// Note: In popup mode, Escape key is handled within the popup window itself
 		};
 
 		document.addEventListener('keydown', handleKeyDown);
 		return () => document.removeEventListener('keydown', handleKeyDown);
-	}, []); // Empty dependency array - listener stays stable
+	}, [usePopupWindow]);
 
+	// Shared MockUI content
+	const MockUIContent = () => (
+		<Tabs defaultValue="endpoints">
+			<div
+				style={{
+					position: 'sticky',
+					top: 0,
+					zIndex: 2,
+					background: '#fff',
+					borderBottom: '1px solid #eee',
+				}}
+			>
+				<TabList>
+					<Tab value="endpoints">Endpoints</Tab>
+					<Tab value="groups">Groups</Tab>
+					<Tab value="settings">Settings</Tab>
+					<Tab value="feature-flags">Feature Flags</Tab>
+				</TabList>
+			</div>
+			{/* Global Disable Banner - Inside Dialog */}
+			<GlobalDisableBanner
+				isGloballyDisabled={platform.isGloballyDisabled()}
+				disabledCount={disabledPluginIds.length}
+				totalCount={plugins.length}
+				onEnableAll={handleEnableAll}
+			/>
+			<TabPanel value="endpoints">
+				<EndpointsTab
+					plugins={plugins}
+					filteredPlugins={filteredPlugins}
+					searchTerm={searchTerm}
+					onSearchChange={setSearchTerm}
+					selectedGroupFilters={selectedGroupFilters}
+					onToggleGroupFilter={toggleGroupFilter}
+					onClearGroupFilters={clearGroupFilters}
+					groups={groups}
+					allGroups={allGroups}
+					isMocked={isMocked}
+					onToggleMocked={toggleEndpointSelection}
+					onUpdateStatusCode={updateStatusCode}
+					onUpdateDelay={updateDelay}
+					getDelay={getDelay}
+					onAddToGroup={addToGroup}
+					onRemoveFromGroup={removeFromGroup}
+					getStatus={getStatus}
+					getStatusCodes={getStatusCodes}
+					endpointScenarios={endpointScenarios}
+					onScenarioChange={handleScenarioChange}
+					platform={platform}
+				/>
+			</TabPanel>
+			<TabPanel value="groups">
+				<GroupsTab
+					groups={groups}
+					autoGroups={autoGroups}
+					plugins={plugins}
+					newGroupName={newGroupName}
+					onNewGroupNameChange={setNewGroupName}
+					onCreateGroup={createGroup}
+					editingGroup={editingGroup}
+					onSetEditingGroup={setEditingGroup}
+					onRenameGroup={renameGroup}
+					onDeleteGroup={deleteGroup}
+					onRemoveFromGroup={removeFromGroup}
+				/>
+			</TabPanel>
+			<TabPanel value="settings">
+				{/* Dynamic middleware settings UI */}
+				<DynamicSettingsTab
+					platform={platform}
+					onSettingChange={updateMiddlewareSetting}
+					onGlobalDisableChange={handleGlobalDisableChange}
+				/>
+			</TabPanel>
+			<TabPanel value="feature-flags">
+				<FeatureFlagsTab featureFlags={featureFlags} featureFlagMetadata={featureFlagMetadata} onToggleFeatureFlag={toggleFeatureFlag} />
+			</TabPanel>
+		</Tabs>
+	);
+
+	// Popup mode: render as fullscreen overlay
+	if (usePopupWindow) {
+		return (
+			<Portal>
+				{/* Floating Button */}
+				<div
+					style={{
+						position: 'fixed',
+						bottom: 24,
+						right: 24,
+						zIndex: 2147483647, // Maximum z-index value
+					}}
+				>
+					<Button
+						onClick={() => setIsOpen(prev => !prev)}
+						style={{
+							borderRadius: '50%',
+							height: 56,
+							width: 56,
+							boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							border: '1px solid #ccc',
+							backgroundColor: isOpen ? '#3b82f6' : 'white',
+							color: isOpen ? 'white' : '#374151',
+						}}
+						data-testid="open-settings"
+						title={isOpen ? 'Close MockUI (Ctrl+M)' : 'Open MockUI (Ctrl+M)'}
+					>
+						<Settings style={{ height: 24, width: 24 }} />
+					</Button>
+				</div>
+
+				{/* Fullscreen overlay when open */}
+				{isOpen && (
+					<div
+						style={{
+							position: 'fixed',
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							zIndex: 2147483646, // Just below the button
+							background: 'rgba(0, 0, 0, 0.5)',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							padding: '20px',
+						}}
+						onClick={e => {
+							// Close when clicking backdrop
+							if (e.target === e.currentTarget) {
+								setIsOpen(false);
+							}
+						}}
+					>
+						<div
+							style={{
+								width: '95vw',
+								height: '95vh',
+								maxWidth: 1200,
+								maxHeight: 900,
+								background: '#fff',
+								borderRadius: 12,
+								boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+								border: '1px solid #eee',
+								display: 'flex',
+								flexDirection: 'column',
+								padding: 0,
+								overflow: 'hidden',
+							}}
+							onClick={e => e.stopPropagation()}
+						>
+							<div
+								style={{
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'space-between',
+									padding: '16px 24px',
+									borderBottom: '1px solid #eee',
+									flex: '0 0 auto',
+								}}
+							>
+								<h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Endpoint Manager</h2>
+								<Button style={{ padding: 8 }} onClick={() => setIsOpen(false)} data-testid="close-dialog">
+									<X style={{ height: 16, width: 16 }} />
+								</Button>
+							</div>
+							<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+								<MockUIContent />
+							</div>
+						</div>
+					</div>
+				)}
+			</Portal>
+		);
+	}
+
+	// Normal mode: render as modal dialog
 	return (
 		<Portal>
 			{/* Floating Button */}
@@ -360,86 +549,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 							</Button>
 						</div>
 						<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-							<Tabs defaultValue="endpoints">
-								<div
-									style={{
-										position: 'sticky',
-										top: 0,
-										zIndex: 2,
-										background: '#fff',
-										borderBottom: '1px solid #eee',
-									}}
-								>
-									<TabList>
-										<Tab value="endpoints">Endpoints</Tab>
-										<Tab value="groups">Groups</Tab>
-										<Tab value="settings">Settings</Tab>
-										<Tab value="feature-flags">Feature Flags</Tab>
-									</TabList>
-								</div>
-								{/* Global Disable Banner - Inside Dialog */}
-								<GlobalDisableBanner
-									isGloballyDisabled={platform.isGloballyDisabled()}
-									disabledCount={disabledPluginIds.length}
-									totalCount={plugins.length}
-									onEnableAll={handleEnableAll}
-								/>
-								<TabPanel value="endpoints">
-									<EndpointsTab
-										plugins={plugins}
-										filteredPlugins={filteredPlugins}
-										searchTerm={searchTerm}
-										onSearchChange={setSearchTerm}
-										selectedGroupFilters={selectedGroupFilters}
-										onToggleGroupFilter={toggleGroupFilter}
-										onClearGroupFilters={clearGroupFilters}
-										groups={groups}
-										allGroups={allGroups}
-										isMocked={isMocked}
-										onToggleMocked={toggleEndpointSelection}
-										onUpdateStatusCode={updateStatusCode}
-										onUpdateDelay={updateDelay}
-										getDelay={getDelay}
-										onAddToGroup={addToGroup}
-										onRemoveFromGroup={removeFromGroup}
-										getStatus={getStatus}
-										getStatusCodes={getStatusCodes}
-										endpointScenarios={endpointScenarios}
-										onScenarioChange={handleScenarioChange}
-										platform={platform}
-									/>
-								</TabPanel>
-								<TabPanel value="groups">
-									<GroupsTab
-										groups={groups}
-										autoGroups={autoGroups}
-										plugins={plugins}
-										newGroupName={newGroupName}
-										onNewGroupNameChange={setNewGroupName}
-										onCreateGroup={createGroup}
-										editingGroup={editingGroup}
-										onSetEditingGroup={setEditingGroup}
-										onRenameGroup={renameGroup}
-										onDeleteGroup={deleteGroup}
-										onRemoveFromGroup={removeFromGroup}
-									/>
-								</TabPanel>
-								<TabPanel value="settings">
-									{/* Dynamic middleware settings UI */}
-									<DynamicSettingsTab
-										platform={platform}
-										onSettingChange={updateMiddlewareSetting}
-										onGlobalDisableChange={handleGlobalDisableChange}
-									/>
-								</TabPanel>
-								<TabPanel value="feature-flags">
-									<FeatureFlagsTab
-										featureFlags={featureFlags}
-										featureFlagMetadata={featureFlagMetadata}
-										onToggleFeatureFlag={toggleFeatureFlag}
-									/>
-								</TabPanel>
-							</Tabs>
+							<MockUIContent />
 						</div>
 					</div>
 				)}

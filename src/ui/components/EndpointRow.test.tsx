@@ -73,14 +73,15 @@ describe('EndpointRow', () => {
 	it('shows mocked state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked />);
 
-		const toggle = screen.getByLabelText('Mock');
+		const toggle = screen.getByLabelText('Toggle endpoint /api/test');
 		expect(toggle).toBeInTheDocument();
+		expect(screen.getByText('Mock')).toBeInTheDocument();
 	});
 
 	it('shows passthrough state correctly', () => {
 		render(<EndpointRow {...defaultProps} isMocked={false} />);
 
-		const toggle = screen.getByLabelText('Mock');
+		const toggle = screen.getByLabelText('Toggle endpoint /api/test');
 		expect(toggle).toBeInTheDocument();
 		expect(screen.getByText(/endpoint will passthrough/i)).toBeInTheDocument();
 	});
@@ -88,7 +89,7 @@ describe('EndpointRow', () => {
 	it('calls onToggleMocked when toggle is clicked', () => {
 		render(<EndpointRow {...defaultProps} />);
 
-		const toggle = screen.getByLabelText('Mock');
+		const toggle = screen.getByLabelText('Toggle endpoint /api/test');
 		fireEvent.click(toggle);
 
 		expect(defaultProps.onToggleMocked).toHaveBeenCalledWith('test-plugin');

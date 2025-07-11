@@ -493,7 +493,7 @@ function DemoApp() {
 					{result ? JSON.stringify(result, null, 2) : error ? error : 'No data yet'}
 				</pre>
 			</div>
-			<MockUI platform={platform} />
+			<MockUI platform={platform} usePopupWindow />
 		</div>
 	);
 }
@@ -507,6 +507,7 @@ export default meta;
 type Story = StoryObj<typeof DemoApp>;
 
 export const Default: Story = {
+	name: 'Modal Mode (Default)',
 	parameters: {
 		msw: {
 			handlers: mswHandlersFromPlatform(platform),
@@ -515,6 +516,7 @@ export const Default: Story = {
 };
 
 export const WithFlagEnabled: Story = {
+	name: 'Modal Mode with Flag Enabled',
 	parameters: {
 		msw: {
 			handlers: mswHandlersFromPlatform(platform),
