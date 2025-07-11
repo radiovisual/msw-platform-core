@@ -1162,21 +1162,15 @@ npm install msw msw-storybook-addon msw-platform-core
 **.storybook/preview.ts**
 ```ts
 import type { Preview } from "@storybook/react";
-import { initialize, mswDecorator } from "msw-storybook-addon";
+import { initialize, mswLoaders } from "msw-storybook-addon";
 
 initialize({
   onUnhandledRequest: "bypass",
 });
 
 const preview: Preview = {
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i,
-      },
-    },
-  },
+  loaders: [mswLoaders],
+  // the reset of your preview config...
 };
 
 export const decorators = [mswDecorator];

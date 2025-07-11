@@ -1,7 +1,6 @@
 /**
  * @jest-environment node
  */
-
 import { setupServer } from 'msw/node';
 import { createMockPlatform } from './platform';
 import { mswHandlersFromPlatform } from './adapters/msw';

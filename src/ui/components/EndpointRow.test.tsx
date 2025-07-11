@@ -1,5 +1,9 @@
+/**
+ * @jest-environment jsdom
+ */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import EndpointRow from './EndpointRow';
 import type { Plugin } from '../../types';
 import type { MockPlatformCore } from '../../classes/MockPlatformCore';

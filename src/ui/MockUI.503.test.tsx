@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import MockUI from './MockUI';
 import { createMockPlatform } from '../platform';
 

@@ -59,7 +59,7 @@
 		"react-hooks/exhaustive-deps": "warn",
 		"react/jsx-no-target-blank": "warn",
 		"brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-		"react/react-in-jsx-scope": "off",
+		"react/react-in-jsx-scope": "error",
 		"no-prototype-builtins": "warn",
 		"no-mixed-spaces-and-tabs": ["warn", "smart-tabs"]
 	}
