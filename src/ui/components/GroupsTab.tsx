@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from './Button';
 import { Plus } from './Icon';
 import GroupRow from './GroupRow';
@@ -24,9 +24,7 @@ interface GroupsTabProps {
 	groups: Group[];
 	autoGroups: AutoGroup[];
 	plugins: Plugin[];
-	newGroupName: string;
-	onNewGroupNameChange: (value: string) => void;
-	onCreateGroup: () => void;
+	onCreateGroup: (name: string) => void;
 	editingGroup: string | null;
 	onSetEditingGroup: (groupId: string) => void;
 	onRenameGroup: (groupId: string, newName: string) => void;
@@ -34,12 +32,10 @@ interface GroupsTabProps {
 	onRemoveFromGroup: (pluginId: string, groupId: string) => void;
 }
 
-const GroupsTab: React.FC<GroupsTabProps> = ({
+const GroupsTab: React.FC<GroupsTabProps> = React.memo(({
 	groups,
 	autoGroups,
 	plugins,
-	newGroupName,
-	onNewGroupNameChange,
 	onCreateGroup,
 	editingGroup,
 	onSetEditingGroup,
@@ -49,6 +45,24 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 }) => {
 	const screenSize = useResponsive();
 	const isMobile = screenSize === 'mobile';
+	const [newGroupName, setNewGroupName] = useState('');
+
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setNewGroupName(e.currentTarget.value);
+	};
+
+	const handleCreateGroup = () => {
+		if (newGroupName.trim()) {
+			onCreateGroup(newGroupName.trim());
+			setNewGroupName('');
+		}
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter') {
+			handleCreateGroup();
+		}
+	};
 
 	return (
 		<div style={{ padding: isMobile ? '16px' : '24px' }}>
@@ -83,7 +97,7 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 					<input
 						placeholder="New group name"
 						value={newGroupName}
-						onChange={e => onNewGroupNameChange(e.currentTarget.value)}
+						onChange={handleInputChange}
 						style={{
 							width: isMobile ? '100%' : '160px',
 							borderRadius: theme.borderRadius.md,
@@ -93,10 +107,10 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 							outline: 'none',
 							transition: 'border-color 0.2s ease',
 						}}
-						onKeyDown={e => e.key === 'Enter' && onCreateGroup()}
+						onKeyDown={handleKeyDown}
 					/>
 					<Button
-						onClick={onCreateGroup}
+						onClick={handleCreateGroup}
 						style={{
 							padding: '8px 12px',
 							borderRadius: theme.borderRadius.md,
@@ -146,6 +160,8 @@ const GroupsTab: React.FC<GroupsTabProps> = ({
 			</div>
 		</div>
 	);
-};
+});
+
+GroupsTab.displayName = 'GroupsTab';
 
 export default GroupsTab;

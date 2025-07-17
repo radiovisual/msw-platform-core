@@ -40,7 +40,7 @@
 		"no-trailing-spaces": ["warn", { "skipBlankLines": true }],
 		"no-unreachable": "warn",
 		"no-alert": "warn",
-		"react/prop-types": ["warn", { "ignore": ["children"] }],
+		"react/prop-types": ["off", { "ignore": ["children"] }],
 		"react/jsx-tag-spacing": ["error", { "closingSlash": "never", "beforeSelfClosing": "always" }],
 		"react/prefer-es6-class": "warn",
 		"react/prefer-stateless-function": "warn",

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Button from './Button';
 import Popover from './Popover';
 import SearchBar from './SearchBar';
@@ -18,9 +18,6 @@ interface Group {
 
 interface EndpointsTabProps {
 	plugins: Plugin[];
-	filteredPlugins: Plugin[];
-	searchTerm: string;
-	onSearchChange: (value: string) => void;
 	selectedGroupFilters: string[];
 	onToggleGroupFilter: (groupId: string) => void;
 	onClearGroupFilters: () => void;
@@ -42,9 +39,6 @@ interface EndpointsTabProps {
 
 const EndpointsTab: React.FC<EndpointsTabProps> = ({
 	plugins,
-	filteredPlugins,
-	searchTerm,
-	onSearchChange,
 	selectedGroupFilters,
 	onToggleGroupFilter,
 	onClearGroupFilters,
@@ -65,6 +59,36 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 }) => {
 	const screenSize = useResponsive();
 	const isMobile = screenSize === 'mobile';
+	const [searchTerm, setSearchTerm] = useState('');
+
+	// Filter plugins based on search term and group filters
+	const filteredPlugins = useMemo(() => {
+		return plugins.filter(plugin => {
+			// Always show all endpoints that match the search and group filters, regardless of passthrough/mocked state
+			const matchesSearch = plugin.endpoint.toLowerCase().includes(searchTerm.toLowerCase());
+			const matchesGroup =
+				selectedGroupFilters.length === 0 ||
+				selectedGroupFilters.some(groupId => {
+					if (!groupId) {
+						// eslint-disable-next-line no-console
+						console.warn('[MockUI] selectedGroupFilters contains undefined groupId');
+						return false;
+					}
+					const userGroup = groups.find(g => g.id === groupId);
+					if (userGroup && Array.isArray(userGroup.endpointIds) && userGroup.endpointIds.includes(plugin.id)) return true;
+					const autoGroups = allGroups.filter(g => g.id === groupId);
+					const autoGroup = autoGroups.find(g => g.id === groupId);
+					if (!autoGroup) {
+						// eslint-disable-next-line no-console
+						console.warn(`[MockUI] autoGroup not found for groupId: ${groupId}. allGroups:`, allGroups);
+						return false;
+					}
+					if (typeof plugin.componentId === 'string' && plugin.componentId === autoGroup.name) return true;
+					return false;
+				});
+			return matchesSearch && matchesGroup;
+		});
+	}, [plugins, searchTerm, selectedGroupFilters, groups, allGroups]);
 
 	return (
 		<div style={{ padding: isMobile ? '16px' : '24px' }}>
@@ -114,7 +138,7 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 			>
 				<SearchBar
 					value={searchTerm}
-					onChange={onSearchChange}
+					onChange={setSearchTerm}
 					placeholder="Search endpoints..."
 					style={{ flex: 1, width: isMobile ? '100%' : 'auto' }}
 				/>

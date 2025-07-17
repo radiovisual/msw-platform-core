@@ -8,7 +8,7 @@ import {
 	Scenario,
 	Plugin,
 } from '../types';
-import { InMemoryPersistence } from './InMemoryPersistance';
+import { LocalStoragePersistence } from './LocalStoragePersistence';
 import { PersistenceProvider } from './interfaces/PersistanceProvider';
 import { PlatformMiddleware } from './PlatformMiddleware';
 import { extractResponseBody, extractResponseHeaders } from '../middleware/utils';
@@ -28,6 +28,8 @@ export class MockPlatformCore {
 	private globalDisable: boolean = false;
 	private pluginMiddleware: Map<string, Middleware[]> = new Map();
 	private middlewareSettings: Record<string, any> = {};
+	private cachedFeatureFlags: { [key: string]: boolean } | null = null;
+	private cachedFeatureFlagMetadata: { [key: string]: { description?: string; default?: boolean } } | null = null;
 
 	// Private registration tracking to prevent duplicates
 	private registeredSettings: MiddlewareSetting[] = [];
@@ -41,7 +43,7 @@ export class MockPlatformCore {
 		this.featureFlagMetadata = {};
 		this.statusOverrides = {};
 		this.scenarios = [];
-		this.persistence = persistence || new InMemoryPersistence(config.name);
+		this.persistence = persistence || new LocalStoragePersistence(config.name);
 
 		// Initialize feature flags from config
 		if (config.featureFlags) {
@@ -98,17 +100,27 @@ export class MockPlatformCore {
 	}
 
 	getFeatureFlags() {
-		return { ...this.featureFlags };
+		if (!this.cachedFeatureFlags) {
+			this.cachedFeatureFlags = { ...this.featureFlags };
+		}
+		return this.cachedFeatureFlags;
 	}
 
 	getFeatureFlagMetadata() {
-		return { ...this.featureFlagMetadata };
+		if (!this.cachedFeatureFlagMetadata || JSON.stringify(this.cachedFeatureFlagMetadata) !== JSON.stringify(this.featureFlagMetadata)) {
+			this.cachedFeatureFlagMetadata = { ...this.featureFlagMetadata };
+		}
+		return this.cachedFeatureFlagMetadata;
 	}
 
 	setFeatureFlag(flag: string, value: boolean) {
 		if (flag in this.featureFlags) {
 			this.featureFlags[flag] = value;
 			this.persistence.setFlag(flag, value);
+			// Update cache
+			if (this.cachedFeatureFlags) {
+				this.cachedFeatureFlags[flag] = value;
+			}
 		}
 	}
 

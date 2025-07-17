@@ -7,9 +7,23 @@ type TabsContextType = {
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
-export const Tabs: React.FC<{ defaultValue: string; children: React.ReactNode }> = ({ defaultValue, children }) => {
-	const [value, setValue] = useState(defaultValue);
-	return <TabsContext.Provider value={{ value, setValue }}>{children}</TabsContext.Provider>;
+export const Tabs: React.FC<{
+	defaultValue?: string;
+	value?: string;
+	onValueChange?: (value: string) => void;
+	children: React.ReactNode;
+}> = ({ defaultValue, value, onValueChange, children }) => {
+	const [internalValue, setInternalValue] = useState(defaultValue || 'endpoints');
+	const isControlled = value !== undefined;
+	const currentValue = isControlled ? value : internalValue;
+	const setValue = (newValue: string) => {
+		if (isControlled) {
+			onValueChange?.(newValue);
+		} else {
+			setInternalValue(newValue);
+		}
+	};
+	return <TabsContext.Provider value={{ value: currentValue, setValue }}>{children}</TabsContext.Provider>;
 };
 
 export const TabList: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (

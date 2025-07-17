@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from './components/Button';
 import Dialog from './components/Dialog';
 import { Tabs, TabList, Tab, TabPanel } from './components/Tabs';
@@ -84,6 +84,7 @@ export default function MockUI({
 	const groupKey = groupStorageKey || `${platformName}.mockui.groups.v1`;
 	const disabledKey = disabledPluginIdsStorageKey || `${platformName}.mockui.disabledPluginIds.v1`;
 	const endpointScenarioKey = `${platformName}.mockui.endpointScenarios.v1`;
+	const activeTabKey = `${platformName}.mockui.activeTab.v1`;
 	const [isOpen, setIsOpen] = useState(false);
 	const [groups, setGroups] = useState<Group[]>(() => loadGroups(groupKey));
 	const [disabledPluginIds, setDisabledPluginIds] = useState<string[]>(() => {
@@ -91,34 +92,44 @@ export default function MockUI({
 		platform.setDisabledPluginIds(ids);
 		return ids;
 	});
-	const [newGroupName, setNewGroupName] = useState('');
+	const [activeTab, setActiveTab] = useState<string>(() => {
+		try {
+			const storedTab = localStorage.getItem(activeTabKey);
+			// Validate that the stored tab is one of the valid tab values
+			const validTabs = ['endpoints', 'groups', 'settings', 'feature-flags'];
+			if (storedTab && validTabs.includes(storedTab)) {
+				return storedTab;
+			}
+			return 'endpoints';
+		} catch {
+			return 'endpoints';
+		}
+	});
 
 	const [editingGroup, setEditingGroup] = useState<string | null>(null);
-	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([]);
 	const [, forceUpdate] = useState(0);
 	const [endpointScenarios, setEndpointScenarios] = useState<{ [key: string]: string }>(() => loadEndpointScenarios(endpointScenarioKey));
 
-	const plugins: Plugin[] = platform.getPlugins();
-	const featureFlags = platform.getFeatureFlags();
-	const featureFlagMetadata = platform.getFeatureFlagMetadata();
+	const plugins: Plugin[] = useMemo(() => platform.getPlugins(), [platform]);
+	const featureFlags = useMemo(() => platform.getFeatureFlags(), [platform]);
+	const featureFlagMetadata = useMemo(() => platform.getFeatureFlagMetadata(), [platform]);
 
 	// Helper to get automatic groups from platform
-	const autoGroups = platform.getComponentIds().map(cid => ({
+	const autoGroups = useMemo(() => platform.getComponentIds().map(cid => ({
 		id: cid,
 		name: cid,
-		endpointIds: platform
-			.getPlugins()
+		endpointIds: plugins
 			.filter(p => p.componentId === cid)
 			.map(p => p.id),
 		auto: true,
-	}));
+	})), [platform, plugins]);
 
 	// Helper: get status override or default
-	const getStatus = (plugin: Plugin) => platform.getStatusOverride(plugin.id) ?? plugin.defaultStatus;
+	const getStatus = useCallback((plugin: Plugin) => platform.getStatusOverride(plugin.id) ?? plugin.defaultStatus, [platform]);
 
 	// Helper: is endpoint mocked?
-	const isMocked = (plugin: Plugin) => !platform.getDisabledPluginIds().includes(plugin.id);
+	const isMocked = useCallback((plugin: Plugin) => !platform.getDisabledPluginIds().includes(plugin.id), [platform]);
 
 	// Persist groups and disabledPluginIds
 	useEffect(() => {
@@ -131,6 +142,14 @@ export default function MockUI({
 	useEffect(() => {
 		saveEndpointScenarios(endpointScenarios, endpointScenarioKey);
 	}, [endpointScenarios, endpointScenarioKey]);
+	// Persist activeTab
+	useEffect(() => {
+		try {
+			localStorage.setItem(activeTabKey, activeTab);
+		} catch {
+			// Ignore localStorage errors
+		}
+	}, [activeTab, activeTabKey]);
 
 	// Notify parent/MSW adapter on state change
 	useEffect(() => {
@@ -189,79 +208,60 @@ export default function MockUI({
 	);
 
 	// Group operations
-	const createGroup = () => {
-		if (newGroupName.trim()) {
-			const newGroup: Group = {
-				id: Date.now().toString(),
-				name: newGroupName.trim(),
-				endpointIds: [],
-			};
-			setGroups(prev => [...prev, newGroup]);
-			setNewGroupName('');
-		}
-	};
-	const deleteGroup = (groupId: string) => {
+	const createGroup = useCallback((name: string) => {
+		const newGroup: Group = {
+			id: Date.now().toString(),
+			name: name,
+			endpointIds: [],
+		};
+		setGroups(prev => [...prev, newGroup]);
+	}, []);
+	const deleteGroup = useCallback((groupId: string) => {
 		setGroups(prev => prev.filter(g => g.id !== groupId));
-	};
-	const renameGroup = (groupId: string, newName: string) => {
+	}, []);
+
+	const renameGroup = useCallback((groupId: string, newName: string) => {
 		setGroups(prev => prev.map(g => (g.id === groupId ? { ...g, name: newName } : g)));
 		setEditingGroup(null);
-	};
-	const addToGroup = (pluginId: string, groupId: string) => {
+	}, []);
+
+	const addToGroup = useCallback((pluginId: string, groupId: string) => {
 		setGroups(prev =>
 			prev.map(g => (g.id === groupId && !g.endpointIds.includes(pluginId) ? { ...g, endpointIds: [...g.endpointIds, pluginId] } : g))
 		);
-	};
-	const removeFromGroup = (pluginId: string, groupId: string) => {
-		setGroups(prev => prev.map(g => (g.id === groupId ? { ...g, endpointIds: g.endpointIds.filter(id => id !== pluginId) } : g)));
-	};
-	const toggleGroupFilter = (groupId: string) => {
-		setSelectedGroupFilters(prev => (prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]));
-	};
-	const clearGroupFilters = () => setSelectedGroupFilters([]);
+	}, []);
 
-	// Filtering
-	const filteredPlugins = plugins.filter(plugin => {
-		// Always show all endpoints that match the search and group filters, regardless of passthrough/mocked state
-		const matchesSearch = plugin.endpoint.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesGroup =
-			selectedGroupFilters.length === 0 ||
-			selectedGroupFilters.some(groupId => {
-				if (!groupId) {
-					console.warn('[MockUI] selectedGroupFilters contains undefined groupId');
-					return false;
-				}
-				const userGroup = groups.find(g => g.id === groupId);
-				if (userGroup && Array.isArray(userGroup.endpointIds) && userGroup.endpointIds.includes(plugin.id)) return true;
-				const autoGroup = autoGroups.find(g => g.id === groupId);
-				if (!autoGroup) {
-					console.warn(`[MockUI] autoGroup not found for groupId: ${groupId}. autoGroups:`, autoGroups);
-					return false;
-				}
-				if (typeof plugin.componentId === 'string' && plugin.componentId === autoGroup.name) return true;
-				return false;
-			});
-		return matchesSearch && matchesGroup;
-	});
+	const removeFromGroup = useCallback((pluginId: string, groupId: string) => {
+		setGroups(prev => prev.map(g => (g.id === groupId ? { ...g, endpointIds: g.endpointIds.filter(id => id !== pluginId) } : g)));
+	}, []);
+	const toggleGroupFilter = useCallback((groupId: string) => {
+		setSelectedGroupFilters(prev => (prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]));
+	}, []);
+	
+	const clearGroupFilters = useCallback(() => setSelectedGroupFilters([]), []);
+
+	const handleSetEditingGroup = useCallback((groupId: string) => {
+		setEditingGroup(groupId);
+	}, []);
 
 	// Helper: get statusCodes for a plugin
-	const getStatusCodes = (plugin: Plugin) => {
+	const getStatusCodes = useCallback((plugin: Plugin) => {
 		const statusCodes = Object.keys(plugin.responses).map(Number);
 		// Always include 503 Service Unavailable as it's available for free on all endpoints
 		if (!statusCodes.includes(503)) {
 			statusCodes.push(503);
 		}
 		return statusCodes.sort((a, b) => a - b);
-	};
+	}, []);
 
-	const allGroups = [...autoGroups, ...groups];
+	const allGroups = useMemo(() => [...autoGroups, ...groups], [autoGroups, groups]);
 
 	// Scenario change handler
-	const handleScenarioChange = (pluginId: string, scenarioId: string) => {
+	const handleScenarioChange = useCallback((pluginId: string, scenarioId: string) => {
 		setEndpointScenarios(prev => ({ ...prev, [pluginId]: scenarioId }));
 		platform.setEndpointScenario(pluginId, scenarioId);
 		forceUpdate(x => x + 1);
-	};
+	}, [platform]);
 
 	// UI: update middleware setting
 	const updateMiddlewareSetting = useCallback(
@@ -309,7 +309,7 @@ export default function MockUI({
 
 	// Shared MockUI content
 	const MockUIContent = () => (
-		<Tabs defaultValue="endpoints">
+		<Tabs value={activeTab} onValueChange={setActiveTab}>
 			<div
 				style={{
 					position: 'sticky',
@@ -336,9 +336,6 @@ export default function MockUI({
 			<TabPanel value="endpoints">
 				<EndpointsTab
 					plugins={plugins}
-					filteredPlugins={filteredPlugins}
-					searchTerm={searchTerm}
-					onSearchChange={setSearchTerm}
 					selectedGroupFilters={selectedGroupFilters}
 					onToggleGroupFilter={toggleGroupFilter}
 					onClearGroupFilters={clearGroupFilters}
@@ -363,11 +360,9 @@ export default function MockUI({
 					groups={groups}
 					autoGroups={autoGroups}
 					plugins={plugins}
-					newGroupName={newGroupName}
-					onNewGroupNameChange={setNewGroupName}
 					onCreateGroup={createGroup}
 					editingGroup={editingGroup}
-					onSetEditingGroup={setEditingGroup}
+					onSetEditingGroup={handleSetEditingGroup}
 					onRenameGroup={renameGroup}
 					onDeleteGroup={deleteGroup}
 					onRemoveFromGroup={removeFromGroup}
