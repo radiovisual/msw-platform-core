@@ -1,11 +1,12 @@
 import type { Preview } from '@storybook/react';
-import { initialize, mswDecorator } from 'msw-storybook-addon';
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 initialize({
 	onUnhandledRequest: 'bypass',
 });
 
 const preview: Preview = {
+	loaders: [mswLoader],
 	parameters: {
 		controls: {
 			matchers: {
@@ -15,7 +16,5 @@ const preview: Preview = {
 		},
 	},
 };
-
-export const decorators = [mswDecorator];
 
 export default preview;

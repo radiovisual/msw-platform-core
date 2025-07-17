@@ -1,9 +1,4 @@
 import type { StorybookConfig } from '@storybook/react-webpack5';
-import { initialize, mswDecorator } from 'msw-storybook-addon';
-
-initialize({
-	onUnhandledRequest: 'bypass',
-});
 
 const config: StorybookConfig = {
 	stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -19,7 +14,5 @@ const config: StorybookConfig = {
 	},
 	staticDirs: ['./public'],
 };
-
-export const decorators = [mswDecorator];
 
 export default config;

@@ -9,7 +9,6 @@ import GroupsTab from './components/GroupsTab';
 import FeatureFlagsTab from './components/FeatureFlagsTab';
 import { DynamicSettingsTab } from './components/DynamicSettingsTab';
 import GlobalDisableBanner from './components/GlobalDisableBanner';
-import Portal from './utils/Portal';
 import type { MockPlatformCore } from '../classes/MockPlatformCore';
 import type { Plugin } from '../types';
 
@@ -25,7 +24,6 @@ interface MockUIProps {
 	onStateChange?: (opts: { disabledPluginIds: string[] }) => void;
 	groupStorageKey?: string;
 	disabledPluginIdsStorageKey?: string;
-	usePopupWindow?: boolean;
 }
 
 function loadGroups(storageKey: string): Group[] {
@@ -74,7 +72,6 @@ export default function MockUI({
 	onStateChange,
 	groupStorageKey,
 	disabledPluginIdsStorageKey,
-	usePopupWindow = false,
 }: MockUIProps) {
 	const platformName = platform.getName();
 	if (!platformName) {
@@ -290,22 +287,21 @@ export default function MockUI({
 		onStateChange?.({ disabledPluginIds: [] });
 	}, [platform, disabledKey, onStateChange]);
 
-	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close (if not popup mode)
+	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.ctrlKey && event.key.toLowerCase() === 'm') {
 				event.preventDefault();
 				setIsOpen(prev => !prev);
-			} else if (event.key === 'Escape' && !usePopupWindow) {
+			} else if (event.key === 'Escape') {
 				event.preventDefault();
 				setIsOpen(prev => (prev ? false : prev)); // Only close if currently open
 			}
-			// Note: In popup mode, Escape key is handled within the popup window itself
 		};
 
 		document.addEventListener('keydown', handleKeyDown);
 		return () => document.removeEventListener('keydown', handleKeyDown);
-	}, [usePopupWindow]);
+	}, []);
 
 	// Shared MockUI content
 	const MockUIContent = () => (
@@ -382,115 +378,16 @@ export default function MockUI({
 		</Tabs>
 	);
 
-	// Popup mode: render as fullscreen overlay
-	if (usePopupWindow) {
-		return (
-			<Portal>
-				{/* Floating Button */}
-				<div
-					style={{
-						position: 'fixed',
-						bottom: 24,
-						right: 24,
-						zIndex: 2147483647, // Maximum z-index value
-					}}
-				>
-					<Button
-						onClick={() => setIsOpen(prev => !prev)}
-						style={{
-							borderRadius: '50%',
-							height: 56,
-							width: 56,
-							boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							border: '1px solid #ccc',
-							backgroundColor: isOpen ? '#3b82f6' : 'white',
-							color: isOpen ? 'white' : '#374151',
-						}}
-						data-testid="open-settings"
-						title={isOpen ? 'Close MockUI (Ctrl+M)' : 'Open MockUI (Ctrl+M)'}
-					>
-						<Settings style={{ height: 24, width: 24 }} />
-					</Button>
-				</div>
-
-				{/* Fullscreen overlay when open */}
-				{isOpen && (
-					<div
-						style={{
-							position: 'fixed',
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
-							zIndex: 2147483646, // Just below the button
-							background: 'rgba(0, 0, 0, 0.5)',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							padding: '20px',
-						}}
-						onClick={e => {
-							// Close when clicking backdrop
-							if (e.target === e.currentTarget) {
-								setIsOpen(false);
-							}
-						}}
-					>
-						<div
-							style={{
-								width: '95vw',
-								height: '95vh',
-								maxWidth: 1200,
-								maxHeight: 900,
-								background: '#fff',
-								borderRadius: 12,
-								boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
-								border: '1px solid #eee',
-								display: 'flex',
-								flexDirection: 'column',
-								padding: 0,
-								overflow: 'hidden',
-							}}
-							onClick={e => e.stopPropagation()}
-						>
-							<div
-								style={{
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-									padding: '16px 24px',
-									borderBottom: '1px solid #eee',
-									flex: '0 0 auto',
-								}}
-							>
-								<h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Endpoint Manager</h2>
-								<Button style={{ padding: 8 }} onClick={() => setIsOpen(false)} data-testid="close-dialog">
-									<X style={{ height: 16, width: 16 }} />
-								</Button>
-							</div>
-							<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-								<MockUIContent />
-							</div>
-						</div>
-					</div>
-				)}
-			</Portal>
-		);
-	}
-
-	// Normal mode: render as modal dialog
+	// Render as modal dialog
 	return (
-		<Portal>
+		<>
 			{/* Floating Button */}
 			<div
 				style={{
 					position: 'fixed',
 					bottom: 24,
 					right: 24,
-					zIndex: 1, // Relative to the Portal's stacking context
+					zIndex: 1000,
 				}}
 			>
 				<Button
@@ -549,6 +446,6 @@ export default function MockUI({
 					</div>
 				)}
 			</Dialog>
-		</Portal>
+		</>
 	);
 }

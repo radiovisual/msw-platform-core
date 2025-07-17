@@ -493,7 +493,7 @@ function DemoApp() {
 					{result ? JSON.stringify(result, null, 2) : error ? error : 'No data yet'}
 				</pre>
 			</div>
-			<MockUI platform={platform} usePopupWindow />
+			<MockUI platform={platform} />
 		</div>
 	);
 }
