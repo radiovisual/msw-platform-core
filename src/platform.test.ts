@@ -72,17 +72,17 @@ describe('MockPlatformCore', () => {
 	it('applies transform when feature flag is active', () => {
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin], featureFlags: ['EXAMPLE_USE_ALT'] });
 		// Default: flag is false
-		expect(platform.getResponse('example', 200)).toEqual({ message: 'Hello from 200' });
+		expect(platform.getResponse('example', 200)).toEqual({ body: { message: 'Hello from 200' }, headers: {} });
 		// Enable flag
 		platform.setFeatureFlag('EXAMPLE_USE_ALT', true);
-		expect(platform.getResponse('example', 200)).toEqual({ message: '[ALT MODE] Hello from 200' });
+		expect(platform.getResponse('example', 200)).toEqual({ body: { message: '[ALT MODE] Hello from 200' }, headers: {} });
 	});
 
 	it('supports status code overrides', () => {
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin], featureFlags: ['EXAMPLE_USE_ALT'] });
-		expect(platform.getResponse('example')).toEqual({ message: 'Hello from 200' });
+		expect(platform.getResponse('example')).toEqual({ body: { message: 'Hello from 200' }, headers: {} });
 		platform.setStatusOverride('example', 400);
-		expect(platform.getResponse('example')).toEqual({ message: 'Bad request' });
+		expect(platform.getResponse('example')).toEqual({ body: { message: 'Bad request' }, headers: {} });
 	});
 
 	it('registers and activates scenarios', () => {
@@ -99,7 +99,7 @@ describe('MockPlatformCore', () => {
 		platform.activateScenario('alt-mode-bad-request');
 		expect(platform.getActiveScenario()).toBe('alt-mode-bad-request');
 		expect(platform.getFeatureFlags().EXAMPLE_USE_ALT).toBe(true);
-		expect(platform.getResponse('example')).toEqual({ message: '[ALT MODE] Bad request' });
+		expect(platform.getResponse('example')).toEqual({ body: { message: '[ALT MODE] Bad request' }, headers: {} });
 	});
 
 	it('persists feature flags and status overrides', () => {
@@ -375,11 +375,11 @@ describe('Middleware system', () => {
 		userTypeMiddleware.attachTo(['user1', 'other1'], platform);
 		platform.setMiddlewareSetting('userType', '005');
 		const resp = platform.getResponse('user1');
-		expect(resp.user.type).toBe('005');
-		expect(resp.contract.user.type).toBe('005');
+		expect(resp?.body.user.type).toBe('005');
+		expect(resp?.body.contract.user.type).toBe('005');
 		// plugin2 also affected
 		const resp2 = platform.getResponse('other1');
-		expect(resp2.user.type).toBe('005');
+		expect(resp2?.body.user.type).toBe('005');
 	});
 
 	it('applies per-plugin middleware only to that plugin', () => {
@@ -396,11 +396,11 @@ describe('Middleware system', () => {
 		userTypeMiddleware.attachTo(['user1'], platform);
 		platform.setMiddlewareSetting('userType', '001');
 		const resp = platform.getResponse('user1');
-		expect(resp.user.type).toBe('001');
-		expect(resp.contract.user.type).toBe('001');
+		expect(resp?.body.user.type).toBe('001');
+		expect(resp?.body.contract.user.type).toBe('001');
 		// plugin2 not affected
 		const resp2 = platform.getResponse('other1');
-		expect(resp2.user.type).toBe('original');
+		expect(resp2?.body.user.type).toBe('original');
 	});
 
 	it('middleware can chain and call next()', () => {
@@ -423,8 +423,8 @@ describe('Middleware system', () => {
 		userTypeMiddleware.attachTo(['user1'], platform);
 		platform.setMiddlewareSetting('userType', '007');
 		const resp = platform.getResponse('user1');
-		expect(resp.user.type).toBe('007');
-		expect(resp._mw).toBe('yes');
+		expect(resp?.body.user.type).toBe('007');
+		expect(resp?.body._mw).toBe('yes');
 	});
 });
 
@@ -1158,7 +1158,7 @@ describe('Custom Response Headers functionality', () => {
 
 		// Test default response (no headers)
 		const defaultResponse = platform.getResponse('test-plugin', 200);
-		expect(defaultResponse).toEqual({ message: 'success' });
+		expect(defaultResponse).toEqual({ body: { message: 'success' }, headers: {} });
 
 		// Test response with headers
 		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 400);
@@ -1170,9 +1170,12 @@ describe('Custom Response Headers functionality', () => {
 			},
 		});
 
-		// Test that getResponse still returns just the body
+		// Test that getResponse now returns the full structured response
 		const bodyOnly = platform.getResponse('test-plugin', 400);
-		expect(bodyOnly).toEqual({ error: 'Bad Request' });
+		expect(bodyOnly).toEqual({
+			body: { error: 'Bad Request' },
+			headers: { 'Content-Type': 'application/problem+json', 'X-Custom-Header': 'custom-value' },
+		});
 	});
 
 	it('should support custom headers in query responses', () => {
@@ -1277,7 +1280,7 @@ describe('Custom Response Headers functionality', () => {
 
 		// Test that simple responses still work
 		const response = platform.getResponse('test-plugin', 200);
-		expect(response).toEqual({ message: 'simple response' });
+		expect(response).toEqual({ body: { message: 'simple response' }, headers: {} });
 
 		// Test that getResponseWithHeaders returns proper structure for simple responses
 		const responseWithHeaders = platform.getResponseWithHeaders('test-plugin', 200);
@@ -1309,11 +1312,11 @@ describe('Transform-based status override', () => {
 			featureFlags: ['FORCE_404'],
 		});
 		// Default: 200
-		let resp = platform.getResponseWithHeaders('plugin-transform', 200);
+		let resp = platform.getResponse('plugin-transform', 200);
 		expect(resp).toEqual({ body: { message: 'ok' }, headers: {} });
 		// With flag: 404
 		platform.setFeatureFlag('FORCE_404', true);
-		resp = platform.getResponseWithHeaders('plugin-transform', 200);
+		resp = platform.getResponse('plugin-transform', 200);
 		expect(resp).toEqual({ body: { error: 'forced' }, headers: {}, status: 404 });
 	});
 
@@ -1337,7 +1340,7 @@ describe('Transform-based status override', () => {
 		};
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
 		platform.setEndpointScenario('plugin-scenario', 'force-500');
-		const resp = platform.getResponseWithHeaders('plugin-scenario', 200);
+		const resp = platform.getResponse('plugin-scenario', 200);
 		expect(resp).toEqual({ body: { error: 'fail' }, headers: {}, status: 500 });
 	});
 
@@ -1357,7 +1360,7 @@ describe('Transform-based status override', () => {
 		};
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
 		const req = { url: 'http://localhost/api/query?force=401' };
-		const resp = platform.getResponseWithHeaders('plugin-query', 200, req);
+		const resp = platform.getResponse('plugin-query', 200, req);
 		expect(resp).toEqual({ body: { error: 'unauthorized' }, headers: {}, status: 401 });
 	});
 
@@ -1374,7 +1377,7 @@ describe('Transform-based status override', () => {
 			},
 		};
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
-		const resp = platform.getResponseWithHeaders('plugin-both', 200);
+		const resp = platform.getResponse('plugin-both', 200);
 		expect(resp).toEqual({ body: { error: 'fail' }, headers: { 'X-Test': 'yes' }, status: 418 });
 	});
 
@@ -1391,7 +1394,551 @@ describe('Transform-based status override', () => {
 			},
 		};
 		const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
-		const resp = platform.getResponseWithHeaders('plugin-backcompat', 200);
+		const resp = platform.getResponse('plugin-backcompat', 200);
 		expect(resp).toEqual({ body: { message: 'transformed' }, headers: {} });
+	});
+});
+
+describe('Comprehensive Transform Method Tests', () => {
+	describe('Transform Context Completeness', () => {
+		it('should provide complete context to transform method', () => {
+			let receivedContext: any = null;
+			const plugin: Plugin = {
+				id: 'context-test',
+				componentId: 'test',
+				endpoint: '/api/context',
+				method: 'GET',
+				responses: { 200: { original: true } },
+				defaultStatus: 200,
+				scenarios: [
+					{
+						id: 'test-scenario',
+						label: 'Test Scenario',
+						responses: { 200: { scenario: true }, 201: { scenario: true, created: true } },
+					},
+				],
+				transform: (response, context) => {
+					receivedContext = { ...context };
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['TEST_FLAG', 'ANOTHER_FLAG'],
+			});
+
+			// Set up context
+			platform.setFeatureFlag('TEST_FLAG', true);
+			platform.setFeatureFlag('ANOTHER_FLAG', false);
+			platform.setEndpointScenario('context-test', 'test-scenario');
+			platform.setStatusOverride('context-test', 201);
+
+			const request = { url: 'http://localhost/api/context' };
+			platform.getResponse('context-test', undefined, request);
+
+			// Verify all context properties are present
+			expect(receivedContext).toBeTruthy();
+			expect(receivedContext.plugin).toBe(plugin);
+			expect(receivedContext.request).toBe(request);
+			expect(receivedContext.response).toEqual({ scenario: true, created: true });
+			expect(receivedContext.featureFlags).toEqual({ TEST_FLAG: true, ANOTHER_FLAG: false });
+			expect(receivedContext.currentStatus).toBe(201); // Status override
+			expect(receivedContext.endpointScenario).toBe('test-scenario');
+			expect(receivedContext.settings).toBeDefined();
+		});
+	});
+
+	describe('Status Code Override', () => {
+		it('should allow transform to override status from 200 to 404', () => {
+			const plugin: Plugin = {
+				id: 'status-404',
+				componentId: 'test',
+				endpoint: '/api/status',
+				method: 'GET',
+				responses: { 200: { message: 'success' } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.FORCE_NOT_FOUND) {
+						return { body: { error: 'Not Found' }, status: 404 };
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['FORCE_NOT_FOUND'],
+			});
+
+			platform.setFeatureFlag('FORCE_NOT_FOUND', true);
+			const resp = platform.getResponse('status-404', 200);
+
+			expect(resp).toEqual({
+				body: { error: 'Not Found' },
+				headers: {},
+				status: 404,
+			});
+		});
+
+		it('should allow transform to override status from 200 to 500', () => {
+			const plugin: Plugin = {
+				id: 'status-500',
+				componentId: 'test',
+				endpoint: '/api/error',
+				method: 'POST',
+				responses: { 200: { id: 123, created: true } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.currentStatus === 200 && context.featureFlags.SIMULATE_ERROR) {
+						return {
+							body: { error: 'Internal Server Error', code: 'DB_CONNECTION_FAILED' },
+							status: 500,
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['SIMULATE_ERROR'],
+			});
+
+			platform.setFeatureFlag('SIMULATE_ERROR', true);
+			const resp = platform.getResponse('status-500', 200);
+
+			expect(resp).toEqual({
+				body: { error: 'Internal Server Error', code: 'DB_CONNECTION_FAILED' },
+				headers: {},
+				status: 500,
+			});
+		});
+
+		it('should allow transform to conditionally override status based on scenario', () => {
+			const plugin: Plugin = {
+				id: 'scenario-status',
+				componentId: 'test',
+				endpoint: '/api/scenario',
+				method: 'GET',
+				responses: { 200: { data: 'normal' } },
+				defaultStatus: 200,
+				scenarios: [
+					{
+						id: 'auth-failure',
+						label: 'Authentication Failure',
+						responses: { 200: { data: 'scenario-data' } },
+					},
+				],
+				transform: (response, context) => {
+					if (context.endpointScenario === 'auth-failure') {
+						return { body: { error: 'Unauthorized' }, status: 401 };
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+
+			// Normal case
+			let resp = platform.getResponse('scenario-status', 200);
+			expect(resp).toEqual({ body: { data: 'normal' }, headers: {} });
+
+			// Scenario case
+			platform.setEndpointScenario('scenario-status', 'auth-failure');
+			resp = platform.getResponse('scenario-status', 200);
+			expect(resp).toEqual({
+				body: { error: 'Unauthorized' },
+				headers: {},
+				status: 401,
+			});
+		});
+	});
+
+	describe('Header Manipulation', () => {
+		it('should allow transform to add custom headers', () => {
+			const plugin: Plugin = {
+				id: 'add-headers',
+				componentId: 'test',
+				endpoint: '/api/headers',
+				method: 'GET',
+				responses: { 200: { data: 'test' } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					return {
+						body: response,
+						headers: {
+							'X-Custom-Header': 'custom-value',
+							'X-Request-ID': '12345',
+							'X-Feature-Flag': context.featureFlags.DEBUG ? 'enabled' : 'disabled',
+						},
+					};
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['DEBUG'],
+			});
+
+			platform.setFeatureFlag('DEBUG', true);
+			const resp = platform.getResponse('add-headers', 200);
+
+			expect(resp).toEqual({
+				body: { data: 'test' },
+				headers: {
+					'X-Custom-Header': 'custom-value',
+					'X-Request-ID': '12345',
+					'X-Feature-Flag': 'enabled',
+				},
+			});
+		});
+
+		it('should allow transform to modify existing headers', () => {
+			const plugin: Plugin = {
+				id: 'modify-headers',
+				componentId: 'test',
+				endpoint: '/api/modify',
+				method: 'GET',
+				responses: {
+					200: {
+						body: { data: 'test' },
+						headers: { 'Content-Type': 'application/json', 'X-Original': 'value' },
+					},
+				},
+				defaultStatus: 200,
+				transform: (response, context) => {
+					const existingHeaders = response.headers || {};
+					return {
+						body: response.body || response,
+						headers: {
+							...existingHeaders,
+							'Content-Type': 'application/json; charset=utf-8', // Modify existing
+							'X-Modified': new Date().toISOString(), // Add new
+							'X-Context': `scenario=${context.endpointScenario || 'none'}`,
+						},
+					};
+				},
+			};
+			const platform = createMockPlatform({ name: 'test', plugins: [plugin] });
+
+			const resp = platform.getResponse('modify-headers', 200);
+
+			expect(resp?.body).toEqual({ data: 'test' });
+			expect(resp?.headers['Content-Type']).toBe('application/json; charset=utf-8');
+			expect(resp?.headers['X-Original']).toBe('value');
+			expect(resp?.headers['X-Modified']).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO date format
+			expect(resp?.headers['X-Context']).toBe('scenario=none');
+		});
+
+		it('should allow transform to remove headers by setting them to undefined', () => {
+			const plugin: Plugin = {
+				id: 'remove-headers',
+				componentId: 'test',
+				endpoint: '/api/remove',
+				method: 'GET',
+				responses: {
+					200: {
+						body: { data: 'test' },
+						headers: {
+							'Content-Type': 'application/json',
+							'X-Remove-Me': 'should-be-removed',
+							'X-Keep-Me': 'should-stay',
+						},
+					},
+				},
+				defaultStatus: 200,
+				transform: (response, context) => {
+					const headers = { ...response.headers };
+					if (context.featureFlags.REMOVE_HEADERS) {
+						delete headers['X-Remove-Me'];
+					}
+					return {
+						body: response.body,
+						headers,
+					};
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['REMOVE_HEADERS'],
+			});
+
+			platform.setFeatureFlag('REMOVE_HEADERS', true);
+			const resp = platform.getResponse('remove-headers', 200);
+
+			expect(resp?.headers).toEqual({
+				'Content-Type': 'application/json',
+				'X-Keep-Me': 'should-stay',
+			});
+			expect(resp?.headers['X-Remove-Me']).toBeUndefined();
+		});
+	});
+
+	describe('Response Body Override', () => {
+		it('should allow transform to replace JSON response completely', () => {
+			const plugin: Plugin = {
+				id: 'replace-json',
+				componentId: 'test',
+				endpoint: '/api/json',
+				method: 'GET',
+				responses: { 200: { original: 'data', count: 5 } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.USE_NEW_FORMAT) {
+						return {
+							body: {
+								data: {
+									items: ['item1', 'item2', 'item3'],
+									meta: { version: 2, timestamp: '2023-01-01' },
+								},
+								status: 'success',
+							},
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['USE_NEW_FORMAT'],
+			});
+
+			platform.setFeatureFlag('USE_NEW_FORMAT', true);
+			const resp = platform.getResponse('replace-json', 200);
+
+			expect(resp?.body).toEqual({
+				data: {
+					items: ['item1', 'item2', 'item3'],
+					meta: { version: 2, timestamp: '2023-01-01' },
+				},
+				status: 'success',
+			});
+		});
+
+		it('should allow transform to replace with HTML content', () => {
+			const plugin: Plugin = {
+				id: 'replace-html',
+				componentId: 'test',
+				endpoint: '/api/html',
+				method: 'GET',
+				responses: { 200: { message: 'json' } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.RETURN_HTML) {
+						return {
+							body: '<html><body><h1>Dynamic HTML</h1><p>Generated by transform</p></body></html>',
+							headers: { 'Content-Type': 'text/html' },
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['RETURN_HTML'],
+			});
+
+			platform.setFeatureFlag('RETURN_HTML', true);
+			const resp = platform.getResponse('replace-html', 200);
+
+			expect(resp?.body).toBe('<html><body><h1>Dynamic HTML</h1><p>Generated by transform</p></body></html>');
+			expect(resp?.headers['Content-Type']).toBe('text/html');
+		});
+
+		it('should allow transform to replace with XML content', () => {
+			const plugin: Plugin = {
+				id: 'replace-xml',
+				componentId: 'test',
+				endpoint: '/api/xml',
+				method: 'GET',
+				responses: { 200: { type: 'json' } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.RETURN_XML) {
+						return {
+							body: '<?xml version="1.0"?><response><status>success</status><data>transformed</data></response>',
+							headers: { 'Content-Type': 'application/xml' },
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['RETURN_XML'],
+			});
+
+			platform.setFeatureFlag('RETURN_XML', true);
+			const resp = platform.getResponse('replace-xml', 200);
+
+			expect(resp?.body).toBe('<?xml version="1.0"?><response><status>success</status><data>transformed</data></response>');
+			expect(resp?.headers['Content-Type']).toBe('application/xml');
+		});
+
+		it('should allow transform to replace with binary-like content', () => {
+			const plugin: Plugin = {
+				id: 'replace-binary',
+				componentId: 'test',
+				endpoint: '/api/binary',
+				method: 'GET',
+				responses: { 200: { file: 'none' } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.RETURN_BINARY) {
+						// Simulate binary data as base64 string (using btoa for browser compatibility)
+						const binaryData = btoa('This is simulated binary content');
+						return {
+							body: binaryData,
+							headers: {
+								'Content-Type': 'application/octet-stream',
+								'Content-Encoding': 'base64',
+							},
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['RETURN_BINARY'],
+			});
+
+			platform.setFeatureFlag('RETURN_BINARY', true);
+			const resp = platform.getResponse('replace-binary', 200);
+
+			expect(resp?.body).toBe('VGhpcyBpcyBzaW11bGF0ZWQgYmluYXJ5IGNvbnRlbnQ=');
+			expect(resp?.headers['Content-Type']).toBe('application/octet-stream');
+			expect(resp?.headers['Content-Encoding']).toBe('base64');
+		});
+	});
+
+	describe('Complex Transform Scenarios', () => {
+		it('should allow transform to override status, headers, and body simultaneously', () => {
+			const plugin: Plugin = {
+				id: 'complex-transform',
+				componentId: 'test',
+				endpoint: '/api/complex',
+				method: 'POST',
+				responses: { 200: { created: true, id: 1 } },
+				defaultStatus: 200,
+				transform: (response, context) => {
+					if (context.featureFlags.VALIDATION_ERROR) {
+						return {
+							body: {
+								error: 'Validation failed',
+								details: ['Field "name" is required', 'Field "email" must be valid'],
+								code: 'VALIDATION_ERROR',
+							},
+							headers: {
+								'Content-Type': 'application/problem+json',
+								'X-Error-Code': 'VALIDATION_ERROR',
+								'X-Request-ID': '12345',
+							},
+							status: 422,
+						};
+					}
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['VALIDATION_ERROR'],
+			});
+
+			platform.setFeatureFlag('VALIDATION_ERROR', true);
+			const resp = platform.getResponse('complex-transform', 200);
+
+			expect(resp).toEqual({
+				body: {
+					error: 'Validation failed',
+					details: ['Field "name" is required', 'Field "email" must be valid'],
+					code: 'VALIDATION_ERROR',
+				},
+				headers: {
+					'Content-Type': 'application/problem+json',
+					'X-Error-Code': 'VALIDATION_ERROR',
+					'X-Request-ID': '12345',
+				},
+				status: 422,
+			});
+		});
+
+		it('should allow conditional transformations based on multiple context factors', () => {
+			const plugin: Plugin = {
+				id: 'conditional-transform',
+				componentId: 'test',
+				endpoint: '/api/conditional',
+				method: 'GET',
+				responses: { 200: { data: 'default' }, 500: { error: 'server error' } },
+				defaultStatus: 200,
+				scenarios: [
+					{
+						id: 'premium-user',
+						label: 'Premium User',
+						responses: { 200: { data: 'premium' } },
+					},
+				],
+				transform: (response, context) => {
+					// Complex logic based on multiple factors
+					const isPremiumScenario = context.endpointScenario === 'premium-user';
+					const isDebugMode = context.featureFlags.DEBUG;
+					const isErrorStatus = context.currentStatus >= 400;
+
+					if (isPremiumScenario && isDebugMode) {
+						return {
+							body: {
+								...response,
+								debug: {
+									scenario: context.endpointScenario,
+									flags: context.featureFlags,
+									status: context.currentStatus,
+								},
+							},
+							headers: { 'X-Debug': 'enabled' },
+						};
+					}
+
+					if (isErrorStatus && context.featureFlags.FRIENDLY_ERRORS) {
+						return {
+							body: { message: 'Something went wrong. Please try again.' },
+							headers: { 'X-Friendly-Error': 'true' },
+							status: context.currentStatus,
+						};
+					}
+
+					return response;
+				},
+			};
+			const platform = createMockPlatform({
+				name: 'test',
+				plugins: [plugin],
+				featureFlags: ['DEBUG', 'FRIENDLY_ERRORS'],
+			});
+
+			// Test premium + debug scenario
+			platform.setFeatureFlag('DEBUG', true);
+			platform.setEndpointScenario('conditional-transform', 'premium-user');
+			let resp = platform.getResponse('conditional-transform', 200);
+
+			expect(resp?.body.data).toBe('premium');
+			expect(resp?.body.debug).toBeDefined();
+			expect(resp?.body.debug.scenario).toBe('premium-user');
+			expect(resp?.headers['X-Debug']).toBe('enabled');
+
+			// Test friendly error scenario
+			platform.setEndpointScenario('conditional-transform', undefined as any);
+			platform.setFeatureFlag('FRIENDLY_ERRORS', true);
+			resp = platform.getResponse('conditional-transform', 500);
+
+			expect(resp?.body.message).toBe('Something went wrong. Please try again.');
+			expect(resp?.headers['X-Friendly-Error']).toBe('true');
+			expect(resp?.status).toBe(500);
+		});
 	});
 });

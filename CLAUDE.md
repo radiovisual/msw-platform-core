@@ -36,6 +36,7 @@ This is a **mock platform core** library that provides a reusable system for moc
 - Support for dynamic route matching (`:id` parameters) and query response variations
 - Custom response headers and multiple content types (JSON, HTML, XML, binary)
 - Configurable response delays and endpoint scenarios
+- Transform methods for runtime response customization
 
 **Adapters** (`src/adapters/`):
 - `msw.ts` - Generates MSW handlers for browser/Node.js environments

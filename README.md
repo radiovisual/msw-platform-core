@@ -223,26 +223,275 @@ responses: {
 - **Rate Limiting**: Simulate rate limit headers like `X-RateLimit-Remaining`
 - **CORS**: Test CORS headers like `Access-Control-Allow-Origin`
 
-### 1.2.1. Overriding Status Code in a Transform
+### 1.2.1. Transform Methods
 
-You can override the response status code from within your plugin's `transform` function by returning an object with a `status` property:
+Transform methods provide powerful runtime response customization. The transform function receives the base response and a rich context object, allowing you to modify any aspect of the response based on feature flags, scenarios, or other runtime conditions.
+
+#### Basic Transform Function
+
+```js
+const plugin = {
+  id: 'api-endpoint',
+  endpoint: '/api/data',
+  method: 'GET',
+  responses: {
+    200: { message: 'Success' },
+    500: { error: 'Server Error' },
+  },
+  defaultStatus: 200,
+  transform: (response, context) => {
+    // Return modified response configuration
+    return {
+      body: response,              // Original or modified response body
+      headers: {},                 // Additional or modified headers
+      status: 200,                 // Override status code (optional)
+    };
+  },
+};
+```
+
+#### Context Object
+
+The transform function receives a comprehensive context object with:
 
 ```js
 transform: (response, context) => {
-  if (context.featureFlags.FORCE_404) {
+  // Available context properties:
+  context.featureFlags        // Current feature flag values
+  context.currentStatus       // Requested status code
+  context.endpointScenario    // Active scenario for this endpoint
+  context.activeScenario      // Global active scenario
+  context.plugin              // Plugin definition
+  context.request             // Request object (when available)
+  context.settings            // Middleware settings
+}
+```
+
+#### Status Code Override
+
+Override response status codes based on runtime conditions:
+
+```js
+transform: (response, context) => {
+  // Force error responses for testing
+  if (context.featureFlags.FORCE_ERROR) {
     return {
-      body: { error: 'forced by transform' },
-      headers: { 'X-Transformed': 'yes' },
-      status: 404, // <-- custom status code
+      body: { error: 'Simulated error for testing' },
+      status: 500,
+      headers: { 'X-Error-Source': 'transform' },
     };
   }
+
+  // Authentication simulation
+  if (context.featureFlags.REQUIRE_AUTH && !context.request?.headers?.authorization) {
+    return {
+      body: { error: 'Authentication required' },
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Bearer realm="API"' },
+    };
+  }
+
   return response;
 }
 ```
 
-- The returned `status` will be used as the HTTP status code for the response.
-- You can set `body`, `headers`, and `status` together or separately.
-- If you return only a body (for backward compatibility), the default status code logic is used.
+#### Header Manipulation
+
+Add, modify, or remove headers dynamically:
+
+```js
+transform: (response, context) => {
+  const existingHeaders = response.headers || {};
+  
+  return {
+    body: response.body || response,
+    headers: {
+      ...existingHeaders,
+      // Add new headers
+      'X-Request-ID': `req_${Date.now()}`,
+      'X-Feature-Flags': Object.keys(context.featureFlags).join(','),
+      
+      // Modify existing headers
+      'Content-Type': 'application/json; charset=utf-8',
+      
+      // Conditional headers
+      ...(context.featureFlags.CORS_ENABLED && {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+      }),
+    },
+  };
+}
+```
+
+#### Response Content Transformation
+
+Transform response content and format:
+
+```js
+transform: (response, context) => {
+  const data = response.body || response;
+
+  // Return XML format
+  if (context.featureFlags.XML_FORMAT) {
+    return {
+      body: `<?xml version="1.0"?>
+        <response>
+          <message>${data.message}</message>
+          <timestamp>${new Date().toISOString()}</timestamp>
+        </response>`,
+      headers: { 'Content-Type': 'application/xml' },
+    };
+  }
+
+  // Return HTML format
+  if (context.featureFlags.HTML_FORMAT) {
+    return {
+      body: `<!DOCTYPE html>
+        <html>
+          <body>
+            <h1>API Response</h1>
+            <p>${data.message}</p>
+          </body>
+        </html>`,
+      headers: { 'Content-Type': 'text/html' },
+    };
+  }
+
+  // Enhanced JSON with debug info
+  if (context.featureFlags.DEBUG_MODE) {
+    return {
+      body: {
+        ...data,
+        _debug: {
+          scenario: context.endpointScenario,
+          timestamp: new Date().toISOString(),
+          flags: context.featureFlags,
+        },
+      },
+    };
+  }
+
+  return response;
+}
+```
+
+#### Scenario-Based Transformations
+
+Use scenarios to create complex response variations:
+
+```js
+transform: (response, context) => {
+  // Different responses based on user role scenario
+  if (context.endpointScenario === 'admin-user') {
+    return {
+      body: {
+        ...response,
+        adminData: { permissions: ['read', 'write', 'admin'] },
+        sensitiveInfo: 'Admin can see this',
+      },
+      headers: { 'X-User-Role': 'admin' },
+    };
+  }
+
+  if (context.endpointScenario === 'guest-user') {
+    const publicData = { ...response };
+    delete publicData.email; // Remove sensitive data
+    
+    return {
+      body: {
+        ...publicData,
+        message: 'Limited data for guest users',
+      },
+      headers: { 'X-User-Role': 'guest' },
+    };
+  }
+
+  return response;
+}
+```
+
+#### Complex Conditional Logic
+
+Combine multiple conditions for sophisticated response logic:
+
+```js
+transform: (response, context) => {
+  const isErrorStatus = context.currentStatus >= 400;
+  const hasScenario = !!context.endpointScenario;
+  const isDebugMode = context.featureFlags.DEBUG_MODE;
+
+  // Enhanced error responses
+  if (isErrorStatus && context.featureFlags.FRIENDLY_ERRORS) {
+    return {
+      body: {
+        error: 'Something went wrong. Please try again.',
+        userMessage: 'We encountered an issue. Our team has been notified.',
+        supportContact: 'support@example.com',
+      },
+      headers: { 'X-Friendly-Error': 'true' },
+      status: context.currentStatus,
+    };
+  }
+
+  // Debug information injection
+  if (isDebugMode && hasScenario) {
+    return {
+      body: {
+        ...response,
+        debug: {
+          scenario: context.endpointScenario,
+          appliedFlags: Object.entries(context.featureFlags)
+            .filter(([, value]) => value)
+            .map(([key]) => key),
+          requestedStatus: context.currentStatus,
+        },
+      },
+      headers: { 'X-Debug': 'enabled' },
+    };
+  }
+
+  return response;
+}
+```
+
+#### Binary and Special Content Types
+
+Handle non-JSON content types:
+
+```js
+transform: (response, context) => {
+  // Return binary data as base64
+  if (context.featureFlags.BINARY_RESPONSE) {
+    const jsonData = JSON.stringify(response);
+    const binaryData = btoa(jsonData); // Base64 encode
+    
+    return {
+      body: binaryData,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Encoding': 'base64',
+        'X-Original-Size': jsonData.length.toString(),
+      },
+    };
+  }
+
+  // Return CSV format
+  if (context.featureFlags.CSV_FORMAT) {
+    const data = response.body || response;
+    const csvData = Object.entries(data)
+      .map(([key, value]) => `${key},${value}`)
+      .join('\n');
+    
+    return {
+      body: `field,value\n${csvData}`,
+      headers: { 'Content-Type': 'text/csv' },
+    };
+  }
+
+  return response;
+}
+```
 
 ### 1.3. Response Delays
 

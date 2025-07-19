@@ -129,7 +129,7 @@ describe('EndpointsTab', () => {
 		render(<EndpointsTab {...defaultProps} />);
 
 		const searchInput = screen.getByPlaceholderText('Search endpoints...');
-		
+
 		// First filter
 		fireEvent.change(searchInput, { target: { value: 'users' } });
 		await waitFor(() => {
@@ -161,7 +161,7 @@ describe('EndpointsTab', () => {
 		render(<EndpointsTab {...defaultProps} />);
 
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Focus the input
 		searchInput.focus();
 		expect(document.activeElement).toBe(searchInput);
@@ -197,7 +197,7 @@ describe('EndpointsTab', () => {
 		render(<EndpointsTab {...defaultProps} />);
 
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Focus and type
 		searchInput.focus();
 		fireEvent.change(searchInput, { target: { value: 'users' } });
@@ -254,7 +254,7 @@ describe('EndpointsTab', () => {
 	it('updates enabled count when some endpoints are disabled', () => {
 		const propsWithDisabled = {
 			...defaultProps,
-			isMocked: jest.fn((plugin) => plugin.id !== 'plugin-2'),
+			isMocked: jest.fn(plugin => plugin.id !== 'plugin-2'),
 		};
 
 		render(<EndpointsTab {...propsWithDisabled} />);
@@ -266,13 +266,13 @@ describe('EndpointsTab', () => {
 		render(<EndpointsTab {...defaultProps} />);
 
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Type a search term
 		fireEvent.change(searchInput, { target: { value: 'api' } });
-		
+
 		// Value should persist
 		expect(searchInput.value).toBe('api');
-		
+
 		// Continue typing
 		fireEvent.change(searchInput, { target: { value: 'api/users' } });
 		expect(searchInput.value).toBe('api/users');

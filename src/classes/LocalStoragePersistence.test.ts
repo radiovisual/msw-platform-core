@@ -31,7 +31,7 @@ describe('LocalStoragePersistence', () => {
 
 		it('should persist flags across instances', () => {
 			persistence.setFlag('PERSISTENT_FLAG', true);
-			
+
 			const newPersistence = new LocalStoragePersistence(testPlatformName);
 			expect(newPersistence.getFlag('PERSISTENT_FLAG')).toBe(true);
 		});
@@ -60,9 +60,9 @@ describe('LocalStoragePersistence', () => {
 		it('should handle corrupted localStorage data gracefully', () => {
 			// Corrupt the localStorage data
 			localStorage.setItem(`${testPlatformName}.persistence.flags.v1`, 'invalid json');
-			
+
 			expect(persistence.getFlag('TEST_FLAG')).toBeUndefined();
-			
+
 			// Should still be able to set flags after corruption
 			persistence.setFlag('TEST_FLAG', true);
 			expect(persistence.getFlag('TEST_FLAG')).toBe(true);
@@ -80,7 +80,7 @@ describe('LocalStoragePersistence', () => {
 
 		it('should persist status overrides across instances', () => {
 			persistence.setStatus('plugin1', 500);
-			
+
 			const newPersistence = new LocalStoragePersistence(testPlatformName);
 			expect(newPersistence.getStatus('plugin1')).toBe(500);
 		});
@@ -107,7 +107,7 @@ describe('LocalStoragePersistence', () => {
 		it('should persist scenarios across instances', () => {
 			persistence.setActiveScenario('active-scenario');
 			persistence.setEndpointScenario('endpoint1', 'endpoint-scenario');
-			
+
 			const newPersistence = new LocalStoragePersistence(testPlatformName);
 			expect(newPersistence.getActiveScenario()).toBe('active-scenario');
 			expect(newPersistence.getEndpointScenario('endpoint1')).toBe('endpoint-scenario');
@@ -125,7 +125,7 @@ describe('LocalStoragePersistence', () => {
 
 		it('should persist delays across instances', () => {
 			persistence.setDelay('plugin1', 3000);
-			
+
 			const newPersistence = new LocalStoragePersistence(testPlatformName);
 			expect(newPersistence.getDelay('plugin1')).toBe(3000);
 		});
@@ -146,7 +146,7 @@ describe('LocalStoragePersistence', () => {
 
 		it('should persist global disable state across instances', () => {
 			persistence.setGlobalDisable(true);
-			
+
 			const newPersistence = new LocalStoragePersistence(testPlatformName);
 			expect(newPersistence.getGlobalDisable()).toBe(true);
 		});
@@ -160,11 +160,11 @@ describe('LocalStoragePersistence', () => {
 		it('should handle localStorage being unavailable gracefully', () => {
 			// This test verifies that the LocalStoragePersistence class methods don't throw errors
 			// when localStorage is unavailable, which is the main requirement for graceful handling
-			
+
 			// Mock localStorage to throw errors
 			const originalSetItem = localStorage.setItem;
 			const originalGetItem = localStorage.getItem;
-			
+
 			localStorage.setItem = jest.fn().mockImplementation(() => {
 				throw new Error('localStorage unavailable');
 			});

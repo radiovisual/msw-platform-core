@@ -276,74 +276,11 @@ export class MockPlatformCore {
 		};
 	}
 
-	getResponse(pluginId: string, status?: number, request?: any) {
-		const plugin = this.plugins.find(p => p.id === pluginId);
-		if (!plugin) return undefined;
-		// If endpoint scenario is set and plugin has scenarios, use it
-		const scenarioId = this.getEndpointScenario(pluginId);
-		const useStatus = status ?? this.statusOverrides[pluginId] ?? plugin.defaultStatus;
-		let resp: ResponseValue | undefined;
-		if (scenarioId && plugin.scenarios) {
-			const scenario = plugin.scenarios.find(s => s.id === scenarioId);
-			if (scenario) {
-				resp = scenario.responses[useStatus];
-				if (resp === undefined) {
-					// Fallback to plugin responses
-					resp = plugin.responses[useStatus];
-				}
-				// If still undefined and requesting 503, provide default 503
-				if (resp === undefined && useStatus === 503) {
-					resp = this.getDefault503Response();
-				}
-				if (resp === undefined) return undefined;
-				if (plugin.transform) {
-					const context: MiddlewareContext = {
-						// TODO: Dont spread this, apply the key, label, and other context explicitly
-						...this,
-						plugin,
-						request,
-						response: resp,
-						settings: this.middlewareSettings,
-						featureFlags: this.featureFlags,
-						currentStatus: useStatus,
-						endpointScenario: scenarioId,
-						activeScenario: this.activeScenario,
-					};
-					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
-				}
-				// Apply middleware
-				resp = this.applyMiddleware(plugin, resp, request);
-				return extractResponseBody(resp);
-			}
-		}
-		// Otherwise, use status override/default
-		resp = plugin.responses[useStatus];
-		// If undefined and requesting 503, provide default 503
-		if (resp === undefined && useStatus === 503) {
-			resp = this.getDefault503Response();
-		}
-		if (resp === undefined) return undefined;
-		if (plugin.transform) {
-			const context: MiddlewareContext = {
-				// TODO: Dont spread this, apply the key, label, and other context explicitly
-				...this,
-				plugin,
-				request,
-				response: resp,
-				settings: this.middlewareSettings,
-				featureFlags: this.featureFlags,
-				currentStatus: useStatus,
-				endpointScenario: scenarioId,
-				activeScenario: this.activeScenario,
-			};
-			resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
-		}
-		// Apply middleware
-		resp = this.applyMiddleware(plugin, resp, request);
-		return extractResponseBody(resp);
-	}
-
-	getResponseWithHeaders(pluginId: string, status?: number, request?: any) {
+	getResponse(
+		pluginId: string,
+		status?: number,
+		request?: any
+	): { body: any; headers: Record<string, string>; status?: number } | undefined {
 		const plugin = this.plugins.find(p => p.id === pluginId);
 		if (!plugin) return undefined;
 		const scenarioId = this.getEndpointScenario(pluginId);
@@ -455,7 +392,37 @@ export class MockPlatformCore {
 			resp = this.applyMiddleware(plugin, resp, request);
 		}
 
-		// Check if this is a ResponseData object
+		// Special case: if we're looking for a 503 response and got here, return default 503
+		if (resp === undefined && useStatus === 503) {
+			resp = this.getDefault503Response();
+		}
+
+		return this.structureResponse(resp);
+	}
+
+	/**
+	 * @deprecated Use getResponse() instead. This method is kept for backward compatibility.
+	 * The getResponse() method now always returns structured responses with headers and status.
+	 */
+	getResponseWithHeaders(pluginId: string, status?: number, request?: any) {
+		return this.getResponse(pluginId, status, request);
+	}
+
+	/**
+	 * Legacy method that returns only the response body for backward compatibility.
+	 * @deprecated Use getResponse() and access the .body property instead.
+	 */
+	getResponseBody(pluginId: string, status?: number, request?: any): any {
+		const result = this.getResponse(pluginId, status, request);
+		return result?.body;
+	}
+
+	/**
+	 * Helper method to properly structure responses from transform methods
+	 * Handles both simple responses and ResponseData objects with status/headers overrides
+	 */
+	private structureResponse(resp: any): { body: any; headers: Record<string, string>; status?: number } {
+		// Check if this is a ResponseData object with body/headers/status
 		if (resp && typeof resp === 'object' && 'body' in resp) {
 			const body = extractResponseBody(resp);
 			const headers = extractResponseHeaders(resp);
@@ -469,16 +436,11 @@ export class MockPlatformCore {
 		if (resp !== undefined) {
 			const body = extractResponseBody(resp);
 			const headers = extractResponseHeaders(resp);
-			const result: any = { body, headers };
-			return result;
+			return { body, headers };
 		}
 
-		// Special case: if we're looking for a 503 response and got here, return default 503
-		if (useStatus === 503) {
-			return this.getDefault503ResponseWithHeaders();
-		}
-
-		return undefined;
+		// Fallback for undefined responses
+		return { body: undefined, headers: {} };
 	}
 
 	registerScenario(scenario: Scenario) {

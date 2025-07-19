@@ -487,7 +487,7 @@ describe('503 Service Unavailable Feature', () => {
 			// Test getResponse with 503 status
 			const response = platform.getResponse('api-test-plugin', 503);
 
-			expect(response).toEqual({ error: 'Service Unavailable' });
+			expect(response).toEqual({ body: { error: 'Service Unavailable' }, headers: { 'Content-Type': 'application/json' } });
 		});
 
 		it('should return custom 503 response from platform.getResponse()', () => {
@@ -508,7 +508,7 @@ describe('503 Service Unavailable Feature', () => {
 			// Test getResponse with 503 status
 			const response = platform.getResponse('api-custom-plugin', 503);
 
-			expect(response).toEqual({ error: 'Custom API Unavailable' });
+			expect(response).toEqual({ body: { error: 'Custom API Unavailable' }, headers: {} });
 		});
 
 		it('should return default 503 response with headers from platform.getResponseWithHeaders()', () => {

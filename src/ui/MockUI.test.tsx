@@ -353,8 +353,10 @@ describe('MockUI', () => {
 		await waitFor(() => expect(select).toHaveValue('not-registered'));
 		// Re-instantiate platform to reflect persisted scenario
 		const platformAfterNotRegistered = createMockPlatform({ name: 'test', plugins }, persistence);
-		await waitFor(() => expect(platformAfterNotRegistered.getResponse('ep1', 200)).toEqual({ error: 'User not registered' }));
-		await waitFor(() => expect(platformAfterNotRegistered.getResponse('ep1', 400)).toEqual({ error: 'bad' })); // fallback to plugin
+		await waitFor(() =>
+			expect(platformAfterNotRegistered.getResponse('ep1', 200)).toEqual({ body: { error: 'User not registered' }, headers: {} })
+		);
+		await waitFor(() => expect(platformAfterNotRegistered.getResponse('ep1', 400)).toEqual({ body: { error: 'bad' }, headers: {} })); // fallback to plugin
 		// Re-query the select element before changing to 'registered'
 		const selectAfter = await screen.findByDisplayValue('User not registered');
 		// Select "User is registered"
@@ -364,8 +366,10 @@ describe('MockUI', () => {
 		await waitFor(() => expect(persistence.getEndpointScenario('ep1')).toBe('registered'));
 		// Re-instantiate platform to reflect persisted scenario
 		const platformAfterRegistered = createMockPlatform({ name: 'test', plugins }, persistence);
-		await waitFor(() => expect(platformAfterRegistered.getResponse('ep1', 200)).toEqual({ ok: 'User is registered' }));
-		await waitFor(() => expect(platformAfterRegistered.getResponse('ep1', 400)).toEqual({ error: 'custom bad' })); // scenario override
+		await waitFor(() =>
+			expect(platformAfterRegistered.getResponse('ep1', 200)).toEqual({ body: { ok: 'User is registered' }, headers: {} })
+		);
+		await waitFor(() => expect(platformAfterRegistered.getResponse('ep1', 400)).toEqual({ body: { error: 'custom bad' }, headers: {} })); // scenario override
 		// Unmount and remount, selection should persist
 		// (simulate reload)
 		localStorage.setItem('test.mockui.endpointScenarios.v1', JSON.stringify({ ep1: 'not-registered' }));
@@ -542,57 +546,57 @@ describe('MockUI', () => {
 	it('persists feature flags between MockUI sessions', async () => {
 		// Create platform with LocalStoragePersistence for feature flag persistence
 		const platform1 = makePlatformWithPersistence();
-		
+
 		// Initial render and open MockUI
 		const { unmount } = render(<MockUI platform={platform1} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
-		
+
 		// Navigate to Feature Flags tab
 		const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 		fireEvent.click(featureFlagsTab);
-		
+
 		// Find and toggle FLAG_A to true
 		const flagCard = await screen.findByLabelText('Toggle feature flag FLAG_A');
-		
+
 		// Verify initial state is false
 		expect(flagCard).toHaveAttribute('aria-checked', 'false');
 		expect(platform1.getFeatureFlags().FLAG_A).toBe(false);
-		
+
 		// Toggle flag to true
 		fireEvent.click(flagCard);
 		await waitFor(() => {
 			expect(platform1.getFeatureFlags().FLAG_A).toBe(true);
 		});
-		
+
 		// Unmount the component (simulating closing MockUI)
 		unmount();
-		
+
 		// Create a new platform instance (simulating app restart or MockUI reopening)
 		const platform2 = makePlatformWithPersistence();
-		
+
 		// Feature flag should be persisted and loaded as true
 		expect(platform2.getFeatureFlags().FLAG_A).toBe(true);
-		
+
 		// Render MockUI again with the new platform
 		render(<MockUI platform={platform2} />);
 		fireEvent.click(await screen.findByTestId('open-settings'));
-		
+
 		// Navigate to Feature Flags tab
 		const featureFlagsTab2 = await screen.findByRole('tab', { name: /feature flags/i });
 		fireEvent.click(featureFlagsTab2);
-		
+
 		// Find FLAG_A again
 		const flagCard2 = await screen.findByLabelText('Toggle feature flag FLAG_A');
-		
+
 		// Verify the flag is still checked (persisted)
 		expect(flagCard2).toHaveAttribute('aria-checked', 'true');
-		
+
 		// Toggle back to false
 		fireEvent.click(flagCard2);
 		await waitFor(() => {
 			expect(platform2.getFeatureFlags().FLAG_A).toBe(false);
 		});
-		
+
 		// Verify persistence of the false state
 		const platform3 = makePlatformWithPersistence();
 		expect(platform3.getFeatureFlags().FLAG_A).toBe(false);
@@ -603,33 +607,33 @@ describe('MockUI', () => {
 		it('persists active tab to localStorage', async () => {
 			const platform = makePlatform();
 			const { unmount } = render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Initially should be on endpoints tab
 			const endpointsTab = await screen.findByRole('tab', { name: /endpoints/i });
 			expect(endpointsTab).toHaveAttribute('aria-selected', 'true');
-			
+
 			// Switch to feature flags tab
 			const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 			fireEvent.click(featureFlagsTab);
-			
+
 			// Wait for the tab to be selected
 			await waitFor(() => {
 				const currentTab = screen.getByRole('tab', { name: /feature flags/i });
 				expect(currentTab).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Check localStorage
 			const activeTabKey = `${platform.getName()}.mockui.activeTab.v1`;
 			expect(localStorage.getItem(activeTabKey)).toBe('feature-flags');
-			
+
 			// Unmount and remount
 			unmount();
 			render(<MockUI platform={platform} />);
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Should still be on feature flags tab
 			await waitFor(() => {
 				const featureFlagsTab2 = screen.getByRole('tab', { name: /feature flags/i });
@@ -640,26 +644,26 @@ describe('MockUI', () => {
 		it('stays on feature flags tab when toggling feature flags', async () => {
 			const platform = makePlatform();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI and navigate to feature flags
 			fireEvent.click(await screen.findByTestId('open-settings'));
 			const featureFlagsTab = await screen.findByRole('tab', { name: /feature flags/i });
 			fireEvent.click(featureFlagsTab);
-			
+
 			// Find and toggle a feature flag
 			const flagCard = await screen.findByLabelText('Toggle feature flag FLAG_A');
 			fireEvent.click(flagCard);
-			
+
 			// Should still be on feature flags tab
 			await waitFor(() => {
 				const featureFlagsTab2 = screen.getByRole('tab', { name: /feature flags/i });
 				expect(featureFlagsTab2).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Toggle again
 			const flagCard2 = await screen.findByLabelText('Toggle feature flag FLAG_A');
 			fireEvent.click(flagCard2);
-			
+
 			// Should still be on feature flags tab
 			await waitFor(() => {
 				const featureFlagsTab3 = screen.getByRole('tab', { name: /feature flags/i });
@@ -670,25 +674,25 @@ describe('MockUI', () => {
 		it('stays on groups tab when typing in search field', async () => {
 			const platform = makePlatform();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI and navigate to groups tab
 			fireEvent.click(await screen.findByTestId('open-settings'));
 			const groupsTab = await screen.findByRole('tab', { name: /groups/i });
 			fireEvent.click(groupsTab);
-			
+
 			// Find new group name input and type in it
 			const newGroupInput = await screen.findByPlaceholderText('New group name');
 			fireEvent.change(newGroupInput, { target: { value: 'Test Group' } });
-			
+
 			// Should still be on groups tab
 			await waitFor(() => {
 				const groupsTab2 = screen.getByRole('tab', { name: /groups/i });
 				expect(groupsTab2).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Type more
 			fireEvent.change(newGroupInput, { target: { value: 'Test Group 2' } });
-			
+
 			// Should still be on groups tab
 			await waitFor(() => {
 				const groupsTab3 = screen.getByRole('tab', { name: /groups/i });
@@ -700,77 +704,77 @@ describe('MockUI', () => {
 			const platform = makePlatform();
 			const user = userEvent.setup();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI and navigate to groups tab
 			fireEvent.click(await screen.findByTestId('open-settings'));
 			const groupsTab = await screen.findByRole('tab', { name: /groups/i });
 			fireEvent.click(groupsTab);
-			
+
 			// Find new group name input
 			const newGroupInput = await screen.findByPlaceholderText('New group name');
-			
+
 			// Focus the input first
 			newGroupInput.focus();
-			
+
 			// Simulate realistic typing with userEvent
 			const testText = 'FastTypedGroupName';
 			await user.type(newGroupInput, testText);
-			
+
 			// Verify the final value is complete (no characters were dropped)
 			await waitFor(() => {
 				expect(newGroupInput).toHaveValue(testText);
 			});
-			
+
 			// Should still be on groups tab
 			await waitFor(() => {
 				const groupsTab2 = screen.getByRole('tab', { name: /groups/i });
 				expect(groupsTab2).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Most importantly: the input should still have focus
 			expect(newGroupInput).toHaveFocus();
 		});
 
 		it('preserves focus in groups tab input when typing', async () => {
 			const platform = makePlatform();
-			
+
 			// Test if platform methods return stable references
 			const flags1 = platform.getFeatureFlags();
 			const flags2 = platform.getFeatureFlags();
 			const metadata1 = platform.getFeatureFlagMetadata();
 			const metadata2 = platform.getFeatureFlagMetadata();
-			
+
 			// These should now be the same objects (the fix!)
 			expect(flags1).toBe(flags2);
 			expect(metadata1).toBe(metadata2);
-			
+
 			const user = userEvent.setup();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI and navigate to groups tab
 			fireEvent.click(await screen.findByTestId('open-settings'));
 			const groupsTab = await screen.findByRole('tab', { name: /groups/i });
 			fireEvent.click(groupsTab);
-			
+
 			// Find new group name input
 			const newGroupInput = await screen.findByPlaceholderText('New group name');
-			
+
 			// Focus the input
 			newGroupInput.focus();
 			expect(newGroupInput).toHaveFocus();
-			
+
 			// Type a single character
 			await user.type(newGroupInput, 'a');
-			
+
 			// Input should still have focus after typing
 			expect(newGroupInput).toHaveFocus();
-			
+
 			// Type another character
 			await user.type(newGroupInput, 'b');
-			
+
 			// Input should still have focus
 			expect(newGroupInput).toHaveFocus();
-			
+
 			// Verify the value is correct
 			expect(newGroupInput).toHaveValue('ab');
 		});
@@ -778,34 +782,34 @@ describe('MockUI', () => {
 		it('stays on settings tab when toggling settings', async () => {
 			const platform = makePlatform();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI and navigate to settings tab
 			fireEvent.click(await screen.findByTestId('open-settings'));
 			const settingsTab = await screen.findByRole('tab', { name: /settings/i });
 			fireEvent.click(settingsTab);
-			
+
 			// Should be on settings tab initially
 			await waitFor(() => {
 				const settingsTab1 = screen.getByRole('tab', { name: /settings/i });
 				expect(settingsTab1).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Verify the settings content is visible
 			expect(await screen.findByText('Global Settings')).toBeInTheDocument();
 			expect(await screen.findByText('Disable All Endpoints')).toBeInTheDocument();
-			
+
 			// Use the platform API to toggle global disable (simulating a settings change)
 			platform.setGlobalDisable(true);
-			
+
 			// Should still be on settings tab
 			await waitFor(() => {
 				const settingsTab2 = screen.getByRole('tab', { name: /settings/i });
 				expect(settingsTab2).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Toggle again
 			platform.setGlobalDisable(false);
-			
+
 			// Should still be on settings tab
 			await waitFor(() => {
 				const settingsTab3 = screen.getByRole('tab', { name: /settings/i });
@@ -816,24 +820,24 @@ describe('MockUI', () => {
 		it('stays on endpoints tab when toggling endpoints', async () => {
 			const platform = makePlatform();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI (defaults to endpoints tab)
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Toggle an endpoint
 			const endpointToggle = await screen.findByLabelText('Toggle endpoint /api/v1/foo');
 			fireEvent.click(endpointToggle);
-			
+
 			// Should still be on endpoints tab
 			await waitFor(() => {
 				const endpointsTab = screen.getByRole('tab', { name: /endpoints/i });
 				expect(endpointsTab).toHaveAttribute('aria-selected', 'true');
 			});
-			
+
 			// Change status code
 			const statusBadge = await screen.findByText('400');
 			fireEvent.click(statusBadge);
-			
+
 			// Should still be on endpoints tab
 			await waitFor(() => {
 				const endpointsTab2 = screen.getByRole('tab', { name: /endpoints/i });
@@ -844,24 +848,24 @@ describe('MockUI', () => {
 		it('switches tabs correctly and persists selection', async () => {
 			const platform = makePlatform();
 			render(<MockUI platform={platform} />);
-			
+
 			// Open MockUI
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Test switching between all tabs
 			const tabs = ['endpoints', 'groups', 'settings', 'feature-flags'];
 			const tabNames = ['endpoints', 'groups', 'settings', 'feature flags'];
-			
+
 			for (let i = 0; i < tabs.length; i++) {
 				const tab = await screen.findByRole('tab', { name: new RegExp(tabNames[i], 'i') });
 				fireEvent.click(tab);
-				
+
 				// Verify tab is selected
 				await waitFor(() => {
 					const currentTab = screen.getByRole('tab', { name: new RegExp(tabNames[i], 'i') });
 					expect(currentTab).toHaveAttribute('aria-selected', 'true');
 				});
-				
+
 				// Verify localStorage is updated
 				const activeTabKey = `${platform.getName()}.mockui.activeTab.v1`;
 				expect(localStorage.getItem(activeTabKey)).toBe(tabs[i]);
@@ -870,32 +874,32 @@ describe('MockUI', () => {
 
 		it('defaults to endpoints tab when no localStorage value exists', async () => {
 			const platform = makePlatform();
-			
+
 			// Clear localStorage
 			const activeTabKey = `${platform.getName()}.mockui.activeTab.v1`;
 			localStorage.removeItem(activeTabKey);
-			
+
 			render(<MockUI platform={platform} />);
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Should default to endpoints tab
 			const endpointsTab = await screen.findByRole('tab', { name: /endpoints/i });
 			expect(endpointsTab).toHaveAttribute('aria-selected', 'true');
-			
+
 			// Should save to localStorage
 			expect(localStorage.getItem(activeTabKey)).toBe('endpoints');
 		});
 
 		it('handles corrupted localStorage gracefully', async () => {
 			const platform = makePlatform();
-			
+
 			// Set corrupted localStorage value
 			const activeTabKey = `${platform.getName()}.mockui.activeTab.v1`;
 			localStorage.setItem(activeTabKey, 'invalid-tab-value');
-			
+
 			render(<MockUI platform={platform} />);
 			fireEvent.click(await screen.findByTestId('open-settings'));
-			
+
 			// Should still work and default to endpoints tab
 			const endpointsTab = await screen.findByRole('tab', { name: /endpoints/i });
 			expect(endpointsTab).toHaveAttribute('aria-selected', 'true');

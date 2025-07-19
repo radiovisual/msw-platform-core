@@ -67,12 +67,7 @@ function saveEndpointScenarios(map: { [key: string]: string }, storageKey: strin
 	localStorage.setItem(storageKey, JSON.stringify(map));
 }
 
-export default function MockUI({
-	platform,
-	onStateChange,
-	groupStorageKey,
-	disabledPluginIdsStorageKey,
-}: MockUIProps) {
+export default function MockUI({ platform, onStateChange, groupStorageKey, disabledPluginIdsStorageKey }: MockUIProps) {
 	const platformName = platform.getName();
 	if (!platformName) {
 		throw new Error('Platform name is required for MockUI localStorage namespacing. Received platform: ' + JSON.stringify(platform));
@@ -113,14 +108,16 @@ export default function MockUI({
 	const featureFlagMetadata = useMemo(() => platform.getFeatureFlagMetadata(), [platform]);
 
 	// Helper to get automatic groups from platform
-	const autoGroups = useMemo(() => platform.getComponentIds().map(cid => ({
-		id: cid,
-		name: cid,
-		endpointIds: plugins
-			.filter(p => p.componentId === cid)
-			.map(p => p.id),
-		auto: true,
-	})), [platform, plugins]);
+	const autoGroups = useMemo(
+		() =>
+			platform.getComponentIds().map(cid => ({
+				id: cid,
+				name: cid,
+				endpointIds: plugins.filter(p => p.componentId === cid).map(p => p.id),
+				auto: true,
+			})),
+		[platform, plugins]
+	);
 
 	// Helper: get status override or default
 	const getStatus = useCallback((plugin: Plugin) => platform.getStatusOverride(plugin.id) ?? plugin.defaultStatus, [platform]);
@@ -234,7 +231,7 @@ export default function MockUI({
 	const toggleGroupFilter = useCallback((groupId: string) => {
 		setSelectedGroupFilters(prev => (prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]));
 	}, []);
-	
+
 	const clearGroupFilters = useCallback(() => setSelectedGroupFilters([]), []);
 
 	const handleSetEditingGroup = useCallback((groupId: string) => {
@@ -254,11 +251,14 @@ export default function MockUI({
 	const allGroups = useMemo(() => [...autoGroups, ...groups], [autoGroups, groups]);
 
 	// Scenario change handler
-	const handleScenarioChange = useCallback((pluginId: string, scenarioId: string) => {
-		setEndpointScenarios(prev => ({ ...prev, [pluginId]: scenarioId }));
-		platform.setEndpointScenario(pluginId, scenarioId);
-		forceUpdate(x => x + 1);
-	}, [platform]);
+	const handleScenarioChange = useCallback(
+		(pluginId: string, scenarioId: string) => {
+			setEndpointScenarios(prev => ({ ...prev, [pluginId]: scenarioId }));
+			platform.setEndpointScenario(pluginId, scenarioId);
+			forceUpdate(x => x + 1);
+		},
+		[platform]
+	);
 
 	// UI: update middleware setting
 	const updateMiddlewareSetting = useCallback(
