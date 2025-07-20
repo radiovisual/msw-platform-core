@@ -269,7 +269,7 @@ describe('EndpointsTab', () => {
 		render(<EndpointsTab {...propsWithSearch} />);
 
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Verify filtering is working initially
 		await waitFor(() => {
 			expect(screen.getByText('/api/users')).toBeInTheDocument();
@@ -288,7 +288,7 @@ describe('EndpointsTab', () => {
 
 		// Check that search term is still preserved (since it's controlled)
 		expect(searchInput.value).toBe('users');
-		
+
 		// Check that filtering is still active - only users endpoint should be visible
 		await waitFor(() => {
 			expect(screen.getByText('/api/users')).toBeInTheDocument();
@@ -313,10 +313,10 @@ describe('EndpointsTab', () => {
 		const testString = 'users';
 		for (let i = 0; i < testString.length; i++) {
 			const currentValue = testString.substring(0, i + 1);
-			
+
 			// Type next character
 			fireEvent.change(searchInput, { target: { value: currentValue } });
-			
+
 			// Focus should still be maintained after each keystroke
 			expect(document.activeElement).toBe(searchInput);
 		}
@@ -337,26 +337,26 @@ describe('EndpointsTab', () => {
 			onSearchTermChange,
 		};
 		render(<EndpointsTab {...propsWithHandlers} />);
-		
+
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Focus and start typing
 		searchInput.focus();
 		fireEvent.change(searchInput, { target: { value: 'api' } });
-		
+
 		// Verify focus is maintained
 		expect(document.activeElement).toBe(searchInput);
 		expect(onSearchTermChange).toHaveBeenCalledWith('api');
-		
+
 		// Trigger a status code change (which used to cause re-renders that interrupted typing)
 		const statusButtons = screen.getAllByText('201');
 		fireEvent.click(statusButtons[0]); // Click the first 201 button
-		
+
 		// Continue typing - focus should still be maintained
 		fireEvent.change(searchInput, { target: { value: 'api/users' } });
 		expect(document.activeElement).toBe(searchInput);
 		expect(onSearchTermChange).toHaveBeenCalledWith('api/users');
-		
+
 		// Verify the status code handler was called
 		expect(onUpdateStatusCode).toHaveBeenCalled();
 	});
@@ -370,42 +370,43 @@ describe('EndpointsTab', () => {
 			onUpdateStatusCode,
 		};
 		render(<EndpointsTab {...propsWithSearch} />);
-		
+
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Verify search is working - only /api/users should be visible
 		await waitFor(() => {
 			expect(screen.getByText('/api/users')).toBeInTheDocument();
 			expect(screen.queryByText('/api/orders')).not.toBeInTheDocument();
 			expect(screen.queryByText('/api/products')).not.toBeInTheDocument();
 		});
-		
+
 		// Verify search input has the correct value
 		expect(searchInput.value).toBe('users');
-		
+
 		// Step 2: Click on a status code for the visible endpoint
 		// Find the status code button within the users endpoint row
 		const usersEndpoint = screen.getByText('/api/users');
 		const usersRow = usersEndpoint.closest('div[style*="background: white"]'); // Find the endpoint row container
 		expect(usersRow).not.toBeNull();
-		
+
 		// Find a status code button in this specific row (should be 200, 201, or 503)
 		const statusButtons = within(usersRow as HTMLElement).getAllByText(/^(200|201|503)$/);
 		expect(statusButtons.length).toBeGreaterThan(0);
-		
+
 		// Click on a status code that's not currently active
-		const inactiveStatusButton = statusButtons.find(btn =>
-			!btn.style.background?.includes('rgb(16, 185, 129)') // Not the green active color
-		) || statusButtons[0]; // Fallback to first button
-		
+		const inactiveStatusButton =
+			statusButtons.find(
+				btn => !btn.style.background?.includes('rgb(16, 185, 129)') // Not the green active color
+			) || statusButtons[0]; // Fallback to first button
+
 		fireEvent.click(inactiveStatusButton);
-		
+
 		// Step 3: Verify the status code was updated
 		expect(onUpdateStatusCode).toHaveBeenCalled();
-		
+
 		// Step 4: Verify search text is NOT reset (this should pass now with controlled state)
 		expect(searchInput.value).toBe('users'); // This should stay 'users'
-		
+
 		// Step 5: Verify filtering is still active after status code click
 		await waitFor(() => {
 			expect(screen.getByText('/api/users')).toBeInTheDocument();
@@ -425,40 +426,41 @@ describe('EndpointsTab', () => {
 			onSearchTermChange,
 		};
 		render(<EndpointsTab {...propsWithCallbacks} />);
-		
+
 		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
-		
+
 		// Start typing rapidly
 		searchInput.focus();
 		expect(document.activeElement).toBe(searchInput);
-		
+
 		// Simulate rapid typing with multiple character changes
 		const typingSequence = ['u', 'us', 'use', 'user', 'users'];
-		
+
 		for (let i = 0; i < typingSequence.length; i++) {
 			const currentValue = typingSequence[i];
-			
+
 			// Type next character
 			fireEvent.change(searchInput, { target: { value: currentValue } });
-			
+
 			// Verify the onSearchTermChange was called with correct value
 			expect(onSearchTermChange).toHaveBeenCalledWith(currentValue);
-			
+
 			// Trigger a status code change during typing (this used to cause interruption)
-			if (i === 2) { // Halfway through typing
+			if (i === 2) {
+				// Halfway through typing
 				const statusButtons = screen.getAllByText('201');
 				fireEvent.click(statusButtons[0]);
 				expect(onUpdateStatusCode).toHaveBeenCalled();
 			}
-			
+
 			// Focus should be maintained throughout typing
 			expect(document.activeElement).toBe(searchInput);
 		}
-		
+
 		// Verify all typing events were captured correctly
 		expect(onSearchTermChange).toHaveBeenCalledTimes(typingSequence.length);
 		expect(onSearchTermChange).toHaveBeenLastCalledWith('users');
-		
+
 		// Focus should still be on search input
 		expect(document.activeElement).toBe(searchInput);
 	});

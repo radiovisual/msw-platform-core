@@ -19,7 +19,7 @@ interface SearchBarProps {
 const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, style }) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const wasFocusedRef = useRef(false);
-	
+
 	// Track if input was focused before re-render
 	useEffect(() => {
 		const input = inputRef.current;
@@ -27,7 +27,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, sty
 			wasFocusedRef.current = true;
 		}
 	});
-	
+
 	// Restore focus after re-render if it was previously focused
 	useEffect(() => {
 		const input = inputRef.current;
@@ -36,7 +36,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, sty
 			wasFocusedRef.current = false;
 		}
 	});
-	
+
 	return (
 		<div style={{ position: 'relative', ...style }}>
 			<Search

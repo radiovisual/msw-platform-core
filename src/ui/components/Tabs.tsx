@@ -16,7 +16,7 @@ export const Tabs: React.FC<{
 	const [internalValue, setInternalValue] = useState(defaultValue || 'endpoints');
 	const isControlled = value !== undefined;
 	const currentValue = isControlled ? value : internalValue;
-	
+
 	const setValue = (newValue: string) => {
 		if (isControlled) {
 			onValueChange?.(newValue);

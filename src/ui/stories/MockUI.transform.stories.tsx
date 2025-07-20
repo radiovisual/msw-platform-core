@@ -105,7 +105,7 @@ const platform = createMockPlatform({
 		{ name: 'FORCE_ERROR', description: 'Override success to 500 error (/api/basic)', default: false },
 		{ name: 'ADD_HEADERS', description: 'Add custom headers (/api/basic)', default: false },
 		{ name: 'RETURN_XML', description: 'Return XML format (/api/basic)', default: false },
-		
+
 		// User data flags (only affect /api/user)
 		{ name: 'FILTER_SENSITIVE_DATA', description: 'Hide sensitive data (/api/user)', default: false },
 	],
@@ -116,7 +116,7 @@ function TransformDemoApp() {
 	const [result, setResult] = useState<any>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [responseHeaders, setResponseHeaders] = useState<Record<string, string>>({});
-	
+
 	// Individual flag states for reliable UI updates
 	const [forceError, setForceError] = useState(false);
 	const [addHeaders, setAddHeaders] = useState(false);
@@ -126,7 +126,7 @@ function TransformDemoApp() {
 	// Helper function to update both platform and local state
 	const updateFeatureFlag = (flagName: string, value: boolean) => {
 		platform.setFeatureFlag(flagName, value);
-		
+
 		// Update local state based on flag name
 		switch (flagName) {
 			case 'FORCE_ERROR':
@@ -150,7 +150,7 @@ function TransformDemoApp() {
 		setResponseHeaders({});
 		try {
 			const response = await fetch(url);
-			
+
 			// Extract headers for display
 			const headers: Record<string, string> = {};
 			response.headers.forEach((value, key) => {
@@ -160,13 +160,13 @@ function TransformDemoApp() {
 
 			const contentType = response.headers.get('content-type') || '';
 			let data;
-			
+
 			if (contentType.includes('application/json')) {
 				data = await response.json();
 			} else {
 				data = await response.text();
 			}
-			
+
 			setResult({ status: response.status, data });
 		} catch (e) {
 			setError(String(e));
@@ -178,7 +178,7 @@ function TransformDemoApp() {
 			<h2>Transform Method Demo</h2>
 			<p>Simple examples showing how transform methods can modify responses. Each feature flag clearly shows which endpoint it affects.</p>
 			<hr />
-			
+
 			<div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
 				<div style={{ flex: 1 }}>
 					<h3>Test Endpoints</h3>
@@ -190,37 +190,25 @@ function TransformDemoApp() {
 							GET /api/user - Data filtering
 						</button>
 					</div>
-					
+
 					<h3>Feature Flags</h3>
 					<div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '14px' }}>
 						<div style={{ backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '4px', marginBottom: 8 }}>
 							<strong>Basic API (/api/basic)</strong>
 						</div>
 						<label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 16 }}>
-							<input
-								type="checkbox"
-								checked={forceError}
-								onChange={(e) => updateFeatureFlag('FORCE_ERROR', e.target.checked)}
-							/>
+							<input type="checkbox" checked={forceError} onChange={e => updateFeatureFlag('FORCE_ERROR', e.target.checked)} />
 							Override success (200) → error (500)
 						</label>
 						<label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 16 }}>
-							<input
-								type="checkbox"
-								checked={addHeaders}
-								onChange={(e) => updateFeatureFlag('ADD_HEADERS', e.target.checked)}
-							/>
+							<input type="checkbox" checked={addHeaders} onChange={e => updateFeatureFlag('ADD_HEADERS', e.target.checked)} />
 							Add custom headers
 						</label>
 						<label style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 16 }}>
-							<input
-								type="checkbox"
-								checked={returnXml}
-								onChange={(e) => updateFeatureFlag('RETURN_XML', e.target.checked)}
-							/>
+							<input type="checkbox" checked={returnXml} onChange={e => updateFeatureFlag('RETURN_XML', e.target.checked)} />
 							Return XML instead of JSON
 						</label>
-						
+
 						<div style={{ backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '4px', marginTop: 12, marginBottom: 8 }}>
 							<strong>User API (/api/user)</strong>
 						</div>
@@ -228,25 +216,26 @@ function TransformDemoApp() {
 							<input
 								type="checkbox"
 								checked={filterSensitiveData}
-								onChange={(e) => updateFeatureFlag('FILTER_SENSITIVE_DATA', e.target.checked)}
+								onChange={e => updateFeatureFlag('FILTER_SENSITIVE_DATA', e.target.checked)}
 							/>
 							Filter sensitive data (email, SSN)
 						</label>
 					</div>
 				</div>
-				
+
 				<div style={{ flex: 1 }}>
 					<h3>Response</h3>
 					{Object.keys(responseHeaders).length > 0 && (
 						<div style={{ marginBottom: '10px' }}>
 							<strong>Headers:</strong>
-							<pre style={{
-								fontSize: '11px',
-								backgroundColor: '#f5f5f5',
-								padding: '8px',
-								borderRadius: '4px',
-								margin: '4px 0',
-							}}
+							<pre
+								style={{
+									fontSize: '11px',
+									backgroundColor: '#f5f5f5',
+									padding: '8px',
+									borderRadius: '4px',
+									margin: '4px 0',
+								}}
 							>
 								{Object.entries(responseHeaders)
 									.filter(([key]) => key.startsWith('x-') || key.startsWith('content-'))
@@ -255,23 +244,24 @@ function TransformDemoApp() {
 							</pre>
 						</div>
 					)}
-					<pre style={{
-						width: '100%',
-						padding: '10px',
-						backgroundColor: 'lightgray',
-						borderRadius: 5,
-						color: 'black',
-						fontFamily: 'monospace',
-						fontSize: '12px',
-						minHeight: '200px',
-						overflow: 'auto',
-					}}
+					<pre
+						style={{
+							width: '100%',
+							padding: '10px',
+							backgroundColor: 'lightgray',
+							borderRadius: 5,
+							color: 'black',
+							fontFamily: 'monospace',
+							fontSize: '12px',
+							minHeight: '200px',
+							overflow: 'auto',
+						}}
 					>
 						{result ? JSON.stringify(result, null, 2) : error ? error : 'Click a button to test!'}
 					</pre>
 				</div>
 			</div>
-			
+
 			<MockUI platform={platform} />
 		</div>
 	);
@@ -281,7 +271,7 @@ function TransformDemoApp() {
 function StatusOverrideDemoApp() {
 	const [result, setResult] = useState<any>(null);
 	const [error, setError] = useState<string | null>(null);
-	
+
 	// Individual flag states for reliable UI updates
 	const [force404, setForce404] = useState(false);
 	const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -326,7 +316,7 @@ function StatusOverrideDemoApp() {
 	// Helper function to update both platform and local state
 	const updateStatusFlag = (flagName: string, value: boolean) => {
 		statusPlatform.setFeatureFlag(flagName, value);
-		
+
 		// Update local state based on flag name
 		switch (flagName) {
 			case 'FORCE_404':
@@ -355,51 +345,44 @@ function StatusOverrideDemoApp() {
 			<h2>Status Code Override Demo</h2>
 			<p>Simple example showing how transform methods can override HTTP status codes.</p>
 			<hr />
-			
+
 			<div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
 				<div style={{ flex: 1 }}>
 					<button onClick={fetchStatus} style={{ padding: '8px 12px', marginBottom: '16px' }}>
 						GET /api/status
 					</button>
-					
+
 					<div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '14px' }}>
 						<label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-							<input
-								type="checkbox"
-								checked={force404}
-								onChange={(e) => updateStatusFlag('FORCE_404', e.target.checked)}
-							/>
+							<input type="checkbox" checked={force404} onChange={e => updateStatusFlag('FORCE_404', e.target.checked)} />
 							Force 404 Not Found
 						</label>
 						<label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-							<input
-								type="checkbox"
-								checked={maintenanceMode}
-								onChange={(e) => updateStatusFlag('MAINTENANCE_MODE', e.target.checked)}
-							/>
+							<input type="checkbox" checked={maintenanceMode} onChange={e => updateStatusFlag('MAINTENANCE_MODE', e.target.checked)} />
 							Force 503 Service Unavailable
 						</label>
 					</div>
 				</div>
-				
+
 				<div style={{ flex: 1 }}>
 					<h3>Response</h3>
-					<pre style={{
-						width: '100%',
-						padding: '10px',
-						backgroundColor: 'lightgray',
-						borderRadius: 5,
-						color: 'black',
-						fontFamily: 'monospace',
-						fontSize: '12px',
-						minHeight: '100px',
-					}}
+					<pre
+						style={{
+							width: '100%',
+							padding: '10px',
+							backgroundColor: 'lightgray',
+							borderRadius: 5,
+							color: 'black',
+							fontFamily: 'monospace',
+							fontSize: '12px',
+							minHeight: '100px',
+						}}
 					>
 						{result ? JSON.stringify(result, null, 2) : error ? error : 'Click button to test!'}
 					</pre>
 				</div>
 			</div>
-			
+
 			<MockUI platform={statusPlatform} />
 		</div>
 	);

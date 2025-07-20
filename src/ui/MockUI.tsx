@@ -101,7 +101,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	const [editingGroup, setEditingGroup] = useState<string | null>(null);
 	const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([]);
 	const [endpointScenarios, setEndpointScenarios] = useState<{ [key: string]: string }>(() => loadEndpointScenarios(endpointScenarioKey));
-	
+
 	// IMPORTANT: These React state variables mirror platform state to ensure React components
 	// re-render when platform state changes. This prevents the need for forceUpdate() calls
 	// which cause unnecessary re-renders and can interrupt user input (like typing in search fields).
@@ -110,7 +110,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	const [delayOverrides, setDelayOverrides] = useState<{ [key: string]: number }>({});
 	const [featureFlagOverrides, setFeatureFlagOverrides] = useState<{ [key: string]: boolean }>({});
 	const [globalDisable, setGlobalDisable] = useState<boolean>(() => platform.isGloballyDisabled());
-	
+
 	// Store search term at MockUI level to prevent it from being reset when EndpointsTab remounts
 	// This fixes the bug where search filters get reset when clicking status codes
 	const [endpointsSearchTerm, setEndpointsSearchTerm] = useState('');
@@ -322,120 +322,123 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	}, []);
 
 	// Shared MockUI content (memoized to prevent component recreation)
-	const MockUIContent = useMemo(() => (
-		<Tabs value={activeTab} onValueChange={setActiveTab}>
-			<div
-				style={{
-					position: 'sticky',
-					top: 0,
-					zIndex: 2,
-					background: '#fff',
-					borderBottom: '1px solid #eee',
-				}}
-			>
-				<TabList>
-					<Tab value="endpoints">Endpoints</Tab>
-					<Tab value="groups">Groups</Tab>
-					<Tab value="settings">Settings</Tab>
-					<Tab value="feature-flags">Feature Flags</Tab>
-				</TabList>
-			</div>
-			{/* Global Disable Banner - Inside Dialog */}
-			<GlobalDisableBanner
-				isGloballyDisabled={globalDisable}
-				disabledCount={disabledPluginIds.length}
-				totalCount={plugins.length}
-				onEnableAll={handleEnableAll}
-			/>
-			<TabPanel key="endpoints-panel" value="endpoints">
-				<EndpointsTab
-					key="endpoints-tab"
-					plugins={plugins}
-					selectedGroupFilters={selectedGroupFilters}
-					onToggleGroupFilter={toggleGroupFilter}
-					onClearGroupFilters={clearGroupFilters}
-					groups={groups}
-					allGroups={allGroups}
-					isMocked={isMocked}
-					onToggleMocked={toggleEndpointSelection}
-					onUpdateStatusCode={updateStatusCode}
-					onUpdateDelay={updateDelay}
-					getDelay={getDelay}
-					onAddToGroup={addToGroup}
-					onRemoveFromGroup={removeFromGroup}
-					getStatus={getStatus}
-					getStatusCodes={getStatusCodes}
-					endpointScenarios={endpointScenarios}
-					onScenarioChange={handleScenarioChange}
-					platform={platform}
-					searchTerm={endpointsSearchTerm}
-					onSearchTermChange={handleSearchTermChange}
+	const MockUIContent = useMemo(
+		() => (
+			<Tabs value={activeTab} onValueChange={setActiveTab}>
+				<div
+					style={{
+						position: 'sticky',
+						top: 0,
+						zIndex: 2,
+						background: '#fff',
+						borderBottom: '1px solid #eee',
+					}}
+				>
+					<TabList>
+						<Tab value="endpoints">Endpoints</Tab>
+						<Tab value="groups">Groups</Tab>
+						<Tab value="settings">Settings</Tab>
+						<Tab value="feature-flags">Feature Flags</Tab>
+					</TabList>
+				</div>
+				{/* Global Disable Banner - Inside Dialog */}
+				<GlobalDisableBanner
+					isGloballyDisabled={globalDisable}
+					disabledCount={disabledPluginIds.length}
+					totalCount={plugins.length}
+					onEnableAll={handleEnableAll}
 				/>
-			</TabPanel>
-			<TabPanel value="groups">
-				<GroupsTab
-					groups={groups}
-					autoGroups={autoGroups}
-					plugins={plugins}
-					onCreateGroup={createGroup}
-					editingGroup={editingGroup}
-					onSetEditingGroup={handleSetEditingGroup}
-					onRenameGroup={renameGroup}
-					onDeleteGroup={deleteGroup}
-					onRemoveFromGroup={removeFromGroup}
-				/>
-			</TabPanel>
-			<TabPanel value="settings">
-				{/* Dynamic middleware settings UI */}
-				<DynamicSettingsTab
-					platform={platform}
-					onSettingChange={updateMiddlewareSetting}
-					onGlobalDisableChange={handleGlobalDisableChange}
-					globalDisable={globalDisable}
-				/>
-			</TabPanel>
-			<TabPanel value="feature-flags">
-				<FeatureFlagsTab featureFlags={featureFlags} featureFlagMetadata={featureFlagMetadata} onToggleFeatureFlag={toggleFeatureFlag} />
-			</TabPanel>
-		</Tabs>
-	), [
-		activeTab,
-		setActiveTab,
-		platform,
-		disabledPluginIds,
-		plugins,
-		globalDisable,
-		handleEnableAll,
-		selectedGroupFilters,
-		toggleGroupFilter,
-		clearGroupFilters,
-		groups,
-		allGroups,
-		isMocked,
-		toggleEndpointSelection,
-		updateStatusCode,
-		updateDelay,
-		getDelay,
-		addToGroup,
-		removeFromGroup,
-		getStatus,
-		getStatusCodes,
-		endpointScenarios,
-		handleScenarioChange,
-		endpointsSearchTerm,
-		handleSearchTermChange,
-		autoGroups,
-		createGroup,
-		editingGroup,
-		handleSetEditingGroup,
-		renameGroup,
-		deleteGroup,
-		updateMiddlewareSetting,
-		handleGlobalDisableChange,
-		featureFlags,
-		featureFlagMetadata,
-		toggleFeatureFlag
-	]);
+				<TabPanel key="endpoints-panel" value="endpoints">
+					<EndpointsTab
+						key="endpoints-tab"
+						plugins={plugins}
+						selectedGroupFilters={selectedGroupFilters}
+						onToggleGroupFilter={toggleGroupFilter}
+						onClearGroupFilters={clearGroupFilters}
+						groups={groups}
+						allGroups={allGroups}
+						isMocked={isMocked}
+						onToggleMocked={toggleEndpointSelection}
+						onUpdateStatusCode={updateStatusCode}
+						onUpdateDelay={updateDelay}
+						getDelay={getDelay}
+						onAddToGroup={addToGroup}
+						onRemoveFromGroup={removeFromGroup}
+						getStatus={getStatus}
+						getStatusCodes={getStatusCodes}
+						endpointScenarios={endpointScenarios}
+						onScenarioChange={handleScenarioChange}
+						platform={platform}
+						searchTerm={endpointsSearchTerm}
+						onSearchTermChange={handleSearchTermChange}
+					/>
+				</TabPanel>
+				<TabPanel value="groups">
+					<GroupsTab
+						groups={groups}
+						autoGroups={autoGroups}
+						plugins={plugins}
+						onCreateGroup={createGroup}
+						editingGroup={editingGroup}
+						onSetEditingGroup={handleSetEditingGroup}
+						onRenameGroup={renameGroup}
+						onDeleteGroup={deleteGroup}
+						onRemoveFromGroup={removeFromGroup}
+					/>
+				</TabPanel>
+				<TabPanel value="settings">
+					{/* Dynamic middleware settings UI */}
+					<DynamicSettingsTab
+						platform={platform}
+						onSettingChange={updateMiddlewareSetting}
+						onGlobalDisableChange={handleGlobalDisableChange}
+						globalDisable={globalDisable}
+					/>
+				</TabPanel>
+				<TabPanel value="feature-flags">
+					<FeatureFlagsTab featureFlags={featureFlags} featureFlagMetadata={featureFlagMetadata} onToggleFeatureFlag={toggleFeatureFlag} />
+				</TabPanel>
+			</Tabs>
+		),
+		[
+			activeTab,
+			setActiveTab,
+			platform,
+			disabledPluginIds,
+			plugins,
+			globalDisable,
+			handleEnableAll,
+			selectedGroupFilters,
+			toggleGroupFilter,
+			clearGroupFilters,
+			groups,
+			allGroups,
+			isMocked,
+			toggleEndpointSelection,
+			updateStatusCode,
+			updateDelay,
+			getDelay,
+			addToGroup,
+			removeFromGroup,
+			getStatus,
+			getStatusCodes,
+			endpointScenarios,
+			handleScenarioChange,
+			endpointsSearchTerm,
+			handleSearchTermChange,
+			autoGroups,
+			createGroup,
+			editingGroup,
+			handleSetEditingGroup,
+			renameGroup,
+			deleteGroup,
+			updateMiddlewareSetting,
+			handleGlobalDisableChange,
+			featureFlags,
+			featureFlagMetadata,
+			toggleFeatureFlag,
+		]
+	);
 
 	// Render as modal dialog
 	return (
@@ -499,9 +502,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 								<X style={{ height: 16, width: 16 }} />
 							</Button>
 						</div>
-						<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-							{MockUIContent}
-						</div>
+						<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>{MockUIContent}</div>
 					</div>
 				)}
 			</Dialog>
