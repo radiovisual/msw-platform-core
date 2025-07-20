@@ -98,7 +98,7 @@ const userDataPlugin: Plugin = {
 
 // Create simplified platform
 const platform = createMockPlatform({
-	name: 'simple-transform-demo',
+	name: 'simple-transform-demo-00',
 	plugins: [basicTransformPlugin, userDataPlugin],
 	featureFlags: [
 		// Basic transform flags (only affect /api/basic)
@@ -277,10 +277,10 @@ function StatusOverrideDemoApp() {
 	const [maintenanceMode, setMaintenanceMode] = useState(false);
 
 	const statusPlatform = createMockPlatform({
-		name: 'status-demo',
+		name: 'transform-status-override-demo-01',
 		plugins: [
 			{
-				id: 'status-demo',
+				id: 'status-demo-01',
 				componentId: 'StatusAPI',
 				endpoint: '/api/status',
 				method: 'GET',
@@ -404,10 +404,10 @@ export const StatusCodeOverrides: Story = {
 		msw: {
 			handlers: mswHandlersFromPlatform(
 				createMockPlatform({
-					name: 'status-demo',
+					name: 'transform-status-demo-02',
 					plugins: [
 						{
-							id: 'status-demo',
+							id: 'status-demo-02',
 							componentId: 'StatusAPI',
 							endpoint: '/api/status',
 							method: 'GET',
@@ -415,7 +415,25 @@ export const StatusCodeOverrides: Story = {
 								200: { message: 'Everything is OK' },
 							},
 							defaultStatus: 200,
+							scenarios: [
+								{
+									id: 'foo',
+									label: 'Foo',
+									responses: { 200: { foo: true } },
+								},
+								{
+									id: 'bar',
+									label: 'Bar',
+									responses: { 200: { bar: true } },
+								},
+							],
 							transform: (response, context) => {
+								if (context.activeScenario === 'foo') {
+									return {
+										body: { transform: true, foo: true },
+										status: 200,
+									};
+								}
 								if (context.featureFlags.FORCE_404) {
 									return {
 										body: { error: 'Not Found', message: 'Resource does not exist' },
@@ -430,7 +448,7 @@ export const StatusCodeOverrides: Story = {
 										headers: { 'Retry-After': '3600' },
 									};
 								}
-								return response;
+								return { body: response, status: context.currentStatus };
 							},
 						},
 					],

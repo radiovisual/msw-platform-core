@@ -248,7 +248,7 @@ export class MockPlatformCore {
 			featureFlags: this.featureFlags,
 			currentStatus: this.statusOverrides[plugin.id] ?? plugin.defaultStatus,
 			endpointScenario: this.endpointScenarioOverrides[plugin.id],
-			activeScenario: this.activeScenario,
+			activeScenario: this.activeScenario || this.endpointScenarioOverrides[plugin.id],
 		};
 		const next = (currentPayload: any): any => {
 			if (idx < chain.length) {
@@ -356,7 +356,7 @@ export class MockPlatformCore {
 						featureFlags: this.featureFlags,
 						currentStatus: useStatus,
 						endpointScenario: scenarioId,
-						activeScenario: this.activeScenario,
+						activeScenario: this.activeScenario || scenarioId,
 					};
 					resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
 				}
@@ -384,7 +384,7 @@ export class MockPlatformCore {
 					featureFlags: this.featureFlags,
 					currentStatus: useStatus,
 					endpointScenario: scenarioId,
-					activeScenario: this.activeScenario,
+					activeScenario: this.activeScenario || scenarioId,
 				};
 				resp = plugin.transform(JSON.parse(JSON.stringify(resp)), context);
 			}
