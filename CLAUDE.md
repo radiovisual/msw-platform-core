@@ -77,3 +77,112 @@ This is a **mock platform core** library that provides a reusable system for moc
 - Testing Library for React component testing
 
 The codebase emphasizes type safety, modularity, and runtime flexibility while maintaining backward compatibility with simple response definitions.
+
+## Important React Patterns & Common Pitfalls
+
+### Component Identity and Focus Management
+
+**Critical Issue Resolved**: Search input typing interruption due to component unmounting/remounting.
+
+**Root Cause**: Function components defined inside render methods cause React to create new function instances on every re-render, leading to complete component tree unmounting/remounting.
+
+**Example of the Problem**:
+```jsx
+// ❌ BAD - Creates new function on every render
+const ParentComponent = () => {
+  const [state, setState] = useState();
+  
+  const ChildComponent = () => (  // This function is recreated every render!
+    <div>Child content</div>
+  );
+  
+  return <ChildComponent />;  // React sees this as a different component each time
+};
+```
+
+**Solution**: Use `useMemo` to memoize component content:
+```jsx
+// ✅ GOOD - Memoized component content
+const ParentComponent = () => {
+  const [state, setState] = useState();
+  
+  const childContent = useMemo(() => (
+    <div>Child content</div>
+  ), [dependencies]);
+  
+  return {childContent};
+};
+```
+
+**Additional Safeguards Applied**:
+1. **Stable `key` props**: Always provide explicit keys for components that manage focus
+2. **React state over platform methods**: Use React state for UI updates instead of calling platform methods that might return new object references
+3. **Focus restoration**: Implement focus restoration in input components as a backup safety mechanism
+
+**Files involved in the fix**:
+- `src/ui/MockUI.tsx`: Memoized MockUIContent with proper dependencies
+- `src/ui/components/EndpointsTab.tsx`: Added stable key props
+- `src/ui/components/SearchBar.tsx`: Enhanced focus restoration logic
+
+**Regression Tests**: 
+- `src/ui/components/SearchFocusRegression.test.tsx`
+- `src/ui/ComponentIdentityRegression.test.tsx`
+
+This pattern is critical for any UI components that manage focus, input state, or complex component trees.
+
+### State Synchronization Between Platform and React
+
+**Critical Issue Resolved**: Delayed or missing UI updates when platform state changes.
+
+**Root Cause**: React components calling platform methods directly without corresponding React state to trigger re-renders.
+
+**Example of the Problem**:
+```jsx
+// ❌ BAD - React doesn't know when platform state changes
+const MyComponent = ({ platform }) => (
+  <div>
+    Status: {platform.isGloballyDisabled() ? 'Disabled' : 'Enabled'}
+    <button onClick={() => platform.setGlobalDisable(true)}>
+      Disable
+    </button>
+  </div>
+);
+```
+
+**Solution**: Mirror platform state in React state for immediate UI updates:
+```jsx
+// ✅ GOOD - React state mirrors platform state
+const MyComponent = ({ platform }) => {
+  const [globalDisable, setGlobalDisable] = useState(() => platform.isGloballyDisabled());
+  
+  const handleToggle = useCallback(() => {
+    const newValue = !globalDisable;
+    platform.setGlobalDisable(newValue);
+    setGlobalDisable(newValue);  // Sync React state immediately
+  }, [platform, globalDisable]);
+  
+  return (
+    <div>
+      Status: {globalDisable ? 'Disabled' : 'Enabled'}
+      <button onClick={handleToggle}>
+        {globalDisable ? 'Enable' : 'Disable'}
+      </button>
+    </div>
+  );
+};
+```
+
+**Key Principles**:
+1. **Mirror Platform State**: Create React state variables for any platform state that affects UI rendering
+2. **Immediate Sync**: Update both platform and React state simultaneously in event handlers
+3. **Consistent Props**: Pass React state (not platform methods) to child components
+4. **Memoization Dependencies**: Include React state in useMemo/useCallback dependencies
+
+**Files involved in the fix**:
+- `src/ui/MockUI.tsx`: Added `globalDisable` React state, updated handlers and dependencies
+- `src/ui/components/DynamicSettingsTab.tsx`: Receives `globalDisable` as prop instead of reading from platform
+
+**Regression Tests**: 
+- `src/ui/GlobalDisableRegression.test.tsx`
+
+This pattern ensures immediate, consistent UI updates across all components and prevents state synchronization delays.

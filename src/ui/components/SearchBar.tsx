@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { theme } from '../theme';
 
 // Simple Search icon since we don't have it in the existing Icon component
@@ -17,6 +17,26 @@ interface SearchBarProps {
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, style }) => {
+	const inputRef = useRef<HTMLInputElement>(null);
+	const wasFocusedRef = useRef(false);
+	
+	// Track if input was focused before re-render
+	useEffect(() => {
+		const input = inputRef.current;
+		if (input && document.activeElement === input) {
+			wasFocusedRef.current = true;
+		}
+	});
+	
+	// Restore focus after re-render if it was previously focused
+	useEffect(() => {
+		const input = inputRef.current;
+		if (input && wasFocusedRef.current && document.activeElement !== input) {
+			input.focus();
+			wasFocusedRef.current = false;
+		}
+	});
+	
 	return (
 		<div style={{ position: 'relative', ...style }}>
 			<Search
@@ -28,13 +48,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, sty
 					width: '16px',
 					height: '16px',
 					color: theme.colors.gray[400],
+					pointerEvents: 'none',
 				}}
 			/>
 			<input
+				ref={inputRef}
 				type="text"
 				value={value}
 				onChange={e => onChange(e.target.value)}
 				placeholder={placeholder}
+				autoComplete="off"
+				spellCheck="false"
 				style={{
 					width: '100%',
 					padding: '12px 12px 12px 40px',
@@ -42,17 +66,22 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder, sty
 					border: `1px solid ${theme.colors.gray[200]}`,
 					fontSize: '14px',
 					outline: 'none',
-					transition: 'all 0.2s ease',
 					background: 'white',
 					boxSizing: 'border-box',
+					transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
 				}}
-				onFocus={e => {
-					e.target.style.borderColor = theme.colors.primary;
-					e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primary}20`;
+				onFocus={() => {
+					if (inputRef.current) {
+						inputRef.current.style.borderColor = theme.colors.primary;
+						inputRef.current.style.boxShadow = `0 0 0 3px ${theme.colors.primary}20`;
+					}
 				}}
-				onBlur={e => {
-					e.target.style.borderColor = theme.colors.gray[200];
-					e.target.style.boxShadow = 'none';
+				onBlur={() => {
+					if (inputRef.current) {
+						inputRef.current.style.borderColor = theme.colors.gray[200];
+						inputRef.current.style.boxShadow = 'none';
+					}
+					wasFocusedRef.current = false;
 				}}
 			/>
 		</div>

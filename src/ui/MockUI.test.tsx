@@ -156,6 +156,118 @@ describe('MockUI', () => {
 		await waitFor(() => expect(platform.getFeatureFlags().FLAG_A).toBe(false));
 	});
 
+	it('preserves search text when clicking status codes in endpoints tab (TDD integration test)', async () => {
+		// INTEGRATION TEST: This should reproduce the bug where search text gets reset
+		// when clicking on status codes in the full MockUI component
+		
+		// Create a platform with an endpoint that contains 'foo' so we can search for it
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+		
+		// Open the MockUI
+		const openButton = screen.getByTestId('open-settings');
+		fireEvent.click(openButton);
+		
+		// Wait for the dialog to be open and navigate to endpoints tab (should be default)
+		await waitFor(() => {
+			expect(screen.getByText('Endpoint Manager')).toBeInTheDocument();
+		});
+		
+		// Find the search input
+		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
+		
+		// Step 1: Type a search term that filters the endpoints (search for 'foo' to match '/api/v1/foo')
+		fireEvent.change(searchInput, { target: { value: 'foo' } });
+		
+		// Verify search is working - should filter to foo endpoint
+		await waitFor(() => {
+			expect(screen.getByText('/api/v1/foo')).toBeInTheDocument();
+			expect(screen.queryByText('/api/v1/bar')).not.toBeInTheDocument(); // bar should be filtered out
+		});
+		
+		// Verify search input has the correct value
+		expect(searchInput.value).toBe('foo');
+		
+		// Step 2: Find and click on a status code for the visible endpoint
+		const fooEndpoint = screen.getByText('/api/v1/foo');
+		const fooRow = fooEndpoint.closest('div[style*="background: white"]'); // Find the endpoint row container
+		expect(fooRow).not.toBeNull();
+		
+		// Find a status code button in this specific row (should be 200, 400, or 503)
+		const statusButtons = within(fooRow as HTMLElement).getAllByText(/^(200|400|503)$/);
+		expect(statusButtons.length).toBeGreaterThan(0);
+		
+		// Click on a status button that's not currently active (400 if current is 200)
+		const targetStatusButton = statusButtons.find(btn => btn.textContent === '400') || statusButtons[0];
+		fireEvent.click(targetStatusButton);
+		
+		// Step 3: THE BUG - Verify search text is NOT reset (this should fail if bug exists)
+		expect(searchInput.value).toBe('foo'); // This should stay 'foo', not become ''
+		
+		// Step 4: Verify filtering is still active after status code click
+		await waitFor(() => {
+			expect(screen.getByText('/api/v1/foo')).toBeInTheDocument();
+			expect(screen.queryByText('/api/v1/bar')).not.toBeInTheDocument(); // bar should still be filtered out
+		});
+	});
+
+	it('preserves search text across multiple UI operations (comprehensive regression test)', async () => {
+		// This test verifies that search state persists across multiple different UI operations
+		const platform = makePlatform();
+		render(<MockUI platform={platform} />);
+		
+		// Open the MockUI
+		const openButton = screen.getByTestId('open-settings');
+		fireEvent.click(openButton);
+		
+		await waitFor(() => {
+			expect(screen.getByText('Endpoint Manager')).toBeInTheDocument();
+		});
+		
+		const searchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
+		
+		// Step 1: Set up initial search
+		fireEvent.change(searchInput, { target: { value: 'foo' } });
+		await waitFor(() => {
+			expect(screen.getByText('/api/v1/foo')).toBeInTheDocument();
+			expect(screen.queryByText('/api/v1/bar')).not.toBeInTheDocument();
+		});
+		expect(searchInput.value).toBe('foo');
+		
+		// Step 2: Toggle endpoint on/off - search should persist
+		const toggleButton = within(screen.getByText('/api/v1/foo').closest('div[style*="background: white"]') as HTMLElement)
+			.getByLabelText(/Toggle endpoint/);
+		fireEvent.click(toggleButton);
+		expect(searchInput.value).toBe('foo');
+		
+		// Step 3: Change status code - search should persist
+		const statusButtons = within(screen.getByText('/api/v1/foo').closest('div[style*="background: white"]') as HTMLElement)
+			.getAllByText(/^(200|400|503)$/);
+		const targetButton = statusButtons.find(btn => btn.textContent === '400') || statusButtons[0];
+		fireEvent.click(targetButton);
+		expect(searchInput.value).toBe('foo');
+		
+		// Step 4: Change delay - search should persist
+		const delayInput = within(screen.getByText('/api/v1/foo').closest('div[style*="background: white"]') as HTMLElement)
+			.getByDisplayValue('150') as HTMLInputElement;
+		fireEvent.change(delayInput, { target: { value: '100' } });
+		expect(searchInput.value).toBe('foo');
+		
+		// Step 5: Navigate to another tab and back - search should persist
+		const groupsTab = screen.getByRole('tab', { name: /groups/i });
+		fireEvent.click(groupsTab);
+		const endpointsTab = screen.getByRole('tab', { name: /endpoints/i });
+		fireEvent.click(endpointsTab);
+		
+		// Verify search is still active after tab navigation
+		await waitFor(() => {
+			const newSearchInput = screen.getByPlaceholderText('Search endpoints...') as HTMLInputElement;
+			expect(newSearchInput.value).toBe('foo');
+			expect(screen.getByText('/api/v1/foo')).toBeInTheDocument();
+			expect(screen.queryByText('/api/v1/bar')).not.toBeInTheDocument();
+		});
+	});
+
 	it('creates, renames, deletes groups and manages membership', async () => {
 		const platform = makePlatform();
 

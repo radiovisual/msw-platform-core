@@ -100,11 +100,26 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	const [editingGroup, setEditingGroup] = useState<string | null>(null);
 	const [selectedGroupFilters, setSelectedGroupFilters] = useState<string[]>([]);
-	const [, forceUpdate] = useState(0);
 	const [endpointScenarios, setEndpointScenarios] = useState<{ [key: string]: string }>(() => loadEndpointScenarios(endpointScenarioKey));
+	
+	// IMPORTANT: These React state variables mirror platform state to ensure React components
+	// re-render when platform state changes. This prevents the need for forceUpdate() calls
+	// which cause unnecessary re-renders and can interrupt user input (like typing in search fields).
+	// When adding new platform state, always create a corresponding React state variable here.
+	const [statusOverrides, setStatusOverrides] = useState<{ [key: string]: number }>({});
+	const [delayOverrides, setDelayOverrides] = useState<{ [key: string]: number }>({});
+	const [featureFlagOverrides, setFeatureFlagOverrides] = useState<{ [key: string]: boolean }>({});
+	const [globalDisable, setGlobalDisable] = useState<boolean>(() => platform.isGloballyDisabled());
+	
+	// Store search term at MockUI level to prevent it from being reset when EndpointsTab remounts
+	// This fixes the bug where search filters get reset when clicking status codes
+	const [endpointsSearchTerm, setEndpointsSearchTerm] = useState('');
 
 	const plugins: Plugin[] = useMemo(() => platform.getPlugins(), [platform]);
-	const featureFlags = useMemo(() => platform.getFeatureFlags(), [platform]);
+	const featureFlags = useMemo(() => {
+		const platformFlags = platform.getFeatureFlags();
+		return { ...platformFlags, ...featureFlagOverrides };
+	}, [platform, featureFlagOverrides]);
 	const featureFlagMetadata = useMemo(() => platform.getFeatureFlagMetadata(), [platform]);
 
 	// Helper to get automatic groups from platform
@@ -120,10 +135,10 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	);
 
 	// Helper: get status override or default
-	const getStatus = useCallback((plugin: Plugin) => platform.getStatusOverride(plugin.id) ?? plugin.defaultStatus, [platform]);
+	const getStatus = useCallback((plugin: Plugin) => statusOverrides[plugin.id] ?? plugin.defaultStatus, [statusOverrides]);
 
-	// Helper: is endpoint mocked?
-	const isMocked = useCallback((plugin: Plugin) => !platform.getDisabledPluginIds().includes(plugin.id), [platform]);
+	// Helper: is endpoint mocked? Use React state instead of platform method to prevent re-renders
+	const isMocked = useCallback((plugin: Plugin) => !disabledPluginIds.includes(plugin.id), [disabledPluginIds]);
 
 	// Persist groups and disabledPluginIds
 	useEffect(() => {
@@ -158,7 +173,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 				platform.setDisabledPluginIds(arr);
 				return arr;
 			});
-			forceUpdate(x => x + 1);
 		},
 		[platform]
 	);
@@ -167,7 +181,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	const updateStatusCode = useCallback(
 		(pluginId: string, statusCode: number) => {
 			platform.setStatusOverride(pluginId, statusCode);
-			forceUpdate(x => x + 1);
+			setStatusOverrides(prev => ({ ...prev, [pluginId]: statusCode }));
 			onStateChange?.({ disabledPluginIds });
 		},
 		[platform, onStateChange, disabledPluginIds]
@@ -177,7 +191,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	const updateDelay = useCallback(
 		(pluginId: string, delay: number) => {
 			platform.setDelayOverride(pluginId, delay);
-			forceUpdate(x => x + 1);
+			setDelayOverrides(prev => ({ ...prev, [pluginId]: delay }));
 			onStateChange?.({ disabledPluginIds });
 		},
 		[platform, onStateChange, disabledPluginIds]
@@ -186,16 +200,16 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	// Helper: get delay for a plugin
 	const getDelay = useCallback(
 		(pluginId: string) => {
-			return platform.getEffectiveDelay(pluginId);
+			return delayOverrides[pluginId] ?? platform.getEffectiveDelay(pluginId);
 		},
-		[platform]
+		[platform, delayOverrides]
 	);
 
 	// UI: toggle feature flag
 	const toggleFeatureFlag = useCallback(
 		(flag: string, value: boolean) => {
 			platform.setFeatureFlag(flag, value);
-			forceUpdate(x => x + 1);
+			setFeatureFlagOverrides(prev => ({ ...prev, [flag]: value }));
 			onStateChange?.({ disabledPluginIds });
 		},
 		[platform, onStateChange, disabledPluginIds]
@@ -255,7 +269,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		(pluginId: string, scenarioId: string) => {
 			setEndpointScenarios(prev => ({ ...prev, [pluginId]: scenarioId }));
 			platform.setEndpointScenario(pluginId, scenarioId);
-			forceUpdate(x => x + 1);
 		},
 		[platform]
 	);
@@ -264,7 +277,6 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 	const updateMiddlewareSetting = useCallback(
 		(key: string, value: any) => {
 			platform.setMiddlewareSetting(key, value);
-			forceUpdate(x => x + 1);
 			onStateChange?.({ disabledPluginIds });
 		},
 		[platform, onStateChange, disabledPluginIds]
@@ -272,9 +284,10 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 
 	// UI: handle global disable change
 	const handleGlobalDisableChange = useCallback(() => {
-		forceUpdate(x => x + 1);
+		const newGlobalDisable = platform.isGloballyDisabled();
+		setGlobalDisable(newGlobalDisable);
 		onStateChange?.({ disabledPluginIds });
-	}, [onStateChange, disabledPluginIds]);
+	}, [platform, onStateChange, disabledPluginIds]);
 
 	// UI: enable all endpoints
 	const handleEnableAll = useCallback(() => {
@@ -282,10 +295,15 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		setDisabledPluginIds([]);
 		platform.setDisabledPluginIds([]);
 		platform.setGlobalDisable(false);
+		setGlobalDisable(false);
 		saveDisabledPluginIds([], disabledKey);
-		forceUpdate(x => x + 1);
 		onStateChange?.({ disabledPluginIds: [] });
 	}, [platform, disabledKey, onStateChange]);
+
+	// UI: handle search term change (wrapped in useCallback to prevent typing interruption)
+	const handleSearchTermChange = useCallback((searchTerm: string) => {
+		setEndpointsSearchTerm(searchTerm);
+	}, []);
 
 	// Keyboard shortcuts: Ctrl+M to toggle MockUI visibility, Escape to close
 	useEffect(() => {
@@ -303,8 +321,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 		return () => document.removeEventListener('keydown', handleKeyDown);
 	}, []);
 
-	// Shared MockUI content
-	const MockUIContent = () => (
+	// Shared MockUI content (memoized to prevent component recreation)
+	const MockUIContent = useMemo(() => (
 		<Tabs value={activeTab} onValueChange={setActiveTab}>
 			<div
 				style={{
@@ -324,13 +342,14 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 			</div>
 			{/* Global Disable Banner - Inside Dialog */}
 			<GlobalDisableBanner
-				isGloballyDisabled={platform.isGloballyDisabled()}
+				isGloballyDisabled={globalDisable}
 				disabledCount={disabledPluginIds.length}
 				totalCount={plugins.length}
 				onEnableAll={handleEnableAll}
 			/>
-			<TabPanel value="endpoints">
+			<TabPanel key="endpoints-panel" value="endpoints">
 				<EndpointsTab
+					key="endpoints-tab"
 					plugins={plugins}
 					selectedGroupFilters={selectedGroupFilters}
 					onToggleGroupFilter={toggleGroupFilter}
@@ -349,6 +368,8 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 					endpointScenarios={endpointScenarios}
 					onScenarioChange={handleScenarioChange}
 					platform={platform}
+					searchTerm={endpointsSearchTerm}
+					onSearchTermChange={handleSearchTermChange}
 				/>
 			</TabPanel>
 			<TabPanel value="groups">
@@ -370,13 +391,51 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 					platform={platform}
 					onSettingChange={updateMiddlewareSetting}
 					onGlobalDisableChange={handleGlobalDisableChange}
+					globalDisable={globalDisable}
 				/>
 			</TabPanel>
 			<TabPanel value="feature-flags">
 				<FeatureFlagsTab featureFlags={featureFlags} featureFlagMetadata={featureFlagMetadata} onToggleFeatureFlag={toggleFeatureFlag} />
 			</TabPanel>
 		</Tabs>
-	);
+	), [
+		activeTab,
+		setActiveTab,
+		platform,
+		disabledPluginIds,
+		plugins,
+		globalDisable,
+		handleEnableAll,
+		selectedGroupFilters,
+		toggleGroupFilter,
+		clearGroupFilters,
+		groups,
+		allGroups,
+		isMocked,
+		toggleEndpointSelection,
+		updateStatusCode,
+		updateDelay,
+		getDelay,
+		addToGroup,
+		removeFromGroup,
+		getStatus,
+		getStatusCodes,
+		endpointScenarios,
+		handleScenarioChange,
+		endpointsSearchTerm,
+		handleSearchTermChange,
+		autoGroups,
+		createGroup,
+		editingGroup,
+		handleSetEditingGroup,
+		renameGroup,
+		deleteGroup,
+		updateMiddlewareSetting,
+		handleGlobalDisableChange,
+		featureFlags,
+		featureFlagMetadata,
+		toggleFeatureFlag
+	]);
 
 	// Render as modal dialog
 	return (
@@ -441,7 +500,7 @@ export default function MockUI({ platform, onStateChange, groupStorageKey, disab
 							</Button>
 						</div>
 						<div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-							<MockUIContent />
+							{MockUIContent}
 						</div>
 					</div>
 				)}

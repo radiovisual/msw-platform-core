@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import Button from './Button';
 import Popover from './Popover';
 import SearchBar from './SearchBar';
@@ -35,6 +35,8 @@ interface EndpointsTabProps {
 	platform: MockPlatformCore;
 	onUpdateDelay: (pluginId: string, delay: number) => void;
 	getDelay: (pluginId: string) => number;
+	searchTerm: string;
+	onSearchTermChange: (searchTerm: string) => void;
 }
 
 const EndpointsTab: React.FC<EndpointsTabProps> = ({
@@ -56,10 +58,11 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 	platform,
 	onUpdateDelay,
 	getDelay,
+	searchTerm,
+	onSearchTermChange,
 }) => {
 	const screenSize = useResponsive();
 	const isMobile = screenSize === 'mobile';
-	const [searchTerm, setSearchTerm] = useState('');
 
 	// Filter plugins based on search term and group filters
 	const filteredPlugins = useMemo(() => {
@@ -137,8 +140,9 @@ const EndpointsTab: React.FC<EndpointsTabProps> = ({
 				}}
 			>
 				<SearchBar
+					key="endpoints-search"
 					value={searchTerm}
-					onChange={setSearchTerm}
+					onChange={onSearchTermChange}
 					placeholder="Search endpoints..."
 					style={{ flex: 1, width: isMobile ? '100%' : 'auto' }}
 				/>

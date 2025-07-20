@@ -8,9 +8,10 @@ interface DynamicSettingsTabProps {
 	platform: MockPlatformCore;
 	onSettingChange: (key: string, value: any) => void;
 	onGlobalDisableChange?: () => void;
+	globalDisable: boolean;
 }
 
-export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableChange }: DynamicSettingsTabProps) {
+export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableChange, globalDisable }: DynamicSettingsTabProps) {
 	const settings = platform.getRegisteredSettings();
 	const screenSize = useResponsive();
 	const isMobile = screenSize === 'mobile';
@@ -71,9 +72,9 @@ export function DynamicSettingsTab({ platform, onSettingChange, onGlobalDisableC
 					</div>
 					<div style={{ minWidth: isMobile ? 'auto' : '120px' }}>
 						<ModernToggle
-							checked={platform.isGloballyDisabled()}
+							checked={globalDisable}
 							onChange={() => {
-								platform.setGlobalDisable(!platform.isGloballyDisabled());
+								platform.setGlobalDisable(!globalDisable);
 								onGlobalDisableChange?.();
 							}}
 							label=""
