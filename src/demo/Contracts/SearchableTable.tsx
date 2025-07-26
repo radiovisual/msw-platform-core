@@ -100,6 +100,21 @@ export function SearchableTable<T = any>({
 		return [...columnDefs];
 	}, [columnDefs]);
 
+	// Ensure pageSize is included in pageSizeOptions and the list is sorted
+	const enhancedPageSizeOptions = useMemo(() => {
+		if (readonly) return false;
+		
+		const options = [...pageSizeOptions];
+		
+		// Add pageSize if it's not already in the options
+		if (!options.includes(pageSize)) {
+			options.push(pageSize);
+		}
+		
+		// Sort the options in ascending order
+		return options.sort((a, b) => a - b);
+	}, [pageSizeOptions, pageSize, readonly]);
+
 	// Handle row selection changes
 	const handleSelectionChanged = useCallback(
 		(event: SelectionChangedEvent) => {
@@ -162,7 +177,7 @@ export function SearchableTable<T = any>({
 						columnDefs={enhancedColumnDefs}
 						pagination={!readonly}
 						paginationPageSize={readonly ? undefined : pageSize}
-						paginationPageSizeSelector={readonly ? false : pageSizeOptions}
+						paginationPageSizeSelector={enhancedPageSizeOptions}
 						domLayout="normal"
 						rowSelection={
 							selectionMode !== 'none' && !readonly
