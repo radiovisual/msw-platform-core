@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+IMPORTANT! You must ignore all the files in the src/demo project completely when doing all your file searches and code analaysis and refactors unless you are explicitly told to work on the demo project.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands
