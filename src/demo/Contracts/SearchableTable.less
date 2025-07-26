@@ -1,0 +1,154 @@
+.searchable-table {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: 15px;
+
+	.searchable-table-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 15px;
+		flex-wrap: wrap;
+
+		.search-container {
+			flex: 1;
+			min-width: 200px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			.search-input {
+				flex: 1;
+				max-width: 400px;
+				padding: 8px 12px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				font-size: 14px;
+
+				&:focus {
+					outline: none;
+					border-color: #007bff;
+					box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+				}
+
+				&::placeholder {
+					color: #6c757d;
+				}
+			}
+
+			.clear-search-btn {
+				background: none;
+				border: 1px solid #ddd;
+				font-size: 14px;
+				color: #6c757d;
+				cursor: pointer;
+				padding: 8px 10px;
+				height: 34px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 4px;
+				transition: all 0.2s ease;
+				flex-shrink: 0;
+
+				&:hover {
+					background-color: #f8f9fa;
+					color: #495057;
+					border-color: #adb5bd;
+				}
+
+				&:active {
+					background-color: #e9ecef;
+				}
+			}
+		}
+	}
+
+	.table-container {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.action-buttons {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		flex-wrap: wrap;
+		padding-top: 10px;
+		border-top: 1px solid #dee2e6;
+
+		.action-btn {
+			padding: 8px 16px;
+			border-radius: 4px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			border: 1px solid;
+			min-width: 80px;
+
+			&:disabled {
+				cursor: not-allowed;
+				opacity: 0.6;
+			}
+
+			&.action-btn-primary {
+				background-color: #007bff;
+				border-color: #007bff;
+				color: white;
+
+				&:hover:not(:disabled) {
+					background-color: #0056b3;
+					border-color: #0056b3;
+				}
+			}
+
+			&.action-btn-secondary {
+				background-color: #6c757d;
+				border-color: #6c757d;
+				color: white;
+
+				&:hover:not(:disabled) {
+					background-color: #5a6268;
+					border-color: #5a6268;
+				}
+			}
+
+			&.action-btn-danger {
+				background-color: #dc3545;
+				border-color: #dc3545;
+				color: white;
+
+				&:hover:not(:disabled) {
+					background-color: #c82333;
+					border-color: #bd2130;
+				}
+			}
+		}
+	}
+
+	// Responsive adjustments
+	@media (max-width: 768px) {
+		.searchable-table-header {
+			flex-direction: column;
+			align-items: stretch;
+
+			.search-container {
+				.search-input {
+					max-width: none;
+				}
+			}
+
+			.selection-controls {
+				justify-content: center;
+			}
+		}
+
+		.action-buttons {
+			justify-content: center;
+		}
+	}
+}

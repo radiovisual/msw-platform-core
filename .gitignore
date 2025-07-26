@@ -5,3 +5,5 @@ dist/
 storybook-static/
 .claude/
 CLAUDE.md
+src/demo/reference-images
+.DS_Store

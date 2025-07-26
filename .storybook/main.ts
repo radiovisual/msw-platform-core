@@ -13,6 +13,15 @@ const config: StorybookConfig = {
 		options: {},
 	},
 	staticDirs: ['./public'],
+	webpackFinal: async config => {
+		// Add LESS support
+		config.module?.rules?.push({
+			test: /\.less$/,
+			use: ['style-loader', 'css-loader', 'less-loader'],
+		});
+
+		return config;
+	},
 };
 
 export default config;
